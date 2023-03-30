@@ -1,10 +1,16 @@
 use uuid::Uuid;
 
+
 #[derive(Debug, Clone)]
 pub enum Term {
-    IRI(IRI),
     Literal(Literal),
-    BlankNode(BlankNode),
+    Resource(Resource),
+}
+
+#[derive(Debug, Clone)]
+pub enum Resource{
+   IRI(IRI), 
+   BlankNode(BlankNode)
 }
 
 #[derive(Debug, Clone)]
