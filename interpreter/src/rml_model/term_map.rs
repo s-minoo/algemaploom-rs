@@ -8,7 +8,7 @@ use super::source_target::{LogicalSource, LogicalTarget};
 
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
-    pub identifier:      String,
+    pub identifier:      IriString,
     pub logical_targets: HashSet<LogicalTarget>,
     pub term_map_type:   TermMapType,
     pub term_value:      TermString,
