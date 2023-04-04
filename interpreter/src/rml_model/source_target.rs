@@ -1,5 +1,6 @@
-use super::term::IRI;
+use sophia_term::iri::Iri;
 
+use crate::{LiteralString, IriString};
 // TODO: <30-03-23, Min Oo>
 // Implement source and target metadata infos
 //
@@ -9,14 +10,14 @@ pub struct LogicalSource {
     pub identifier:            String,
     pub iterator:              String,
     pub input:                 Input,
-    pub reference_formulation: IRI,
+    pub reference_formulation: IriString,
 }
 
 #[derive(Debug, Clone)]
 pub struct LogicalTarget {
     pub identifier:    String,
-    pub compression:   Option<IRI>,
-    pub serialization: IRI,
+    pub compression:   Option<IriString>,
+    pub serialization: IriString,
     pub output:        Output,
 }
 

@@ -1,15 +1,17 @@
 use std::collections::HashSet;
 
+
+use crate::{TermString, IriString};
+
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
-use super::term::Term;
 
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
     pub identifier:      String,
     pub logical_targets: HashSet<LogicalTarget>,
     pub term_map_type:   TermMapType,
-    pub term_value:      Term,
+    pub term_value:      TermString,
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +33,7 @@ pub struct TriplesMap {
 #[derive(Debug, Clone)]
 pub struct SubjectMap {
     pub tm_info: TermMapInfo,
+    pub classes: Vec<IriString>, 
 }
 
 #[derive(Debug, Clone)]

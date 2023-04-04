@@ -1,5 +1,5 @@
-pub const PREFIX: &str = "rml";
-pub const IRI: &str = "http://semweb.mmlab.be/ns/rml#";
+pub const PREFIX: &str = "rr";
+pub const IRI: &str = "http://www.w3.org/ns/r2rml#";
 
 pub mod PROPERTY {
     use super::IRI;
@@ -16,6 +16,7 @@ pub mod PROPERTY {
     pub const CONSTANT: PAIR = (IRI, "constant");
     pub const TEMPLATE: PAIR = (IRI, "template");
     pub const TERMTYPE: PAIR = (IRI, "termType");
+    pub const COLUMN: PAIR = (IRI, "column");
     pub const CLASS: PAIR = (IRI, "class");
     pub const PARENTTRIPLESMAP: PAIR = (IRI, "parentTriplesMap");
     pub const JOINCONDITION: PAIR = (IRI, "joinCondition");
@@ -29,12 +30,12 @@ pub mod PROPERTY {
 }
 
 pub mod CLASS {
-    use super::IRI;
+    use super::IRI as SUPER_IRI;
     use crate::PAIR;
-    pub const PREDICATEOBJECTMAP: PAIR = (IRI, "PredicateObjectMap");
-    pub const OBJECTMAP: PAIR = (IRI, "ObjectMap");
-    pub const TRIPLESMAP: PAIR = (IRI, "TriplesMap");
-    pub const IRI: PAIR = (IRI, "IRI");
-    pub const BLANKNODE: PAIR = (IRI, "BlankNode");
-    pub const LITERAL: PAIR = (IRI, "Literal");
+    pub const PREDICATEOBJECTMAP: PAIR = (SUPER_IRI, "PredicateObjectMap");
+    pub const OBJECTMAP: PAIR = (SUPER_IRI, "ObjectMap");
+    pub const TRIPLESMAP: PAIR = (SUPER_IRI, "TriplesMap");
+    pub const IRI: PAIR = (SUPER_IRI, "IRI");
+    pub const BLANKNODE: PAIR = (SUPER_IRI, "BlankNode");
+    pub const LITERAL: PAIR = (SUPER_IRI, "Literal");
 }
