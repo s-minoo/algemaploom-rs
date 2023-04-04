@@ -19,8 +19,8 @@ impl Extractor<LogicalSource> for LogicalSource {
         let iter_pred = vocab::rml::PROPERTY::ITERATOR.to_term();
         let refform_pred = vocab::rml::PROPERTY::REFERENCEFORMULATION.to_term();
 
-        let iterator = get_object(graph, subject, iter_pred)?.to_string();
-        let reference_formulation = get_object(graph, subject, refform_pred)?
+        let iterator = get_object(graph, subject, &iter_pred)?.to_string();
+        let reference_formulation = get_object(graph, subject, &refform_pred)?
             .map(|inner| (*inner).to_string())
             .try_into()?;
         let input = extract_input_type(subject, graph)?;
@@ -39,7 +39,7 @@ fn extract_input_type(
     graph: &FastGraph,
 ) -> ExtractorResult<Input> {
     let source_pred = vocab::rml::PROPERTY::SOURCE.to_term();
-    let source = get_object(graph, subject, source_pred)?;
+    let source = get_object(graph, subject, &source_pred)?;
 
     match source.kind() {
         sophia_api::term::TermKind::Literal => {

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sophia_api::graph::Graph;
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
@@ -9,7 +11,10 @@ use super::{Extractor, ExtractorResult, TermShared, TermString};
 use crate::extractors::store::get_object;
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::LogicalSource;
-use crate::rml_model::term_map::{SubjectMap, TriplesMap};
+use crate::rml_model::term_map::{
+    ConstantTermMapInfo, SubjectMap, TermMapInfo, TriplesMap,
+};
+use crate::IriString;
 
 impl Extractor<TriplesMap> for TriplesMap {
     fn extract(
@@ -17,11 +22,9 @@ impl Extractor<TriplesMap> for TriplesMap {
         graph: &FastGraph,
     ) -> ExtractorResult<TriplesMap> {
         let ls_term = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
-        let s_map = vocab::r2rml::PROPERTY::SUBJECTMAP.to_term();
         let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_term();
 
-        let logical_source_subj = get_object(graph, subject, ls_term)?;
-        let sm_subj = get_object(graph, subject, s_map)?;
+        let logical_source_subj = get_object(graph, subject, &ls_term)?;
         let poms: Vec<_> = graph
             .triples_with_sp(subject, &pom)
             .filter_map(|triples| triples.ok())
@@ -34,12 +37,47 @@ impl Extractor<TriplesMap> for TriplesMap {
                 &logical_source_subj,
                 graph,
             )?,
-            subject_map:    SubjectMap::extract(&sm_subj, graph)?,
+            subject_map:    extract_subject_map(graph, subject)?,
             po_maps:        todo!(),
             graph_map:      None,
         };
         todo!()
     }
+}
+fn extract_subject_map(
+    graph_ref: &FastGraph,
+    tmmap_subj_ref: &TermShared,
+) -> ExtractorResult<SubjectMap> {
+    let s_map = vocab::r2rml::PROPERTY::SUBJECTMAP.to_term();
+    let s_const = vocab::r2rml::PROPERTY::SUBJECT.to_term();
+
+    let sm_subj_res = get_object(graph_ref, tmmap_subj_ref, &s_map);
+    let sm_const_obj_res = get_object(graph_ref, tmmap_subj_ref, &s_const);
+
+    if let Ok(sm_subj) = sm_subj_res {
+        return SubjectMap::extract(&sm_subj, graph_ref);
+    } else if let Ok(sm_const_subj) = sm_const_obj_res {
+        let map = sm_const_subj.map(|i| i.to_string());
+        let identifier: IriString = map.clone().try_into()?;
+
+        let tm_info = TermMapInfo::constant_term_map(
+            identifier,
+            // TODO:  <04-04-23, Min Oo> //
+            // Implement the logical targets parsing properly!!
+            HashSet::new(),
+            map,
+        );
+
+        return Ok(SubjectMap {
+            tm_info,
+            classes: Vec::new(),
+        });
+    }
+
+    Err(ParseError::GenericError(format!(
+        "TriplesMap {} has no subject map!",
+        tmmap_subj_ref
+    )))
 }
 
 pub fn extract_triples_maps(

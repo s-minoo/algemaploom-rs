@@ -1,10 +1,8 @@
 use std::collections::HashSet;
 
-
-use crate::{TermString, IriString};
-
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
+use crate::{IriString, TermString};
 
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
@@ -33,7 +31,7 @@ pub struct TriplesMap {
 #[derive(Debug, Clone)]
 pub struct SubjectMap {
     pub tm_info: TermMapInfo,
-    pub classes: Vec<IriString>, 
+    pub classes: Vec<IriString>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,12 +47,36 @@ pub struct PredicateMap {
 
 #[derive(Debug, Clone)]
 pub struct ObjectMap {
-    pub tm_info: TermMapInfo,
-    pub parent_tm: Option<String>,  
-    pub join_condition: Option<JoinCondition>, 
+    pub tm_info:        TermMapInfo,
+    pub parent_tm:      Option<String>,
+    pub join_condition: Option<JoinCondition>,
 }
 
 #[derive(Debug, Clone)]
 pub struct GraphMap {
     pub tm_info: TermMapInfo,
 }
+
+pub trait ConstantTermMapInfo<T> {
+    fn constant_term_map(
+        identifier: IriString,
+        logical_targets: HashSet<LogicalTarget>,
+        term_value: TermString,
+    ) -> T;
+}
+
+impl ConstantTermMapInfo<TermMapInfo> for TermMapInfo {
+    fn constant_term_map(
+        identifier: IriString,
+        logical_targets: HashSet<LogicalTarget>,
+        term_value: TermString,
+    ) -> TermMapInfo {
+        TermMapInfo {
+            identifier,
+            logical_targets,
+            term_map_type: TermMapType::Constant,
+            term_value,
+        }
+    }
+}
+

@@ -15,28 +15,39 @@ use crate::rml_model::term_map::TriplesMap;
 
 pub fn get_subject(
     graph: &FastGraph,
-    pred: TermString,
+    pred: &TermString,
     obj: &TermShared,
 ) -> Result<TermShared, ParseError> {
-    Ok(graph
-        .triples_with_po(&pred, obj)
+    graph
+        .triples_with_po(pred, obj)
         .next()
-        .unwrap()?
-        .o()
-        .clone())
+        .map(|trip_res| trip_res.map(|trip| trip.o().to_owned()).unwrap())
+        .ok_or(ParseError::GenericError(format!(
+            "Subject not found in graph with obj {} and pred {}",
+            pred, obj
+        )))
 }
-
+pub fn get_objects(
+    graph: &FastGraph,
+    subject: &TermShared,
+    pred: &TermString,
+) -> Result<Vec<TermShared>, ParseError> {
+    Ok(graph
+        .triples_with_sp(subject, pred)
+        .filter_map(|trip_res| trip_res.ok().map(|trip| trip.o().to_owned()))
+        .collect())
+}
 pub fn get_object(
     graph: &FastGraph,
     subject: &TermShared,
-    pred: TermString,
+    pred: &TermString,
 ) -> Result<TermShared, ParseError> {
-    Ok(graph
-        .triples_with_sp(subject, &pred)
-        .next()
-        .unwrap()?
-        .o()
-        .clone())
+    let mut objects = get_objects(graph, subject, pred)?;
+
+    objects.pop().ok_or(ParseError::GenericError(format!(
+        "Object not found in graph with subj {} and pred {}",
+        subject, pred
+    )))
 }
 
 pub fn parse_bread(buf_read: impl BufRead) -> Result<FastGraph, ParseError> {
