@@ -11,7 +11,15 @@ impl Extractor<PredicateObjectMap> for PredicateObjectMap {
         let pm_pred2 = vocab::r2rml::PROPERTY::PREDICATEMAP.to_term();
         
         
+        
+        
+        
+        
 
         todo!()
     }
 }
+
+
+
+

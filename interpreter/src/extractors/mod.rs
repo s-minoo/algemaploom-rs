@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::rc::Rc;
 
@@ -10,8 +11,11 @@ use sophia_term::Term;
 use vocab::{ToString, PAIR};
 
 use self::error::ParseError;
-use crate::rml_model::term_map::TermMapType;
-use crate::{TermShared, TermString};
+use self::store::get_object;
+use crate::rml_model::term_map::{
+    ConstantTermMapInfo, TermMapInfo, TermMapType,
+};
+use crate::{IriString, TermShared, TermString};
 
 pub mod error;
 pub mod logicalsource_extractor;
@@ -65,6 +69,50 @@ pub fn extract_term_map_type_value(
     let term_value = trip.o().to_owned().map(|i| i.to_string());
 
     term_map_type_res.map(|map_type| (map_type, term_value))
+}
+
+pub trait TermMapExtractor<T> {
+    fn create_term_map(subj_ref: &TermShared, graph_ref: &FastGraph) -> ExtractorResult<T>;
+
+    fn create_constant_map(tm_info: TermMapInfo) -> T;
+
+    fn get_map_pred() -> TermString;
+    fn get_const_pred() -> TermString;
+
+    fn extract_term_map(
+        graph_ref: &FastGraph,
+        container_map_subj_ref: &TermShared,
+    ) -> ExtractorResult<T> {
+        let map_pred = Self::get_map_pred();
+        let const_pred = Self::get_const_pred();
+        let map_subj_res =
+            get_object(graph_ref, container_map_subj_ref, &map_pred);
+        let const_obj_res =
+            get_object(graph_ref, container_map_subj_ref, &const_pred);
+
+        if let Ok(map_subj) = map_subj_res {
+            return Self::create_term_map(&map_subj, graph_ref);
+            //return SubjectMap::extract(&sm_subj, graph_ref);
+        } else if let Ok(map_const_obj) = const_obj_res {
+            let map = map_const_obj.map(|i| i.to_string());
+            let identifier: IriString = map.clone().try_into()?;
+
+            let tm_info = TermMapInfo::constant_term_map(
+                identifier,
+                // TODO:  <04-04-23, Min Oo> //
+                // Implement the logical targets parsing properly!!
+                HashSet::new(),
+                map,
+            );
+
+            return Ok(Self::create_constant_map(tm_info));
+        }
+
+        Err(ParseError::GenericError(format!(
+            "TriplesMap {} has no subject map!",
+            container_map_subj_ref
+        )))
+    }
 }
 
 pub trait Extractor<T> {

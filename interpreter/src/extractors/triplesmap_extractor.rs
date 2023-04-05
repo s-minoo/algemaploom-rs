@@ -8,13 +8,10 @@ use vocab::ToString;
 
 use super::error::ParseError;
 use super::{Extractor, ExtractorResult, TermShared, TermString};
-use crate::extractors::store::get_object;
-use crate::extractors::FromVocab;
+use crate::extractors::store::{get_object, get_objects};
+use crate::extractors::{FromVocab, TermMapExtractor};
 use crate::rml_model::source_target::LogicalSource;
-use crate::rml_model::term_map::{
-    ConstantTermMapInfo, SubjectMap, TermMapInfo, TriplesMap,
-};
-use crate::IriString;
+use crate::rml_model::term_map::{PredicateObjectMap, SubjectMap, TriplesMap};
 
 impl Extractor<TriplesMap> for TriplesMap {
     fn extract(
@@ -25,59 +22,25 @@ impl Extractor<TriplesMap> for TriplesMap {
         let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_term();
 
         let logical_source_subj = get_object(graph, subject, &ls_term)?;
-        let poms: Vec<_> = graph
-            .triples_with_sp(subject, &pom)
-            .filter_map(|triples| triples.ok())
-            .map(|triple| triple.o().to_owned())
+        let po_maps: Vec<_> = get_objects(graph, subject, &pom)?
+            .into_iter()
+            .filter_map(|pom_subj| {
+                PredicateObjectMap::extract(&pom_subj, graph).ok()
+            })
             .collect();
 
         TriplesMap {
-            identifier:     subject.to_string(),
+            identifier: subject.to_string(),
             logical_source: LogicalSource::extract(
                 &logical_source_subj,
                 graph,
             )?,
-            subject_map:    extract_subject_map(graph, subject)?,
-            po_maps:        todo!(),
-            graph_map:      None,
+            subject_map: SubjectMap::extract_term_map(graph, subject)?,
+            po_maps,
+            graph_map: None,
         };
         todo!()
     }
-}
-fn extract_subject_map(
-    graph_ref: &FastGraph,
-    tmmap_subj_ref: &TermShared,
-) -> ExtractorResult<SubjectMap> {
-    let s_map = vocab::r2rml::PROPERTY::SUBJECTMAP.to_term();
-    let s_const = vocab::r2rml::PROPERTY::SUBJECT.to_term();
-
-    let sm_subj_res = get_object(graph_ref, tmmap_subj_ref, &s_map);
-    let sm_const_obj_res = get_object(graph_ref, tmmap_subj_ref, &s_const);
-
-    if let Ok(sm_subj) = sm_subj_res {
-        return SubjectMap::extract(&sm_subj, graph_ref);
-    } else if let Ok(sm_const_subj) = sm_const_obj_res {
-        let map = sm_const_subj.map(|i| i.to_string());
-        let identifier: IriString = map.clone().try_into()?;
-
-        let tm_info = TermMapInfo::constant_term_map(
-            identifier,
-            // TODO:  <04-04-23, Min Oo> //
-            // Implement the logical targets parsing properly!!
-            HashSet::new(),
-            map,
-        );
-
-        return Ok(SubjectMap {
-            tm_info,
-            classes: Vec::new(),
-        });
-    }
-
-    Err(ParseError::GenericError(format!(
-        "TriplesMap {} has no subject map!",
-        tmmap_subj_ref
-    )))
 }
 
 pub fn extract_triples_maps(

@@ -1,5 +1,4 @@
 use std::convert::Infallible;
-use std::error::Error;
 use std::io;
 
 use sophia_term::TermError;
