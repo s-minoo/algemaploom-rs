@@ -1,9 +1,6 @@
-use std::collections::HashSet;
-use std::error::Error;
 use std::rc::Rc;
 
 use sophia_api::graph::Graph;
-use sophia_api::triple::streaming_mode::{ByTermRefs, StreamedTriple};
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
 use sophia_term::matcher::ANY;
@@ -11,11 +8,9 @@ use sophia_term::Term;
 use vocab::{ToString, PAIR};
 
 use self::error::ParseError;
-use self::store::get_object;
-use crate::rml_model::term_map::{
-    ConstantTermMapInfo, TermMapInfo, TermMapType,
-};
-use crate::{IriString, TermShared, TermString};
+use crate::extractors::store::get_objects;
+use crate::rml_model::term_map::{TermMapInfo, TermMapType};
+use crate::{TermShared, TermString};
 
 pub mod error;
 pub mod logicalsource_extractor;
@@ -28,7 +23,6 @@ pub mod term_map_info_extractor;
 pub mod triplesmap_extractor;
 
 type ExtractorResult<T> = Result<T, ParseError>;
-type Triples = StreamedTriple<'static, ByTermRefs<Term<Rc<str>>>>;
 
 pub fn extract_term_map_type_value(
     subject_ref: &TermShared,
@@ -82,32 +76,45 @@ pub trait TermMapExtractor<T> {
         graph_ref: &FastGraph,
     ) -> ExtractorResult<T>;
 
+    fn extract_constant_term_map(map_const_obj_vec: &Term<Rc<str>>) -> T {
+        let map_const = map_const_obj_vec.clone().map(|i| i.to_string());
+        let tm_info = TermMapInfo::from_constant_value(map_const.clone());
+
+        Self::create_constant_map(tm_info)
+    }
+
     fn extract_term_map(
         graph_ref: &FastGraph,
         container_map_subj_ref: &TermShared,
     ) -> ExtractorResult<T> {
+        Self::extract_term_maps(graph_ref, container_map_subj_ref)
+            .and_then(|mut vec| vec.pop().ok_or(ParseError::Infallible))
+    }
+    fn extract_term_maps(
+        graph_ref: &FastGraph,
+        container_map_subj_ref: &TermShared,
+    ) -> ExtractorResult<Vec<T>> {
         let map_pred = Self::get_map_pred();
         let const_pred = Self::get_const_pred();
-        let map_subj_res =
-            get_object(graph_ref, container_map_subj_ref, &map_pred);
-        let const_obj_res =
-            get_object(graph_ref, container_map_subj_ref, &const_pred);
+        let map_subj_vec_res =
+            get_objects(graph_ref, container_map_subj_ref, &map_pred);
+        let const_obj_vec_res =
+            get_objects(graph_ref, container_map_subj_ref, &const_pred);
 
-        if let Ok(map_subj) = map_subj_res {
-            return Self::create_term_map(&map_subj, graph_ref);
-            //return SubjectMap::extract(&sm_subj, graph_ref);
-        } else if let Ok(map_const_obj) = const_obj_res {
-            let map = map_const_obj.map(|i| i.to_string());
-            let identifier: IriString = map.clone().try_into()?;
-
-            let tm_info = TermMapInfo::constant_term_map(
-                identifier,
-                // TODO: Implement the logical targets parsing properly!! <04-04-23, Min Oo> //
-                HashSet::new(),
-                map,
-            );
-
-            return Ok(Self::create_constant_map(tm_info));
+        if let Ok(map_subj_vec) = map_subj_vec_res {
+            return Ok(map_subj_vec
+                .iter()
+                .flat_map(|map_subj| {
+                    Self::create_term_map(&map_subj, graph_ref)
+                })
+                .collect());
+        } else if let Ok(mut map_const_obj_vec) = const_obj_vec_res {
+            return Ok(map_const_obj_vec
+                .iter_mut()
+                .map(|map_const_obj_vec| {
+                    Self::extract_constant_term_map(map_const_obj_vec)
+                })
+                .collect::<Vec<_>>());
         }
 
         Err(ParseError::GenericError(format!(
@@ -115,8 +122,8 @@ pub trait TermMapExtractor<T> {
             container_map_subj_ref
         )))
     }
-    fn get_const_pred() -> TermString;
 
+    fn get_const_pred() -> TermString;
     fn get_map_pred() -> TermString;
 }
 

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use sophia_api::term::{TTerm, TermKind};
+use sophia_term::Term;
 
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
@@ -8,7 +9,7 @@ use crate::{IriString, TermString};
 
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
-    pub identifier:      IriString,
+    pub identifier:      TermString,
     pub logical_targets: HashSet<LogicalTarget>,
     pub term_map_type:   TermMapType,
     pub term_value:      TermString,
@@ -62,26 +63,30 @@ pub struct GraphMap {
     pub tm_info: TermMapInfo,
 }
 
-pub trait ConstantTermMapInfo<T> {
-    fn constant_term_map(
-        identifier: IriString,
-        logical_targets: HashSet<LogicalTarget>,
-        term_value: TermString,
-    ) -> T;
-}
+impl TermMapInfo {
+    pub fn from_constant_value(const_value: TermString) -> TermMapInfo {
+        let identifier: TermString = match const_value.clone() {
+            Term::Iri(iri) => Term::Iri(iri),
+            Term::BNode(bnode) => Term::BNode(bnode),
+            Term::Literal(lit) => {
+                Term::new_bnode(format!(
+                    "{}-{}",
+                    lit.txt(),
+                    uuid::Uuid::new_v4()
+                ))
+                .unwrap()
+            }
+            Term::Variable(_) => {
+                panic!("Variable not supported yet!")
+            }
+        };
+        let term_type = Some(const_value.kind());
 
-impl ConstantTermMapInfo<TermMapInfo> for TermMapInfo {
-    fn constant_term_map(
-        identifier: IriString,
-        logical_targets: HashSet<LogicalTarget>,
-        term_value: TermString,
-    ) -> TermMapInfo {
-        let term_type = Some(term_value.kind());
         TermMapInfo {
             identifier,
-            logical_targets,
+            logical_targets: HashSet::new(),
             term_map_type: TermMapType::Constant,
-            term_value,
+            term_value: const_value,
             term_type,
         }
     }
