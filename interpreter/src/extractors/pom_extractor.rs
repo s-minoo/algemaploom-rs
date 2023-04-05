@@ -7,13 +7,6 @@ impl Extractor<PredicateObjectMap> for PredicateObjectMap {
         subject_ref: &crate::TermShared,
         graph_ref: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<PredicateObjectMap> {
-        
-    
-
         todo!()
     }
 }
-
-
-
-
