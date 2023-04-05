@@ -23,6 +23,9 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
     }
 
     fn create_constant_map(tm_info: TermMapInfo) -> SubjectMap {
+        if tm_info.term_value.kind() != TermKind::Iri {
+            panic!("Constant-valued SubjectMap has to have an IRI as value");
+        }
         SubjectMap {
             tm_info,
             classes: Vec::new(),
