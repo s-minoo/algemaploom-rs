@@ -19,12 +19,13 @@ use crate::{IriString, TermShared, TermString};
 
 pub mod error;
 pub mod logicalsource_extractor;
+pub mod objectmap_extractor;
 pub mod pom_extractor;
 pub mod predicatemap_extractor;
 pub mod store;
 pub mod subjectmap_extractor;
-pub mod triplesmap_extractor;
 pub mod term_map_info_extractor;
+pub mod triplesmap_extractor;
 
 type ExtractorResult<T> = Result<T, ParseError>;
 type Triples = StreamedTriple<'static, ByTermRefs<Term<Rc<str>>>>;
@@ -81,7 +82,6 @@ pub trait TermMapExtractor<T> {
         graph_ref: &FastGraph,
     ) -> ExtractorResult<T>;
 
-
     fn extract_term_map(
         graph_ref: &FastGraph,
         container_map_subj_ref: &TermShared,
@@ -102,8 +102,7 @@ pub trait TermMapExtractor<T> {
 
             let tm_info = TermMapInfo::constant_term_map(
                 identifier,
-                // TODO:  <04-04-23, Min Oo> //
-                // Implement the logical targets parsing properly!!
+                // TODO: Implement the logical targets parsing properly!! <04-04-23, Min Oo> //
                 HashSet::new(),
                 map,
             );

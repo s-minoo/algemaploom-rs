@@ -1,9 +1,7 @@
 use sophia_term::iri::Iri;
 
 use crate::{LiteralString, IriString};
-// TODO: <30-03-23, Min Oo>
-// Implement source and target metadata infos
-//
+// TODO: Implement source and target metadata infos <30-03-23, Min Oo>
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {

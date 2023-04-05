@@ -53,6 +53,8 @@ pub struct ObjectMap {
     pub tm_info:        TermMapInfo,
     pub parent_tm:      Option<String>,
     pub join_condition: Option<JoinCondition>,
+    pub data_type:      Option<IriString>,
+    pub language:       Option<String>,
 }
 
 #[derive(Debug, Clone)]
