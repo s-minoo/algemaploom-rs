@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use sophia_api::term::TermKind;
+use sophia_api::term::{TTerm, TermKind};
 
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
@@ -74,12 +74,13 @@ impl ConstantTermMapInfo<TermMapInfo> for TermMapInfo {
         logical_targets: HashSet<LogicalTarget>,
         term_value: TermString,
     ) -> TermMapInfo {
+        let term_type = Some(term_value.kind());
         TermMapInfo {
             identifier,
             logical_targets,
             term_map_type: TermMapType::Constant,
             term_value,
-            term_type: None,
+            term_type,
         }
     }
 }

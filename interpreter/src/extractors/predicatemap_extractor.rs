@@ -33,7 +33,7 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
     }
 
     fn create_constant_map(tm_info: TermMapInfo) -> PredicateMap {
-        if tm_info.term_value.kind() != TermKind::Iri {
+        if tm_info.term_type != Some(TermKind::Iri) {
             panic!("Constant-valued PredicateMap has to have an IRI as value");
         }
         PredicateMap { tm_info }

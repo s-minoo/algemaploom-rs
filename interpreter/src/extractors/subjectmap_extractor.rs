@@ -1,3 +1,5 @@
+use sophia_api::term::TermKind;
+
 use super::store::get_objects;
 use super::{Extractor, TermMapExtractor};
 use crate::extractors::FromVocab;
@@ -23,7 +25,7 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
     }
 
     fn create_constant_map(tm_info: TermMapInfo) -> SubjectMap {
-        if tm_info.term_value.kind() != TermKind::Iri {
+        if tm_info.term_type != Some(TermKind::Iri) {
             panic!("Constant-valued SubjectMap has to have an IRI as value");
         }
         SubjectMap {
