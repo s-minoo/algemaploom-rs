@@ -7,14 +7,8 @@ impl Extractor<PredicateObjectMap> for PredicateObjectMap {
         subject_ref: &crate::TermShared,
         graph_ref: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<PredicateObjectMap> {
-        let pm_pred1 = vocab::r2rml::PROPERTY::PREDICATE.to_term();
-        let pm_pred2 = vocab::r2rml::PROPERTY::PREDICATEMAP.to_term();
         
-        
-        
-        
-        
-        
+    
 
         todo!()
     }

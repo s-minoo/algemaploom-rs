@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use sophia_api::term::TermKind;
+
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
 use crate::{IriString, TermString};
@@ -10,6 +12,7 @@ pub struct TermMapInfo {
     pub logical_targets: HashSet<LogicalTarget>,
     pub term_map_type:   TermMapType,
     pub term_value:      TermString,
+    pub term_type:       Option<TermKind>,
 }
 
 #[derive(Debug, Clone)]
@@ -76,7 +79,7 @@ impl ConstantTermMapInfo<TermMapInfo> for TermMapInfo {
             logical_targets,
             term_map_type: TermMapType::Constant,
             term_value,
+            term_type: None,
         }
     }
 }
-
