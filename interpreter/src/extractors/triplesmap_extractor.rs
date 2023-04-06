@@ -5,7 +5,7 @@ use sophia_term::Term;
 use vocab::ToString;
 
 use super::error::ParseError;
-use super::{Extractor, ExtractorResult, TermShared, TermString};
+use super::{Extractor, ExtractorResult, RcTerm, TermString};
 use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::{FromVocab, TermMapExtractor};
 use crate::rml_model::source_target::LogicalSource;
@@ -13,7 +13,7 @@ use crate::rml_model::term_map::{PredicateObjectMap, SubjectMap, TriplesMap};
 
 impl Extractor<TriplesMap> for TriplesMap {
     fn extract(
-        subject: &TermShared,
+        subject: &RcTerm,
         graph: &FastGraph,
     ) -> ExtractorResult<TriplesMap> {
         println!("SubjectMap parsing...");
@@ -45,9 +45,9 @@ impl Extractor<TriplesMap> for TriplesMap {
 pub fn extract_triples_maps(
     graph: &FastGraph,
 ) -> Result<Vec<TriplesMap>, ParseError> {
-    let ptype: TermShared =
+    let ptype: RcTerm =
         Term::new_iri(vocab::rdf::PROPERTY::TYPE.to_string())?;
-    let otm: TermShared =
+    let otm: RcTerm =
         Term::new_iri(vocab::r2rml::CLASS::TRIPLESMAP.to_string())?;
 
     Ok(graph

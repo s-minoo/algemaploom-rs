@@ -1,15 +1,15 @@
 use sophia_api::term::TermKind;
 use sophia_inmem::graph::FastGraph;
+use sophia_term::RcTerm;
 
 use super::{FromVocab, TermMapExtractor};
 use crate::extractors::error::ParseError;
 use crate::extractors::Extractor;
 use crate::rml_model::term_map::{PredicateMap, TermMapInfo};
-use crate::TermShared;
 
 impl TermMapExtractor<PredicateMap> for PredicateMap {
     fn create_term_map(
-        subj_ref: &TermShared,
+        subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<PredicateMap> {
         let mut tm_info = TermMapInfo::extract(subj_ref, graph_ref)?;
@@ -39,11 +39,11 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
         PredicateMap { tm_info }
     }
 
-    fn get_map_pred() -> crate::TermShared {
+    fn get_map_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::PREDICATEMAP.to_term()
     }
 
-    fn get_const_pred() -> crate::TermShared {
+    fn get_const_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::PREDICATE.to_term()
     }
 }

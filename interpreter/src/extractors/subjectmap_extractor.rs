@@ -1,14 +1,15 @@
 use sophia_api::term::TermKind;
+use sophia_term::RcTerm;
 
 use super::store::get_objects;
 use super::{Extractor, TermMapExtractor};
 use crate::extractors::FromVocab;
 use crate::rml_model::term_map::{SubjectMap, TermMapInfo};
-use crate::{IriString, TermShared};
+use crate::IriString;
 
 impl TermMapExtractor<SubjectMap> for SubjectMap {
     fn create_term_map(
-        subj_ref: &crate::TermShared,
+        subj_ref: &RcTerm,
         graph_ref: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<SubjectMap> {
         let tm_info = TermMapInfo::extract(subj_ref, graph_ref)?;
@@ -34,11 +35,11 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
         }
     }
 
-    fn get_map_pred() -> TermShared {
+    fn get_map_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::SUBJECTMAP.to_term()
     }
 
-    fn get_const_pred() -> TermShared {
+    fn get_const_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::SUBJECT.to_term()
     }
 }

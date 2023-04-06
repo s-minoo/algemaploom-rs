@@ -1,12 +1,12 @@
 use sophia_api::term::TermKind;
 use sophia_inmem::graph::FastGraph;
+use sophia_term::RcTerm;
 
 use super::{FromVocab, TermMapExtractor};
 use crate::extractors::store::get_object;
 use crate::extractors::Extractor;
 use crate::rml_model::term_map::{ObjectMap, TermMapInfo};
-use crate::{IriString, TermShared};
-
+use crate::IriString;
 
 impl TermMapExtractor<ObjectMap> for ObjectMap {
     fn create_constant_map(tm_info: TermMapInfo) -> ObjectMap {
@@ -23,7 +23,7 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         }
     }
     fn create_term_map(
-        subj_ref: &TermShared,
+        subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<ObjectMap> {
         // TODO:Implement term map join parsing correctly!  <05-04-23, Min Oo> //
@@ -51,11 +51,11 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         })
     }
 
-    fn get_const_pred() -> crate::TermShared {
+    fn get_const_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::OBJECT.to_term()
     }
 
-    fn get_map_pred() -> crate::TermShared {
+    fn get_map_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::OBJECTMAP.to_term()
     }
 }

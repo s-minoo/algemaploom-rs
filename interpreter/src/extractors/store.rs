@@ -6,13 +6,13 @@ use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
 
 use super::error::ParseError;
-use super::TermShared;
+use super::RcTerm;
 
 pub fn get_subject<T>(
     graph: &FastGraph,
     pred: &T,
     obj: &T,
-) -> Result<TermShared, ParseError>
+) -> Result<RcTerm, ParseError>
 where
     T: TTerm + ?Sized + Display,
 {
@@ -29,7 +29,7 @@ pub fn get_objects<T>(
     graph: &FastGraph,
     subject: &T,
     pred: &T,
-) -> Result<Vec<TermShared>, ParseError>
+) -> Result<Vec<RcTerm>, ParseError>
 where
     T: TTerm + ?Sized + Display,
 {
@@ -42,7 +42,7 @@ pub fn get_object<T>(
     graph: &FastGraph,
     subject: &T,
     pred: &T,
-) -> Result<TermShared, ParseError>
+) -> Result<RcTerm, ParseError>
 where
     T: TTerm + ?Sized + Display,
 {

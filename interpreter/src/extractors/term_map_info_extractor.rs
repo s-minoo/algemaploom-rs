@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use sophia_api::term::TermKind;
 use sophia_inmem::graph::FastGraph;
+use sophia_term::RcTerm;
 
 use super::store::get_object;
 use super::{extract_term_map_type_value, Extractor, FromVocab};
@@ -9,7 +10,7 @@ use crate::rml_model::term_map::TermMapInfo;
 
 impl Extractor<TermMapInfo> for TermMapInfo {
     fn extract(
-        subj_ref: &crate::TermShared,
+        subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<TermMapInfo> {
         let (term_map_type, term_value) =

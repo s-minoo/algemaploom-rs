@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
 use sophia_api::term::{TTerm, TermKind};
-use sophia_term::Term;
+use sophia_term::{Term, RcTerm};
 
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
-use crate::{IriString, TermShared, TermString};
+use crate::{IriString, TermString};
 
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
@@ -64,7 +64,7 @@ pub struct GraphMap {
 }
 
 impl TermMapInfo {
-    pub fn from_constant_value(const_value: TermShared) -> TermMapInfo {
+    pub fn from_constant_value(const_value: RcTerm) -> TermMapInfo {
         let identifier: TermString = match const_value.clone() {
             Term::Iri(iri) => Term::Iri(iri.map(|i| i.to_string())),
             Term::BNode(bnode) => Term::BNode(bnode.map(|i| i.to_string())),

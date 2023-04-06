@@ -2,14 +2,14 @@ use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
 
 use super::error::ParseError;
-use super::{Extractor, ExtractorResult, TermShared};
+use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::{LogicalSource, Source};
 
 impl Extractor<LogicalSource> for LogicalSource {
     fn extract(
-        subject: &TermShared,
+        subject: &RcTerm,
         graph: &FastGraph,
     ) -> super::ExtractorResult<LogicalSource> {
         let iter_pred = vocab::rml::PROPERTY::ITERATOR.to_term();
@@ -36,7 +36,7 @@ impl Extractor<LogicalSource> for LogicalSource {
 
 // TODO: expand to also support other input types <05-04-23, Min Oo> //
 fn extract_input_type(
-    subject: &TermShared,
+    subject: &RcTerm,
     graph: &FastGraph,
 ) -> ExtractorResult<Source> {
     let source_pred = vocab::rml::PROPERTY::SOURCE.to_term();
@@ -66,7 +66,6 @@ mod tests {
 
     use sophia_api::graph::Graph;
     use sophia_api::triple::Triple;
-    use sophia_term::matcher::ANY;
 
     use super::*;
     use crate::extractors::io::load_graph_bread;

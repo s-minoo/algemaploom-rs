@@ -1,10 +1,12 @@
+use sophia_term::RcTerm;
+
 use super::Extractor;
 use crate::extractors::TermMapExtractor;
 use crate::rml_model::term_map::{ObjectMap, PredicateMap, PredicateObjectMap};
 
 impl Extractor<PredicateObjectMap> for PredicateObjectMap {
     fn extract(
-        subject_ref: &crate::TermShared,
+        subject_ref: &RcTerm,
         graph_ref: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<PredicateObjectMap> {
         let predicate_maps =
