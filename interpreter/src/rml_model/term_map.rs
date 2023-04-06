@@ -25,7 +25,7 @@ pub enum TermMapType {
 
 #[derive(Debug, Clone)]
 pub struct TriplesMap {
-    pub identifier:     String,
+    pub identifier:     TermString,
     pub logical_source: LogicalSource,
     pub subject_map:    SubjectMap,
     pub po_maps:        Vec<PredicateObjectMap>,

@@ -47,3 +47,37 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
         vocab::r2rml::PROPERTY::PREDICATE.to_term()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use sophia_api::term::TTerm;
+
+    use super::*;
+    use crate::import_test_mods;
+    use crate::rml_model::term_map::TermMapType;
+
+    import_test_mods!();
+
+    #[test]
+    fn create_const_predicatemap_test() -> ExtractorResult<()> {
+        let graph = load_graph!("sample_mapping.ttl")?;
+        let pm_const_pred = vocab::r2rml::PROPERTY::PREDICATE.to_term();
+        let triples = graph.triples_with_p(&pm_const_pred);
+        let values = triples.flatten().map(|trip| trip.o().to_owned());
+        let pms: Vec<PredicateMap> = values
+            .map(|map_const| {
+                PredicateMap::extract_constant_term_map(&map_const)
+            })
+            .collect();
+
+        assert_eq!(pms.len(), 3);
+
+        pms.iter().for_each(|pm| {
+            assert_eq!(pm.tm_info.term_map_type, TermMapType::Constant);
+            assert_eq!(pm.tm_info.term_type, Some(TermKind::Iri));
+            assert_eq!(pm.tm_info.term_value.kind(), TermKind::Iri);
+        });
+
+        Ok(())
+    }
+}

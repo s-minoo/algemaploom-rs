@@ -4,7 +4,7 @@ use sophia_api::graph::Graph;
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
 use sophia_term::matcher::ANY;
-use sophia_term::{Term, RcTerm};
+use sophia_term::{RcTerm, Term};
 use vocab::{ToString, PAIR};
 
 use self::error::ParseError;
@@ -96,21 +96,22 @@ pub trait TermMapExtractor<T> {
     ) -> ExtractorResult<Vec<T>> {
         let map_pred = Self::get_map_pred();
         let const_pred = Self::get_const_pred();
-        let map_subj_vec_res =
+        let map_subj_vec =
             get_objects(graph_ref, container_map_subj_ref, &map_pred);
-        let const_obj_vec_res =
+        let map_const_obj_vec =
             get_objects(graph_ref, container_map_subj_ref, &const_pred);
 
-        if let Ok(map_subj_vec) = map_subj_vec_res {
+        if !map_subj_vec.is_empty() {
             return Ok(map_subj_vec
                 .iter()
                 .flat_map(|map_subj| {
                     Self::create_term_map(&map_subj, graph_ref)
                 })
                 .collect());
-        } else if let Ok(mut map_const_obj_vec) = const_obj_vec_res {
+        } else if !map_const_obj_vec.is_empty() {
+            println!("{:?}", &map_const_obj_vec);
             return Ok(map_const_obj_vec
-                .iter_mut()
+                .iter()
                 .map(|map_const_obj_vec| {
                     Self::extract_constant_term_map(map_const_obj_vec)
                 })
@@ -147,45 +148,4 @@ impl<'a> FromVocab for PAIR<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const TEST_MAPPING_STR: &str = r##"
-@prefix rr: <http://www.w3.org/ns/r2rml#>.
-@prefix rml: <http://semweb.mmlab.be/ns/rml#>.
-@prefix ql: <http://semweb.mmlab.be/ns/ql#>.
-@prefix transit: <http://vocab.org/transit/terms/>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix wgs84_pos: <http://www.w3.org/2003/01/geo/wgs84_pos#>.
-@base <http://example.com/ns#>.
-
-<#AirportMapping> a rr:TriplesMap;
-  rml:logicalSource [
-    rml:source "Airport.csv" ;
-    rml:referenceFormulation ql:CSV
-  ];
-  rr:subjectMap [
-    rr:template "http://airport.example.com/{id}";
-    rr:class transit:Stop
-  ];
-
-  rr:predicateObjectMap [
-    rr:predicate transit:route;
-    rr:objectMap [
-      rml:reference "stop";
-      rr:datatype xsd:int
-      ]
-    ];
-
-  rr:predicateObjectMap [
-    rr:predicate wgs84_pos:lat;
-    rr:objectMap [
-      rml:reference "latitude"
-    ]
-  ];
-
-  rr:predicateObjectMap [
-    rr:predicate wgs84_pos:long;
-    rr:objectMap [
-      rml:reference "longitude"
-    ]
-  ]."##;
 }

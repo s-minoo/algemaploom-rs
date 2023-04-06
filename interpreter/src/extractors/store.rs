@@ -25,18 +25,14 @@ where
             pred, obj
         )))
 }
-pub fn get_objects<T>(
-    graph: &FastGraph,
-    subject: &T,
-    pred: &T,
-) -> Result<Vec<RcTerm>, ParseError>
+pub fn get_objects<T>(graph: &FastGraph, subject: &T, pred: &T) -> Vec<RcTerm>
 where
     T: TTerm + ?Sized + Display,
 {
-    Ok(graph
+    graph
         .triples_with_sp(subject, pred)
         .filter_map(|trip_res| trip_res.ok().map(|trip| trip.o().to_owned()))
-        .collect())
+        .collect()
 }
 pub fn get_object<T>(
     graph: &FastGraph,
@@ -46,7 +42,7 @@ pub fn get_object<T>(
 where
     T: TTerm + ?Sized + Display,
 {
-    let mut objects = get_objects(graph, subject, pred)?;
+    let mut objects = get_objects(graph, subject, pred);
 
     objects.pop().ok_or(ParseError::GenericError(format!(
         "Object not found in graph with subj {} and pred {}",

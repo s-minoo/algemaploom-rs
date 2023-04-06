@@ -11,6 +11,7 @@ impl Extractor<PredicateObjectMap> for PredicateObjectMap {
     ) -> super::ExtractorResult<PredicateObjectMap> {
         let predicate_maps =
             PredicateMap::extract_term_maps(graph_ref, subject_ref)?;
+
         let object_maps = ObjectMap::extract_term_maps(graph_ref, subject_ref)?;
 
         Ok(PredicateObjectMap {

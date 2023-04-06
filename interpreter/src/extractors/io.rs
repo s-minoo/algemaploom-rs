@@ -61,17 +61,20 @@ pub fn parse_file(path: PathBuf) -> ExtractorResult<Vec<TriplesMap>> {
 
 #[cfg(test)]
 mod tests {
+    use sophia_turtle::parser::nq::parse_bufread;
+
     use super::*;
     use crate::test_case;
 
     #[test]
-    fn one_tm_test() {
+    fn one_tm_test() -> ExtractorResult<()> {
         let path = PathBuf::from(test_case!("sample_mapping.ttl"));
-        let parsed_res = parse_file(path);
+        let parsed_res = parse_file(path)?;
 
-        assert!(parsed_res.is_ok());
         // One TriplesMap should be parsed
-        assert!(parsed_res.unwrap().len() == 1);
+        assert!(parsed_res.len() == 1);
+
+        Ok(())
     }
 
     #[test]
