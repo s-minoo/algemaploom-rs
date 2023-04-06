@@ -109,7 +109,6 @@ pub trait TermMapExtractor<T> {
                 })
                 .collect());
         } else if !map_const_obj_vec.is_empty() {
-            println!("{:?}", &map_const_obj_vec);
             return Ok(map_const_obj_vec
                 .iter()
                 .map(|map_const_obj_vec| {
