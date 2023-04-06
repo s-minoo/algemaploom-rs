@@ -4,7 +4,7 @@ use super::store::get_objects;
 use super::{Extractor, TermMapExtractor};
 use crate::extractors::FromVocab;
 use crate::rml_model::term_map::{SubjectMap, TermMapInfo};
-use crate::{IriString, TermString};
+use crate::{IriString, TermShared};
 
 impl TermMapExtractor<SubjectMap> for SubjectMap {
     fn create_term_map(
@@ -34,11 +34,11 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
         }
     }
 
-    fn get_map_pred() -> TermString {
+    fn get_map_pred() -> TermShared {
         vocab::r2rml::PROPERTY::SUBJECTMAP.to_term()
     }
 
-    fn get_const_pred() -> TermString {
+    fn get_const_pred() -> TermShared {
         vocab::r2rml::PROPERTY::SUBJECT.to_term()
     }
 }

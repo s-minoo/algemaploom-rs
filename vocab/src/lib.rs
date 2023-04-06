@@ -9,6 +9,7 @@ pub type PAIR<'a> = (&'a str, &'a str);
 
 pub trait ToString {
     fn to_string(self) -> String;
+
 }
 
 impl<'a> ToString for PAIR<'a> {

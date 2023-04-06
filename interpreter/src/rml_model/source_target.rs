@@ -1,13 +1,11 @@
-use sophia_term::iri::Iri;
-
-use crate::{LiteralString, IriString};
+use crate::IriString;
 // TODO: Implement source and target metadata infos <30-03-23, Min Oo>
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {
     pub identifier:            String,
-    pub iterator:              String,
-    pub input:                 Input,
+    pub iterator:              Option<String>,
+    pub source:                Source,
     pub reference_formulation: IriString,
 }
 
@@ -19,8 +17,8 @@ pub struct LogicalTarget {
     pub output:        Output,
 }
 
-#[derive(Debug, Clone)]
-pub enum Input {
+#[derive(Debug, Clone, PartialEq)]
+pub enum Source {
     FileInput { path: String },
 }
 

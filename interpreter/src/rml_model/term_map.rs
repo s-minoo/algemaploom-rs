@@ -5,7 +5,7 @@ use sophia_term::Term;
 
 use super::join::JoinCondition;
 use super::source_target::{LogicalSource, LogicalTarget};
-use crate::{IriString, TermString};
+use crate::{IriString, TermShared, TermString};
 
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
@@ -16,7 +16,7 @@ pub struct TermMapInfo {
     pub term_type:       Option<TermKind>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TermMapType {
     Constant,
     Reference,
@@ -64,10 +64,10 @@ pub struct GraphMap {
 }
 
 impl TermMapInfo {
-    pub fn from_constant_value(const_value: TermString) -> TermMapInfo {
+    pub fn from_constant_value(const_value: TermShared) -> TermMapInfo {
         let identifier: TermString = match const_value.clone() {
-            Term::Iri(iri) => Term::Iri(iri),
-            Term::BNode(bnode) => Term::BNode(bnode),
+            Term::Iri(iri) => Term::Iri(iri.map(|i| i.to_string())),
+            Term::BNode(bnode) => Term::BNode(bnode.map(|i| i.to_string())),
             Term::Literal(lit) => {
                 Term::new_bnode(format!(
                     "{}-{}",
@@ -86,7 +86,7 @@ impl TermMapInfo {
             identifier,
             logical_targets: HashSet::new(),
             term_map_type: TermMapType::Constant,
-            term_value: const_value,
+            term_value: const_value.map(|i| i.to_string()),
             term_type,
         }
     }

@@ -13,30 +13,31 @@ use crate::rml_model::term_map::{TermMapInfo, TermMapType};
 use crate::{TermShared, TermString};
 
 pub mod error;
-pub mod logicalsource_extractor;
-pub mod objectmap_extractor;
-pub mod pom_extractor;
-pub mod predicatemap_extractor;
-pub mod store;
-pub mod subjectmap_extractor;
-pub mod term_map_info_extractor;
+pub mod io;
+mod logicalsource_extractor;
+mod objectmap_extractor;
+mod pom_extractor;
+mod predicatemap_extractor;
+mod store;
+mod subjectmap_extractor;
+mod term_map_info_extractor;
 pub mod triplesmap_extractor;
 
-type ExtractorResult<T> = Result<T, ParseError>;
+pub type ExtractorResult<T> = Result<T, ParseError>;
 
 pub fn extract_term_map_type_value(
     subject_ref: &TermShared,
     graph_ref: &FastGraph,
 ) -> ExtractorResult<(TermMapType, TermString)> {
     //template-map
-    let temp_pred: TermString = vocab::r2rml::PROPERTY::TEMPLATE.to_term();
+    let temp_pred: TermShared = vocab::r2rml::PROPERTY::TEMPLATE.to_term();
 
     //constant-map
-    let const_pred: TermString = vocab::r2rml::PROPERTY::CONSTANT.to_term();
+    let const_pred: TermShared = vocab::r2rml::PROPERTY::CONSTANT.to_term();
 
     //reference-map
-    let ref_pred: TermString = vocab::rml::PROPERTY::REFERENCE.to_term();
-    let col_pred: TermString = vocab::r2rml::PROPERTY::COLUMN.to_term();
+    let ref_pred: TermShared = vocab::rml::PROPERTY::REFERENCE.to_term();
+    let col_pred: TermShared = vocab::r2rml::PROPERTY::COLUMN.to_term();
 
     let pred_query = &[&ref_pred, &col_pred, &const_pred, &temp_pred];
 
@@ -76,8 +77,7 @@ pub trait TermMapExtractor<T> {
         graph_ref: &FastGraph,
     ) -> ExtractorResult<T>;
 
-    fn extract_constant_term_map(map_const_obj_vec: &Term<Rc<str>>) -> T {
-        let map_const = map_const_obj_vec.clone().map(|i| i.to_string());
+    fn extract_constant_term_map(map_const: &Term<Rc<str>>) -> T {
         let tm_info = TermMapInfo::from_constant_value(map_const.clone());
 
         Self::create_constant_map(tm_info)
@@ -123,8 +123,8 @@ pub trait TermMapExtractor<T> {
         )))
     }
 
-    fn get_const_pred() -> TermString;
-    fn get_map_pred() -> TermString;
+    fn get_const_pred() -> TermShared;
+    fn get_map_pred() -> TermShared;
 }
 
 pub trait Extractor<T> {
@@ -135,11 +135,57 @@ pub trait Extractor<T> {
 }
 
 pub trait FromVocab {
-    fn to_term(&self) -> TermString;
+    fn to_term(&self) -> TermShared;
 }
 
 impl<'a> FromVocab for PAIR<'a> {
-    fn to_term(&self) -> TermString {
-        Term::new_iri(self.to_string()).unwrap()
+    fn to_term(&self) -> TermShared {
+        Term::new_iri(self.to_string().as_ref()).unwrap()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_MAPPING_STR: &str = r##"
+@prefix rr: <http://www.w3.org/ns/r2rml#>.
+@prefix rml: <http://semweb.mmlab.be/ns/rml#>.
+@prefix ql: <http://semweb.mmlab.be/ns/ql#>.
+@prefix transit: <http://vocab.org/transit/terms/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix wgs84_pos: <http://www.w3.org/2003/01/geo/wgs84_pos#>.
+@base <http://example.com/ns#>.
+
+<#AirportMapping> a rr:TriplesMap;
+  rml:logicalSource [
+    rml:source "Airport.csv" ;
+    rml:referenceFormulation ql:CSV
+  ];
+  rr:subjectMap [
+    rr:template "http://airport.example.com/{id}";
+    rr:class transit:Stop
+  ];
+
+  rr:predicateObjectMap [
+    rr:predicate transit:route;
+    rr:objectMap [
+      rml:reference "stop";
+      rr:datatype xsd:int
+      ]
+    ];
+
+  rr:predicateObjectMap [
+    rr:predicate wgs84_pos:lat;
+    rr:objectMap [
+      rml:reference "latitude"
+    ]
+  ];
+
+  rr:predicateObjectMap [
+    rr:predicate wgs84_pos:long;
+    rr:objectMap [
+      rml:reference "longitude"
+    ]
+  ]."##;
 }

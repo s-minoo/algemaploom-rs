@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use sophia_api::graph::Graph;
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
@@ -18,10 +16,15 @@ impl Extractor<TriplesMap> for TriplesMap {
         subject: &TermShared,
         graph: &FastGraph,
     ) -> ExtractorResult<TriplesMap> {
-        let ls_term = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
-        let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_term();
+        println!("SubjectMap parsing...");
+        let subject_map = SubjectMap::extract_term_map(graph, subject)?;
 
+        let ls_term = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
         let logical_source_subj = get_object(graph, subject, &ls_term)?;
+        let logical_source =
+            LogicalSource::extract(&logical_source_subj, graph)?;
+
+        let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_term();
         let po_maps: Vec<_> = get_objects(graph, subject, &pom)?
             .into_iter()
             .filter_map(|pom_subj| {
@@ -29,26 +32,22 @@ impl Extractor<TriplesMap> for TriplesMap {
             })
             .collect();
 
-        TriplesMap {
+        Ok(TriplesMap {
             identifier: subject.to_string(),
-            logical_source: LogicalSource::extract(
-                &logical_source_subj,
-                graph,
-            )?,
-            subject_map: SubjectMap::extract_term_map(graph, subject)?,
+            logical_source,
+            subject_map,
             po_maps,
             graph_map: None,
-        };
-        todo!()
+        })
     }
 }
 
 pub fn extract_triples_maps(
     graph: &FastGraph,
 ) -> Result<Vec<TriplesMap>, ParseError> {
-    let ptype: TermString =
+    let ptype: TermShared =
         Term::new_iri(vocab::rdf::PROPERTY::TYPE.to_string())?;
-    let otm: TermString =
+    let otm: TermShared =
         Term::new_iri(vocab::r2rml::CLASS::TRIPLESMAP.to_string())?;
 
     Ok(graph
@@ -56,50 +55,4 @@ pub fn extract_triples_maps(
         .filter_map(|triple| triple.ok())
         .filter_map(|triple| TriplesMap::extract(triple.s(), graph).ok())
         .collect())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const TEST_MAPPING_STR: &str = r##"
-@prefix rr: <http://www.w3.org/ns/r2rml#>.
-@prefix rml: <http://semweb.mmlab.be/ns/rml#>.
-@prefix ql: <http://semweb.mmlab.be/ns/ql#>.
-@prefix transit: <http://vocab.org/transit/terms/>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix wgs84_pos: <http://www.w3.org/2003/01/geo/wgs84_pos#>.
-@base <http://example.com/ns#>.
-
-<#AirportMapping> a rr:TriplesMap;
-  rml:logicalSource [
-    rml:source "Airport.csv" ;
-    rml:referenceFormulation ql:CSV
-  ];
-  rr:subjectMap [
-    rr:template "http://airport.example.com/{id}";
-    rr:class transit:Stop
-  ];
-
-  rr:predicateObjectMap [
-    rr:predicate transit:route;
-    rr:objectMap [
-      rml:reference "stop";
-      rr:datatype xsd:int
-      ]
-    ];
-
-  rr:predicateObjectMap [
-    rr:predicate wgs84_pos:lat;
-    rr:objectMap [
-      rml:reference "latitude"
-    ]
-  ];
-
-  rr:predicateObjectMap [
-    rr:predicate wgs84_pos:long;
-    rr:objectMap [
-      rml:reference "longitude"
-    ]
-  ]."##;
 }

@@ -1,4 +1,4 @@
-use sophia_api::term::{TTerm, TermKind};
+use sophia_api::term::TermKind;
 use sophia_inmem::graph::FastGraph;
 
 use super::{FromVocab, TermMapExtractor};
@@ -39,11 +39,11 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
         PredicateMap { tm_info }
     }
 
-    fn get_map_pred() -> crate::TermString {
+    fn get_map_pred() -> crate::TermShared {
         vocab::r2rml::PROPERTY::PREDICATEMAP.to_term()
     }
 
-    fn get_const_pred() -> crate::TermString {
+    fn get_const_pred() -> crate::TermShared {
         vocab::r2rml::PROPERTY::PREDICATE.to_term()
     }
 }

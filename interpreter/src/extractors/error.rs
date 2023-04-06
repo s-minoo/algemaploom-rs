@@ -14,7 +14,7 @@ pub enum ParseError {
 }
 
 impl From<Infallible> for ParseError {
-    fn from(value: Infallible) -> Self {
+    fn from(_: Infallible) -> Self {
         ParseError::Infallible
     }
 }

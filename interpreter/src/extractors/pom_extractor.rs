@@ -1,5 +1,5 @@
 use super::Extractor;
-use crate::extractors::{FromVocab, TermMapExtractor};
+use crate::extractors::TermMapExtractor;
 use crate::rml_model::term_map::{ObjectMap, PredicateMap, PredicateObjectMap};
 
 impl Extractor<PredicateObjectMap> for PredicateObjectMap {

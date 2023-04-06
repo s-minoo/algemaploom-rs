@@ -7,6 +7,7 @@ use sophia_term::Term;
 
 pub mod extractors;
 pub mod rml_model;
+mod test_util;
 
 type TermShared = Term<Rc<str>>;
 type TermString = Term<String>;

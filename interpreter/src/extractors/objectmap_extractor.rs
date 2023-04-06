@@ -1,23 +1,12 @@
-use sophia_api::term::{TTerm, TermKind};
+use sophia_api::term::TermKind;
 use sophia_inmem::graph::FastGraph;
-use sophia_term::literal::Literal;
 
-use super::{ExtractorResult, FromVocab, TermMapExtractor};
+use super::{FromVocab, TermMapExtractor};
 use crate::extractors::store::get_object;
 use crate::extractors::Extractor;
 use crate::rml_model::term_map::{ObjectMap, TermMapInfo};
-use crate::{IriString, TermShared, TermString};
+use crate::{IriString, TermShared};
 
-fn data_type_extraction(
-    subj_ref: &TermShared,
-    graph_ref: &FastGraph,
-) -> Option<IriString> {
-    let dtype_pred = vocab::r2rml::PROPERTY::DATATYPE.to_term();
-    match get_object(graph_ref, subj_ref, &dtype_pred).ok() {
-        Some(iri) => iri.map(|i| i.to_string()).try_into().ok(),
-        None => None,
-    }
-}
 
 impl TermMapExtractor<ObjectMap> for ObjectMap {
     fn create_constant_map(tm_info: TermMapInfo) -> ObjectMap {
@@ -53,22 +42,20 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
 
         let tm_info = TermMapInfo::extract(subj_ref, graph_ref)?;
 
-
-        Ok(ObjectMap{
+        Ok(ObjectMap {
             tm_info,
             parent_tm: None,
             join_condition: None,
             data_type,
             language,
         })
-
     }
 
-    fn get_const_pred() -> crate::TermString {
+    fn get_const_pred() -> crate::TermShared {
         vocab::r2rml::PROPERTY::OBJECT.to_term()
     }
 
-    fn get_map_pred() -> crate::TermString {
+    fn get_map_pred() -> crate::TermShared {
         vocab::r2rml::PROPERTY::OBJECTMAP.to_term()
     }
 }
