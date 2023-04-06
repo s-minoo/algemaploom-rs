@@ -61,7 +61,6 @@ pub fn parse_file(path: PathBuf) -> ExtractorResult<Vec<TriplesMap>> {
 
 #[cfg(test)]
 mod tests {
-    use sophia_turtle::parser::nq::parse_bufread;
 
     use super::*;
     use crate::test_case;
