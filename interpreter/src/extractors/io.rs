@@ -10,6 +10,7 @@ use super::error::ParseError;
 use super::triplesmap_extractor::extract_triples_maps;
 use super::ExtractorResult;
 use crate::rml_model::term_map::TriplesMap;
+use crate::rml_model::Document;
 
 pub fn load_graph_bread(buf_read: impl BufRead) -> ExtractorResult<FastGraph> {
     match turtle::parse_bufread(buf_read).collect_triples() {
@@ -35,12 +36,13 @@ pub fn load_graph_str(input_str: &str) -> ExtractorResult<FastGraph> {
     }
 }
 
-pub fn parse_str(input_str: &str) -> ExtractorResult<Vec<TriplesMap>> {
+pub fn parse_str(input_str: &str) -> ExtractorResult<Document> {
     let graph = load_graph_str(input_str)?;
-    return extract_triples_maps(&graph);
+    let triples_maps = extract_triples_maps(&graph)?;
+    return Ok(Document { triples_maps });
 }
 
-pub fn parse_file(path: PathBuf) -> ExtractorResult<Vec<TriplesMap>> {
+pub fn parse_file(path: PathBuf) -> ExtractorResult<Document> {
     if let Some(ext) = path.extension() {
         if ext != "ttl" {
             return Err(ParseError::ExtensionError(format!(
@@ -50,7 +52,8 @@ pub fn parse_file(path: PathBuf) -> ExtractorResult<Vec<TriplesMap>> {
         }
 
         let buf_read = BufReader::new(File::open(path)?);
-        return extract_triples_maps(&load_graph_bread(buf_read)?);
+        let triples_maps = extract_triples_maps(&load_graph_bread(buf_read)?)?;
+        return Ok(Document { triples_maps });
     }
 
     Err(ParseError::IOErrorStr(format!(

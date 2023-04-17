@@ -11,5 +11,6 @@ sophia_inmem = "0.7.2"
 sophia_turtle = "0.7.2"
 sophia_term = "0.7.2"
 vocab  = {path= "../vocab/"}
+algebra = {path= "../algebra/"}
 
 uuid = { version= "1.3.0", features=["v4"]}
