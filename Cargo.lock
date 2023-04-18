@@ -40,6 +40,7 @@ dependencies = [
 name = "interpreter"
 version = "0.1.0"
 dependencies = [
+ "algebra",
  "sophia_api",
  "sophia_inmem",
  "sophia_term",
