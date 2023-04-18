@@ -9,7 +9,6 @@ use sophia_turtle::parser::turtle;
 use super::error::ParseError;
 use super::triplesmap_extractor::extract_triples_maps;
 use super::ExtractorResult;
-use crate::rml_model::term_map::TriplesMap;
 use crate::rml_model::Document;
 
 pub fn load_graph_bread(buf_read: impl BufRead) -> ExtractorResult<FastGraph> {
@@ -74,7 +73,7 @@ mod tests {
         let parsed_res = parse_file(path)?;
 
         // One TriplesMap should be parsed
-        assert!(parsed_res.len() == 1);
+        assert!(parsed_res.triples_maps.len() == 1);
 
         Ok(())
     }
@@ -86,6 +85,6 @@ mod tests {
 
         assert!(parsed_res.is_ok());
         // One TriplesMap should be parsed
-        assert!(parsed_res.unwrap().len() == 2);
+        assert!(parsed_res.unwrap().triples_maps.len() == 2);
     }
 }
