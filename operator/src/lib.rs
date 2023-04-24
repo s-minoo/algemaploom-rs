@@ -1,3 +1,5 @@
+mod test_util;
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -7,7 +9,6 @@ pub enum Operator {
     MappingOp(Mapping, Box<Operator>),
     TargetOp(Target),
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Source {
@@ -26,7 +27,6 @@ pub struct Target {
     pub configuration: HashMap<String, String>,
     pub target_type:   IOType,
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataItem {
@@ -53,4 +53,38 @@ pub enum IOType {
     SPARQLEndpoint,
 }
 
+#[cfg(test)]
+mod tests {
 
+    use super::*;
+
+    #[test]
+    fn test_simple_rml() {
+        let file = test_resource!("sample_mapping.ttl");
+
+        let chains = Operator::SourceOp(
+            Source {
+                configuration: HashMap::from([(
+                    "path".into(),
+                    "Airport.csv".into(),
+                )]),
+                source_type:   IOType::File,
+                data_format:   DataFormat::CSV,
+            },
+            Box::new(Operator::MappingOp(
+                Mapping {
+                    mapping_document: file.into(),
+                },
+                Box::new(Operator::TargetOp(Target {
+                    configuration: HashMap::from([(
+                        "path".into(),
+                        "output.nt".into(),
+                    )]),
+                    target_type:   IOType::File,
+                })),
+            )),
+        );
+
+        println!("{:#?}", chains);
+    }
+}
