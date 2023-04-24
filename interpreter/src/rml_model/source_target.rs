@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use algebra::{DataFormat, IOType};
+use operator::{DataFormat, IOType};
 use vocab::ToString;
 
 use crate::{IriString, TermString};
@@ -65,8 +65,8 @@ fn source_config_map(ls: &LogicalSource) -> HashMap<String, String> {
     map
 }
 
-impl Into<algebra::Source> for LogicalSource {
-    fn into(self) -> algebra::Source {
+impl Into<operator::Source> for LogicalSource {
+    fn into(self) -> operator::Source {
         let source_type = match &self.source {
             Source::FileInput { path: _ } => IOType::File,
         };
@@ -82,7 +82,7 @@ impl Into<algebra::Source> for LogicalSource {
             p => panic!("Data format not supported {} ", p),
         };
 
-        algebra::Source {
+        operator::Source {
             configuration: source_config_map(&self),
             source_type,
             data_format,
