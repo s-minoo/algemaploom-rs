@@ -1,7 +1,10 @@
 mod test_util;
+pub mod value;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+
+use value::Value;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
@@ -30,7 +33,14 @@ pub struct Target {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataItem {
-    pub fields_value: HashMap<String, String>,
+    pub fields_value: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MappedDataItem {
+    pub id_key:         String,
+    pub id_val:         Value,
+    pub attributes_map: HashMap<String, Value>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
