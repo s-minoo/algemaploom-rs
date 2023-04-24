@@ -1,7 +1,7 @@
 mod test_util;
 pub mod value;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use value::Value;
@@ -22,8 +22,26 @@ pub struct Source {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Mapping {
-    pub mapping_document: PathBuf,
+    pub item_mappings: Vec<ItemMappingSpec>
 }
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ItemMappingSpec{
+
+    pub attributes: HashSet<String>,
+    pub map_value: Value, 
+    pub map_type: MapType
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MapType{
+    Template, 
+    Reference, 
+    Constant, 
+}
+
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Target {
