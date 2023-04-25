@@ -91,6 +91,7 @@ mod tests {
     fn test_simple_rml() {
         let file = test_resource!("sample_mapping.ttl");
 
+        // TODO: FIX Mapping struct init <25-04-23, yourname> //
         let chains = Operator::SourceOp(
             Source {
                 configuration: HashMap::from([(
@@ -102,7 +103,7 @@ mod tests {
             },
             Box::new(Operator::MappingOp(
                 Mapping {
-                    mapping_document: file.into(),
+                    item_mappings: Vec::new(),
                 },
                 Box::new(Operator::TargetOp(Target {
                     configuration: HashMap::from([(
