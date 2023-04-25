@@ -2,7 +2,6 @@ mod test_util;
 pub mod value;
 
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
 
 use value::Value;
 
@@ -13,41 +12,7 @@ pub enum Operator {
     TargetOp(Target),
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Source {
-    pub configuration: HashMap<String, String>,
-    pub source_type:   IOType,
-    pub data_format:   DataFormat,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Mapping {
-    pub item_mappings: Vec<ItemMappingSpec>
-}
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ItemMappingSpec{
-
-    pub attributes: HashSet<String>,
-    pub map_value: Value, 
-    pub map_type: MapType
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MapType{
-    Template, 
-    Reference, 
-    Constant, 
-}
-
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Target {
-    pub configuration: HashMap<String, String>,
-    pub target_type:   IOType,
-}
+// Pre-mapping operators
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataItem {
@@ -55,10 +20,10 @@ pub struct DataItem {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MappedDataItem {
-    pub id_key:         String,
-    pub id_val:         Value,
-    pub attributes_map: HashMap<String, Value>,
+pub struct Source {
+    pub configuration: HashMap<String, String>,
+    pub source_type:   IOType,
+    pub data_format:   DataFormat,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -69,6 +34,42 @@ pub enum DataFormat {
     TTL,
     NQ,
     SQL,
+}
+
+// Mapping operators
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Mapping {
+    pub item_mappings: Vec<ItemMappingSpec>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ItemMappingSpec {
+    pub input_reference_attributes: HashSet<String>,
+    pub map_attribute:              String,
+    pub map_value:                  Value,
+    pub map_type:                   MapType,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MapType {
+    Template,
+    Reference,
+    Constant,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MappedDataItem {
+    pub id_val:        Value,
+    pub attr_vals_map: HashMap<String, Vec<Value>>,
+}
+
+// Post-mapping operators
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Target {
+    pub configuration: HashMap<String, String>,
+    pub target_type:   IOType,
 }
 
 #[derive(Debug, Clone, PartialEq)]
