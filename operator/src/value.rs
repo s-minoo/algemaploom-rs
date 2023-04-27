@@ -16,6 +16,26 @@ pub enum Value {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum MapTypedValue {
+    ObjectRef(MapValue), 
+    Boolean(MapValue),
+    Number(MapValue),
+    String(MapValue),
+    Array(Vec<MapTypedValue>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MapValue {
+    Null, 
+    Reference(String),
+    Constant(String),
+    Template {
+        template:   String,
+        attributes: Vec<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Number {
     PosInfinity,
     NegInfinity,
@@ -27,7 +47,6 @@ pub enum Number {
     UInt(u64),
     Float(f32),
 }
-
 
 // Conversions traits
 
@@ -138,12 +157,11 @@ mod tests {
         assert!(map_val == intoed_map);
     }
 
-
     #[test]
     fn test_number_from_string() {
         let num_str: Value = "23".into();
         let f64_val: Value = (23 as f64).into();
 
-        assert!(num_str == f64_val); 
+        assert!(num_str == f64_val);
     }
 }

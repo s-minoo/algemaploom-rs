@@ -1,14 +1,16 @@
 mod test_util;
 pub mod value;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use value::Value;
+use value::{MapTypedValue, Value};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
     SourceOp(Source, Box<Operator>),
+    ProjectOp(Projection, Box<Operator>),
     MappingOp(Mapping, Box<Operator>),
+    SerializerOp(Serializer, Box<Operator>),
     TargetOp(Target),
 }
 
@@ -36,6 +38,9 @@ pub enum DataFormat {
     SQL,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Projection {}
+
 // Mapping operators
 
 #[derive(Debug, Clone, PartialEq)]
@@ -45,26 +50,22 @@ pub struct Mapping {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ItemMappingSpec {
-    pub input_reference_attributes: HashSet<String>,
-    pub map_attribute:              String,
-    pub map_value:                  Value,
-    pub map_type:                   MapType,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MapType {
-    Template,
-    Reference,
-    Constant,
+    pub map_attribute:  String,
+    pub map_type_value: MapTypedValue,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MappedDataItem {
-    pub id_val:        Value,
     pub attr_vals_map: HashMap<String, Vec<Value>>,
 }
 
 // Post-mapping operators
+
+// TODO: Unit struct for now since I have
+// no idea which fields are required for the
+// serializer component <26-04-23, Min Oo> //
+#[derive(Debug, Clone, PartialEq)]
+pub struct Serializer {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Target {
