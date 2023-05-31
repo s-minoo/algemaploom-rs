@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use operator::{DataFormat, IOType};
+use operator::IOType;
+use operator::formats::DataFormat; 
 use vocab::ToString;
 
 use crate::{IriString, TermString};

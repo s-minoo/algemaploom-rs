@@ -1,25 +1,29 @@
+pub mod formats;
 mod test_util;
 pub mod value;
 
 use std::collections::HashMap;
 
+use formats::DataFormat;
 use value::{MapTypedValue, Value};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
     SourceOp(Source, Box<Operator>),
-    ProjectOp(Projection, Box<Operator>),
+    TransformOp(Transform, Box<Operator>),
+    JoinOp(Join, Vec<Operator>),
     MappingOp(Mapping, Box<Operator>),
     SerializerOp(Serializer, Box<Operator>),
     TargetOp(Target),
 }
 
-// Pre-mapping operators
-
+// Data items for communications
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataItem {
     pub fields_value: HashMap<String, Value>,
 }
+
+// Pre-mapping operators
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Source {
@@ -28,18 +32,32 @@ pub struct Source {
     pub data_format:   DataFormat,
 }
 
+// Transformation operators
+/// Alias type to define Foreign Function Interface (FFI) configurations.
+pub type FFIConfig = HashMap<String, String>;
+
+/// Enums for transformation operators where the data item can be
+/// processed/transformed through the use of FFI's or built-in functions.
 #[derive(Debug, Clone, PartialEq)]
-pub enum DataFormat {
-    JSON,
-    XML,
-    CSV,
-    TTL,
-    NQ,
-    SQL,
+pub enum Transform {
+    ArbitraryTransform(FFIConfig),
+    Lower,
+    Upper,
 }
 
+////
+
+pub type ConditionExtractor = Box<dyn Fn(DataItem) -> bool>;
+// Join operators
 #[derive(Debug, Clone, PartialEq)]
-pub struct Projection {}
+pub struct Join {}
+impl Join {
+    pub fn is_binary_join(&self) -> bool {
+        // TODO:  <30-05-23, Sitt Min Oo> //
+
+        todo!()
+    }
+}
 
 // Mapping operators
 
@@ -71,6 +89,7 @@ pub struct Serializer {}
 pub struct Target {
     pub configuration: HashMap<String, String>,
     pub target_type:   IOType,
+    pub data_format:   DataFormat,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -87,6 +106,11 @@ pub enum IOType {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn test_double_rml() {
+        let file = test_resource!("join_mapping.ttl");
+    }
 
     #[test]
     fn test_simple_rml() {
@@ -112,6 +136,7 @@ mod tests {
                         "output.nt".into(),
                     )]),
                     target_type:   IOType::File,
+                    data_format:   DataFormat::NT,
                 })),
             )),
         );
