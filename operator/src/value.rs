@@ -15,25 +15,6 @@ pub enum Value {
     Object(HashMap<String, Value>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MapTypedValue {
-    ObjectRef(MapValue), 
-    Boolean(MapValue),
-    Number(MapValue),
-    String(MapValue),
-    Array(Vec<MapTypedValue>),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MapValue {
-    Null, 
-    Reference(String),
-    Constant(String),
-    Template {
-        template:   String,
-        attributes: Vec<String>,
-    },
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Number {
