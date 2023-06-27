@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use operator::formats::DataFormat;
 use operator::IOType;
+use sophia_api::term::TTerm;
 use vocab::ToString;
 
 use crate::{IriString, TermString};
@@ -21,7 +22,7 @@ impl Into<operator::Source> for LogicalSource {
             Source::FileInput { path: _ } => IOType::File,
         };
 
-        let data_format = match &self.reference_formulation.to_string() {
+        let data_format = match &self.reference_formulation.value().to_string() {
             p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
             p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
                 DataFormat::JSON
