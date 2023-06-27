@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
+use operator::formats::DataFormat;
 use operator::IOType;
-use operator::formats::DataFormat; 
 use vocab::ToString;
 
 use crate::{IriString, TermString};
@@ -15,6 +15,30 @@ pub struct LogicalSource {
     pub reference_formulation: IriString,
 }
 
+impl Into<operator::Source> for LogicalSource {
+    fn into(self) -> operator::Source {
+        let source_type = match &self.source {
+            Source::FileInput { path: _ } => IOType::File,
+        };
+
+        let data_format = match &self.reference_formulation.to_string() {
+            p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
+            p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
+                DataFormat::JSON
+            }
+            p if *p == vocab::query::CLASS::XPATH.to_string() => {
+                DataFormat::XML
+            }
+            p => panic!("Data format not supported {} ", p),
+        };
+
+        operator::Source {
+            configuration: source_config_map(&self),
+            source_type,
+            data_format,
+        }
+    }
+}
 #[derive(Debug, Clone)]
 pub struct LogicalTarget {
     pub identifier:    TermString,
@@ -66,27 +90,3 @@ fn source_config_map(ls: &LogicalSource) -> HashMap<String, String> {
     map
 }
 
-impl Into<operator::Source> for LogicalSource {
-    fn into(self) -> operator::Source {
-        let source_type = match &self.source {
-            Source::FileInput { path: _ } => IOType::File,
-        };
-
-        let data_format = match &self.reference_formulation.to_string() {
-            p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
-            p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
-                DataFormat::JSON
-            }
-            p if *p == vocab::query::CLASS::XPATH.to_string() => {
-                DataFormat::XML
-            }
-            p => panic!("Data format not supported {} ", p),
-        };
-
-        operator::Source {
-            configuration: source_config_map(&self),
-            source_type,
-            data_format,
-        }
-    }
-}

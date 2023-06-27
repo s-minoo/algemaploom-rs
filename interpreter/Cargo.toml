@@ -9,8 +9,10 @@ edition = "2021"
 sophia_api = "0.7.2"
 sophia_inmem = "0.7.2"
 sophia_turtle = "0.7.2"
-sophia_term = "0.7.2"
 vocab  = {path= "../vocab/"}
 operator = {path= "../operator/"}
 
 uuid = { version= "1.3.0", features=["v4"]}
+regex = "1.8.4"
+sophia_term = "0.7.2"
+lazy_static = "1.4.0"

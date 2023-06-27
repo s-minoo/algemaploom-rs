@@ -3,20 +3,22 @@ mod test_util;
 pub mod tuples;
 pub mod value;
 
-use std::collections::HashMap;
+use std::{collections::{HashMap, HashSet}, rc::Rc};
 
 use formats::DataFormat;
 
+pub type RcOperator = Rc<Operator>; 
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
-    SourceOp(Source, Box<Operator>),
-    TransformOp(Transform, Box<Operator>),
-    JoinOp(Join, Vec<Operator>),
-    ProjectOp(Projection, Box<Operator>),
-    ExtendOp(Extend, Box<Operator>),
-    RenameOp(Rename, Box<Operator>),
-    SerializerOp(Serializer, Box<Operator>),
-    TargetOp(Target),
+    SourceOp(Source),
+    TransformOp(Transform, RcOperator),
+    JoinOp(Join, Vec<RcOperator>),
+    ProjectOp(Projection, RcOperator),
+    ExtendOp(Extend, RcOperator),
+    RenameOp(Rename, RcOperator),
+    SerializerOp(Serializer, RcOperator),
+    TargetOp(Target, RcOperator),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,7 +66,7 @@ impl Join {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Projection {
-    pub projection_attributes: Vec<String>,
+    pub projection_attributes: HashSet<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
