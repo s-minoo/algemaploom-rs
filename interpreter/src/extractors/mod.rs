@@ -144,7 +144,3 @@ impl<'a> FromVocab for PAIR<'a> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

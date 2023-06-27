@@ -1,4 +1,3 @@
-use std::rc::Rc;
 
 use sophia_term::blank_node::BlankNode;
 use sophia_term::iri::Iri;

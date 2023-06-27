@@ -2,7 +2,7 @@ use sophia_api::term::{TTerm, TermKind};
 use sophia_inmem::graph::FastGraph;
 use sophia_term::RcTerm;
 
-use super::{term_map_info_extractor, FromVocab, TermMapExtractor};
+use super::{FromVocab, TermMapExtractor};
 use crate::extractors::store::get_object;
 use crate::extractors::Extractor;
 use crate::rml_model::term_map::{ObjectMap, TermMapInfo};

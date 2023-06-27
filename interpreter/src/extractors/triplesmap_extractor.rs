@@ -5,7 +5,7 @@ use sophia_term::Term;
 use vocab::ToString;
 
 use super::error::ParseError;
-use super::{Extractor, ExtractorResult, RcTerm, TermString};
+use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::{FromVocab, TermMapExtractor};
 use crate::rml_model::source_target::LogicalSource;

@@ -95,9 +95,7 @@ mod tests {
     use std::borrow::Borrow;
     use std::collections::HashSet;
 
-    use sophia_api::term::TTerm;
-    use sophia_term::{RcTerm, Term};
-    use std::rc::Rc;
+    use sophia_term::Term;
 
     use crate::extractors::triplesmap_extractor::extract_triples_maps;
     use crate::import_test_mods;

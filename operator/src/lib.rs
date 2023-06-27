@@ -106,18 +106,3 @@ pub enum IOType {
     SPARQLEndpoint,
 }
 
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn test_double_rml() {
-        let file = test_resource!("join_mapping.ttl");
-    }
-
-    #[test]
-    fn test_simple_rml() {
-        let file = test_resource!("sample_mapping.ttl");
-    }
-}
