@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 pub type RcOperator = Rc<Operator>;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum Operator {
     SourceOp(Source),
     TransformOp {
@@ -102,8 +103,17 @@ pub struct Extend {
     pub extend_pairs: HashMap<String, String>,
 }
 
+pub type RcExtendFunction = Rc<ExtendFunction>;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum ExtendFunction {}
+pub enum ExtendFunction {
+    Reference(String),
+    Constant(String),
+    UriEncode(RcExtendFunction),
+    Iri(RcExtendFunction),
+    Literal(RcExtendFunction),
+    Upper(RcExtendFunction), 
+    Lower(RcExtendFunction)
+}
 
 // Post-mapping operators
 
