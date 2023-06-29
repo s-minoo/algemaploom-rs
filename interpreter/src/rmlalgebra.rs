@@ -5,7 +5,7 @@ use operator::{Operator, Projection, RcOperator};
 use regex::Regex;
 use sophia_api::term::TTerm;
 
-use crate::rml_model::term_map::{self, TermMapInfo, TriplesMap};
+use crate::rml_model::term_map::{self, TermMapInfo, TermMapType, TriplesMap};
 use crate::rml_model::Document;
 
 pub fn translate_to_algebra(doc: Document) -> Vec<Operator> {
@@ -74,19 +74,33 @@ pub fn translate_projection_op(
     projection_attributes.extend(p_attributes);
     projection_attributes.extend(gm_attributes);
 
-    Operator::ProjectOp(
-        Projection {
+    Operator::ProjectOp {
+        config:   Projection {
             projection_attributes,
         },
-        parent_op,
-    )
+        operator: parent_op,
+    }
     .into()
 }
 
+fn extract_extend_from_term_map(
+    tm_info: &TermMapInfo,
+) -> Option<(String, String)> {
+    if tm_info.term_map_type == TermMapType::Reference {
+        return None;
+    }
+
+    let template = tm_info.term_value.value().to_string();
+
+    todo!()
+}
+
 pub fn translate_extend_op(
-    tm: TriplesMap,
+    tm: &TriplesMap,
     parent_op: RcOperator,
 ) -> RcOperator {
+    let sub_extend = extract_extend_from_term_map(&tm.subject_map.tm_info);
+
     todo!()
 }
 
@@ -97,10 +111,9 @@ mod tests {
 
     use sophia_term::Term;
 
+    use super::*;
     use crate::extractors::triplesmap_extractor::extract_triples_maps;
     use crate::import_test_mods;
-
-    use super::*;
     import_test_mods!();
 
     #[test]
@@ -159,15 +172,18 @@ mod tests {
             translate_projection_op(&triples_map, source_op.clone());
 
         let projection = match projection_ops.borrow() {
-            Operator::ProjectOp(proj, _source) => proj,
+            Operator::ProjectOp {
+                config: proj,
+                operator: _,
+            } => proj,
             _ => panic!("Parsed wrong! Operator should be projection"),
         };
 
         let check_attributes =
             new_hash_set(["stop", "id", "latitude", "longitude"].to_vec());
 
-        assert_eq!(projection.projection_attributes, check_attributes); 
-        
+        assert_eq!(projection.projection_attributes, check_attributes);
+
         Ok(())
     }
 

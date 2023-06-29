@@ -3,10 +3,8 @@ mod test_util;
 pub mod tuples;
 pub mod value;
 
-use std::{
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use formats::DataFormat;
 use serde::{Deserialize, Serialize};
@@ -16,20 +14,41 @@ pub type RcOperator = Rc<Operator>;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Operator {
     SourceOp(Source),
-    TransformOp(Transform, RcOperator),
-    JoinOp(Join, Vec<RcOperator>),
-    ProjectOp(Projection, RcOperator),
-    ExtendOp(Extend, RcOperator),
-    RenameOp(Rename, RcOperator),
-    SerializerOp(Serializer, RcOperator),
-    TargetOp(Target, RcOperator),
+    TransformOp {
+        config:   Transform,
+        operator: RcOperator,
+    },
+    JoinOp {
+        config:    Join,
+        operators: Vec<RcOperator>,
+    },
+    ProjectOp {
+        config:   Projection,
+        operator: RcOperator,
+    },
+    ExtendOp {
+        config:   Extend,
+        operator: RcOperator,
+    },
+    RenameOp {
+        config:   Rename,
+        operator: RcOperator,
+    },
+    SerializerOp {
+        config:   Serializer,
+        operator: RcOperator,
+    },
+    TargetOp {
+        config:   Target,
+        operator: RcOperator,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Source {
     pub configuration: HashMap<String, String>,
-    pub source_type: IOType,
-    pub data_format: DataFormat,
+    pub source_type:   IOType,
+    pub data_format:   DataFormat,
 }
 
 // Transformation operators
@@ -41,8 +60,8 @@ pub type FFIConfig = HashMap<String, String>;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Transform {
     ArbitraryTransform(FFIConfig),
-    Lower,
-    Upper,
+    Lower(String),
+    Upper(String),
 }
 
 ////
@@ -58,7 +77,7 @@ pub enum JoinType {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Join {
     pub left_right_pairs: HashMap<String, String>,
-    pub join_type: JoinType,
+    pub join_type:        JoinType,
 }
 impl Join {
     pub fn is_binary_join(&self) -> bool {
@@ -83,6 +102,9 @@ pub struct Extend {
     pub extend_pairs: HashMap<String, String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ExtendFunction {}
+
 // Post-mapping operators
 
 // TODO: Unit struct for now since I have
@@ -96,8 +118,8 @@ pub struct Serializer {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Target {
     pub configuration: HashMap<String, String>,
-    pub target_type: IOType,
-    pub data_format: DataFormat,
+    pub target_type:   IOType,
+    pub data_format:   DataFormat,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
