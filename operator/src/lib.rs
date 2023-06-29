@@ -112,6 +112,7 @@ pub enum Function {
     UriEncode(RcExtendFunction),
     Iri(RcExtendFunction),
     Literal(RcExtendFunction),
+    BlankNode(RcExtendFunction),
     Upper(RcExtendFunction),
     Lower(RcExtendFunction),
 }
