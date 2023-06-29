@@ -1,7 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
-use operator::{Function, Operator, Projection, RcExtendFunction, RcOperator};
+use operator::{
+    Extend, Function, Operator, Projection, RcExtendFunction, RcOperator,
+};
 use regex::Regex;
 use sophia_api::term::TTerm;
 
@@ -119,9 +121,34 @@ pub fn translate_extend_op(
     tm: &TriplesMap,
     parent_op: RcOperator,
 ) -> RcOperator {
-    let sub_extend = extract_extend_from_term_map(&tm.subject_map.tm_info);
+    let sub_extend =
+        vec![extract_extend_from_term_map(&tm.subject_map.tm_info)];
 
-    todo!()
+    let poms_extend = tm.po_maps.iter().flat_map(|pom| {
+        let predicate_extends = pom
+            .predicate_maps
+            .iter()
+            .map(|pm| extract_extend_from_term_map(&pm.tm_info));
+
+        let object_extends = pom
+            .object_maps
+            .iter()
+            .map(|om| extract_extend_from_term_map(&om.tm_info));
+        predicate_extends.chain(object_extends)
+    });
+
+    let extend_ops_map: HashMap<String, Function> = poms_extend
+        .chain(sub_extend)
+        .filter_map(|extend_pairs| extend_pairs)
+        .collect();
+
+    operator::Operator::ExtendOp {
+        config:   Extend {
+            extend_pairs: extend_ops_map,
+        },
+        operator: parent_op,
+    }
+    .into()
 }
 
 #[cfg(test)]
