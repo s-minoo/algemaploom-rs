@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use lazy_static::lazy_static;
-use operator::{Operator, Projection, RcOperator};
+use operator::{Function, Operator, Projection, RcExtendFunction, RcOperator};
 use regex::Regex;
 use sophia_api::term::TTerm;
 
@@ -85,14 +85,34 @@ pub fn translate_projection_op(
 
 fn extract_extend_from_term_map(
     tm_info: &TermMapInfo,
-) -> Option<(String, String)> {
+) -> Option<(String, Function)> {
     if tm_info.term_map_type == TermMapType::Reference {
         return None;
     }
+    let term_value = tm_info.term_value.value().to_string();
+    let value_function: RcExtendFunction = match tm_info.term_map_type {
+        TermMapType::Constant => Function::Constant(term_value),
+        TermMapType::Reference => Function::Reference(term_value),
+        TermMapType::Template => Function::Template(term_value),
+    }
+    .into();
 
-    let template = tm_info.term_value.value().to_string();
+    let type_function = match tm_info.term_type.unwrap() {
+        sophia_api::term::TermKind::Iri => {
+            Function::Iri(Function::UriEncode(value_function).into())
+        }
+        sophia_api::term::TermKind::Literal => {
+            Function::Literal(value_function)
+        }
+        sophia_api::term::TermKind::BlankNode => {
+            Function::BlankNode(value_function)
+        }
+        typ => panic!("Unrecognized term kind {:?}", typ),
+    };
 
-    todo!()
+    let identifier = tm_info.identifier.value().to_string();
+
+    Some((identifier, type_function))
 }
 
 pub fn translate_extend_op(
