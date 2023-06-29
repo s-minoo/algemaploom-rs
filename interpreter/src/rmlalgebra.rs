@@ -11,10 +11,13 @@ use crate::rml_model::term_map::{self, TermMapInfo, TermMapType, TriplesMap};
 use crate::rml_model::Document;
 
 pub fn translate_to_algebra(doc: Document) -> Vec<Operator> {
+    let mut count = 0;
     for tm in doc.triples_maps {
         let source_op = translate_source_op(&tm);
         let projection_op = translate_projection_op(&tm, source_op);
-        let extend_op = translate_extend_op(&tm, projection_op);
+        let prefix_id = format!("??tm{}", count);
+        let extend_op = translate_extend_op(&tm, projection_op, &prefix_id);
+        count += 1
     }
     todo!()
 }
@@ -86,7 +89,10 @@ pub fn translate_projection_op(
     .into()
 }
 
-fn extract_extend_from_term_map(tm_info: &TermMapInfo) -> (String, Function) {
+fn extract_extend_function_from_term_map(
+    tm_info: &TermMapInfo,
+    attribute: String,
+) -> (String, Function) {
     let term_value = tm_info.term_value.value().to_string();
     let value_function: RcExtendFunction = match tm_info.term_map_type {
         TermMapType::Constant => Function::Constant(term_value),
@@ -108,28 +114,39 @@ fn extract_extend_from_term_map(tm_info: &TermMapInfo) -> (String, Function) {
         typ => panic!("Unrecognized term kind {:?}", typ),
     };
 
-    let identifier = tm_info.identifier.value().to_string();
-
-    (identifier, type_function)
+    (attribute, type_function)
 }
 
 pub fn translate_extend_op(
     tm: &TriplesMap,
     parent_op: RcOperator,
+    prefix_id: &str,
 ) -> RcOperator {
-    let sub_extend =
-        vec![extract_extend_from_term_map(&tm.subject_map.tm_info)];
+    let sub_extend = vec![extract_extend_function_from_term_map(
+        &tm.subject_map.tm_info,
+        format!("{}_sm", prefix_id),
+    )];
 
+    let mut pom_count = 0;
     let poms_extend = tm.po_maps.iter().flat_map(|pom| {
-        let predicate_extends = pom
-            .predicate_maps
-            .iter()
-            .map(|pm| extract_extend_from_term_map(&pm.tm_info));
+        pom_count += 1;
+        let mut p_count = 0;
+        let mut o_count = 0;
+        let predicate_extends = pom.predicate_maps.iter().map(move |pm| {
+            p_count += 1;
+            extract_extend_function_from_term_map(
+                &pm.tm_info,
+                format!("{}_p{}-{}", prefix_id, pom_count, p_count),
+            )
+        });
 
-        let object_extends = pom
-            .object_maps
-            .iter()
-            .map(|om| extract_extend_from_term_map(&om.tm_info));
+        let object_extends = pom.object_maps.iter().map(move |om| {
+            o_count += 1;
+            extract_extend_function_from_term_map(
+                &om.tm_info,
+                format!("{}_o{}-{}", prefix_id, pom_count, o_count),
+            )
+        });
         predicate_extends.chain(object_extends)
     });
 
@@ -246,7 +263,8 @@ mod tests {
         let projection_ops =
             translate_projection_op(&triples_map, source_op.clone());
 
-        let extend_op = translate_extend_op(&triples_map, projection_ops);
+        let extend_op =
+            translate_extend_op(&triples_map, projection_ops, "?tm1");
 
         let output = File::create("output.json")?;
         serde_json::to_writer_pretty(output, &extend_op).unwrap();
