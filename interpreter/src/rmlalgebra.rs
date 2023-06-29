@@ -13,7 +13,8 @@ use crate::rml_model::Document;
 pub fn translate_to_algebra(doc: Document) -> Vec<Operator> {
     for tm in doc.triples_maps {
         let source_op = translate_source_op(&tm);
-        let projection = translate_projection_op(&tm, source_op);
+        let projection_op = translate_projection_op(&tm, source_op);
+        let extend_op = translate_extend_op(&tm, projection_op);
     }
     todo!()
 }
@@ -85,12 +86,7 @@ pub fn translate_projection_op(
     .into()
 }
 
-fn extract_extend_from_term_map(
-    tm_info: &TermMapInfo,
-) -> Option<(String, Function)> {
-    if tm_info.term_map_type == TermMapType::Reference {
-        return None;
-    }
+fn extract_extend_from_term_map(tm_info: &TermMapInfo) -> (String, Function) {
     let term_value = tm_info.term_value.value().to_string();
     let value_function: RcExtendFunction = match tm_info.term_map_type {
         TermMapType::Constant => Function::Constant(term_value),
@@ -114,7 +110,7 @@ fn extract_extend_from_term_map(
 
     let identifier = tm_info.identifier.value().to_string();
 
-    Some((identifier, type_function))
+    (identifier, type_function)
 }
 
 pub fn translate_extend_op(
@@ -137,10 +133,8 @@ pub fn translate_extend_op(
         predicate_extends.chain(object_extends)
     });
 
-    let extend_ops_map: HashMap<String, Function> = poms_extend
-        .chain(sub_extend)
-        .filter_map(|extend_pairs| extend_pairs)
-        .collect();
+    let extend_ops_map: HashMap<String, Function> =
+        poms_extend.chain(sub_extend).collect();
 
     operator::Operator::ExtendOp {
         config:   Extend {
@@ -240,5 +234,24 @@ mod tests {
 
     fn new_hash_set(v: Vec<&str>) -> HashSet<String> {
         v.into_iter().map(|st| st.to_string()).collect()
+    }
+
+    #[test]
+    fn test_extend_operator() -> ExtractorResult<()> {
+        let graph = load_graph!("sample_mapping.ttl").unwrap();
+        let mut triples_map_vec = extract_triples_maps(&graph)?;
+        assert_eq!(triples_map_vec.len(), 1);
+        let triples_map = triples_map_vec.pop().unwrap();
+        let source_op = translate_source_op(&triples_map);
+        let projection_ops =
+            translate_projection_op(&triples_map, source_op.clone());
+
+        let extend_op = translate_extend_op(&triples_map, projection_ops);
+
+        let output = File::create("output.json")?;
+        serde_json::to_writer_pretty(output, &extend_op).unwrap();
+        println!("{:#?}", extend_op);
+
+        todo!()
     }
 }
