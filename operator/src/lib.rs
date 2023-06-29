@@ -100,19 +100,20 @@ pub struct Rename {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Extend {
-    pub extend_pairs: HashMap<String, String>,
+    pub extend_pairs: HashMap<String, Function>,
 }
 
-pub type RcExtendFunction = Rc<ExtendFunction>;
+pub type RcExtendFunction = Rc<Function>;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum ExtendFunction {
+pub enum Function {
     Reference(String),
     Constant(String),
+    Template(String),
     UriEncode(RcExtendFunction),
     Iri(RcExtendFunction),
     Literal(RcExtendFunction),
-    Upper(RcExtendFunction), 
-    Lower(RcExtendFunction)
+    Upper(RcExtendFunction),
+    Lower(RcExtendFunction),
 }
 
 // Post-mapping operators
