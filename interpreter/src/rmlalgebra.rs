@@ -1,8 +1,10 @@
 use std::collections::{HashMap, HashSet};
+use std::fmt::format;
 
 use lazy_static::lazy_static;
 use operator::{
     Extend, Function, Operator, Projection, RcExtendFunction, RcOperator,
+    Serializer,
 };
 use regex::Regex;
 use sophia_api::term::TTerm;
@@ -10,19 +12,24 @@ use sophia_api::term::TTerm;
 use crate::rml_model::term_map::{self, TermMapInfo, TermMapType, TriplesMap};
 use crate::rml_model::Document;
 
-pub fn translate_to_algebra(doc: Document) -> Vec<Operator> {
-    let mut count = 0;
-    for tm in doc.triples_maps {
-        let source_op = translate_source_op(&tm);
-        let projection_op = translate_projection_op(&tm, source_op);
-        let prefix_id = format!("??tm{}", count);
-        let extend_op = translate_extend_op(&tm, projection_op, &prefix_id);
-        count += 1
-    }
-    todo!()
+pub fn translate_to_algebra(doc: Document) -> Vec<RcOperator> {
+    doc.triples_maps
+        .iter()
+        .enumerate()
+        .map(|(count, tm)| {
+            let source_op = translate_source_op(&tm);
+            let projection_op = translate_projection_op(&tm, source_op);
+            let prefix_id = format!("?tm{}", count);
+            let extend_op = translate_extend_op(&tm, projection_op, &prefix_id);
+            let serializer_op =
+                translate_serializer_op(&tm, extend_op, &prefix_id);
+
+            serializer_op
+        })
+        .collect()
 }
 
-pub fn translate_source_op(tm: &TriplesMap) -> RcOperator {
+fn translate_source_op(tm: &TriplesMap) -> RcOperator {
     Operator::SourceOp(tm.logical_source.clone().into()).into()
 }
 
@@ -49,7 +56,7 @@ fn get_attributes_from_term_map(tm_info: &TermMapInfo) -> HashSet<String> {
     }
 }
 
-pub fn translate_projection_op(
+fn translate_projection_op(
     tm: &TriplesMap,
     parent_op: RcOperator,
 ) -> RcOperator {
@@ -117,7 +124,7 @@ fn extract_extend_function_from_term_map(
     (attribute, type_function)
 }
 
-pub fn translate_extend_op(
+fn translate_extend_op(
     tm: &TriplesMap,
     parent_op: RcOperator,
     prefix_id: &str,
@@ -127,28 +134,29 @@ pub fn translate_extend_op(
         format!("{}_sm", prefix_id),
     )];
 
-    let mut pom_count = 0;
-    let poms_extend = tm.po_maps.iter().flat_map(|pom| {
-        pom_count += 1;
-        let mut p_count = 0;
-        let mut o_count = 0;
-        let predicate_extends = pom.predicate_maps.iter().map(move |pm| {
-            p_count += 1;
-            extract_extend_function_from_term_map(
-                &pm.tm_info,
-                format!("{}_p{}-{}", prefix_id, pom_count, p_count),
-            )
-        });
+    let poms_extend =
+        tm.po_maps.iter().enumerate().flat_map(|(pom_count, pom)| {
+            let predicate_extends = pom.predicate_maps.iter().enumerate().map(
+                move |(p_count, pm)| {
+                    extract_extend_function_from_term_map(
+                        &pm.tm_info,
+                        format!("{}_p{}-{}", prefix_id, pom_count, p_count),
+                    )
+                },
+            );
 
-        let object_extends = pom.object_maps.iter().map(move |om| {
-            o_count += 1;
-            extract_extend_function_from_term_map(
-                &om.tm_info,
-                format!("{}_o{}-{}", prefix_id, pom_count, o_count),
-            )
+            let object_extends =
+                pom.object_maps
+                    .iter()
+                    .enumerate()
+                    .map(move |(o_count, om)| {
+                        extract_extend_function_from_term_map(
+                            &om.tm_info,
+                            format!("{}_o{}-{}", prefix_id, pom_count, o_count),
+                        )
+                    });
+            predicate_extends.chain(object_extends)
         });
-        predicate_extends.chain(object_extends)
-    });
 
     let extend_ops_map: HashMap<String, Function> =
         poms_extend.chain(sub_extend).collect();
@@ -156,6 +164,55 @@ pub fn translate_extend_op(
     operator::Operator::ExtendOp {
         config:   Extend {
             extend_pairs: extend_ops_map,
+        },
+        operator: parent_op,
+    }
+    .into()
+}
+
+fn extract_serializer_template(tm: &TriplesMap, prefix_id: &str) -> String {
+    let subject = format!("{}_sm", prefix_id);
+    let predicate_objects =
+        tm.po_maps.iter().enumerate().flat_map(|(idx, pom)| {
+            let p_length = pom.predicate_maps.len();
+            let o_length = pom.object_maps.len();
+
+            let predicates = (0..p_length).map(move |p_count| {
+                format!("{}_p{}-{}", prefix_id, idx, p_count)
+            });
+            let objects = (0..o_length).map(move |o_count| {
+                format!("{}_o{}-{}", prefix_id, idx, o_count)
+            });
+
+            let pairs = predicates.flat_map(move |p_string| {
+                objects
+                    .clone()
+                    .map(move |o_string| (p_string.clone(), o_string.clone()))
+            });
+
+            pairs
+        });
+
+    let triple_graph_pattern = predicate_objects
+        .map(|(predicate, object)| {
+            format!(" {} {} {}.", subject, predicate, object)
+        })
+        .fold(String::new(), |a, b| a + &b + "\n");
+
+    triple_graph_pattern
+}
+
+fn translate_serializer_op(
+    tm: &TriplesMap,
+    parent_op: RcOperator,
+    prefix_id: &str,
+) -> RcOperator {
+    let template = extract_serializer_template(tm, prefix_id);
+    Operator::SerializerOp {
+        config:   Serializer {
+            template,
+            options: None,
+            format: operator::formats::DataFormat::NT,
         },
         operator: parent_op,
     }
@@ -170,6 +227,7 @@ mod tests {
     use sophia_term::Term;
 
     use super::*;
+    use crate::extractors::io::parse_file;
     use crate::extractors::triplesmap_extractor::extract_triples_maps;
     use crate::import_test_mods;
     import_test_mods!();
@@ -266,10 +324,18 @@ mod tests {
         let extend_op =
             translate_extend_op(&triples_map, projection_ops, "?tm1");
 
-        let output = File::create("output.json")?;
-        serde_json::to_writer_pretty(output, &extend_op).unwrap();
         println!("{:#?}", extend_op);
+        Ok(())
+    }
 
-        todo!()
+    #[test]
+    fn test_operator_translation() -> ExtractorResult<()> {
+        let document = parse_file(test_case!("sample_mapping.ttl").into())?;
+        let operators = translate_to_algebra(document);
+
+        let output = File::create("op_trans_output.json")?;
+        serde_json::to_writer_pretty(output, &operators).unwrap();
+        println!("{:#?}", operators);
+        Ok(())
     }
 }

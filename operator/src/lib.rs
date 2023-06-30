@@ -125,6 +125,8 @@ pub enum Function {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Serializer {
     pub template: String,
+    pub options:  Option<HashMap<String, String>>, 
+    pub format:   DataFormat,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
