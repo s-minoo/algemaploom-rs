@@ -338,4 +338,15 @@ mod tests {
         println!("{:#?}", operators);
         Ok(())
     }
+
+    #[test]
+    fn test_operator_translation_complex() -> ExtractorResult<()> {
+        let document = parse_file(test_case!("multiple_tm.ttl").into())?;
+        let operators = translate_to_algebra(document);
+
+        let output = File::create("op_trans_complex_output.json")?;
+        serde_json::to_writer_pretty(output, &operators).unwrap();
+        println!("{:#?}", operators);
+        Ok(())
+    }
 }
