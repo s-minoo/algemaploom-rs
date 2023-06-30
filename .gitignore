@@ -1,3 +1,4 @@
 /target
 .sess
-output.json
+output/
+
