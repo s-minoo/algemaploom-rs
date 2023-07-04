@@ -105,6 +105,7 @@ pub struct Extend {
 
 pub type RcExtendFunction = Rc<Function>;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum Function {
     Reference(String),
     Constant(String),
@@ -125,7 +126,7 @@ pub enum Function {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Serializer {
     pub template: String,
-    pub options:  Option<HashMap<String, String>>, 
+    pub options:  Option<HashMap<String, String>>,
     pub format:   DataFormat,
 }
 
