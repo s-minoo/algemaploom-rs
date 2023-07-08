@@ -102,21 +102,30 @@ fn extract_extend_function_from_term_map(
 ) -> (String, Function) {
     let term_value = tm_info.term_value.value().to_string();
     let value_function: RcExtendFunction = match tm_info.term_map_type {
-        TermMapType::Constant => Function::Constant(term_value),
-        TermMapType::Reference => Function::Reference(term_value),
-        TermMapType::Template => Function::Template(term_value),
+        TermMapType::Constant => Function::Constant { value: term_value },
+        TermMapType::Reference => Function::Reference { value: term_value },
+        TermMapType::Template => Function::Template { value: term_value },
     }
     .into();
 
     let type_function = match tm_info.term_type.unwrap() {
         sophia_api::term::TermKind::Iri => {
-            Function::Iri(Function::UriEncode(value_function).into())
+            Function::Iri {
+                inner_function: Function::UriEncode {
+                    inner_function: value_function,
+                }
+                .into(),
+            }
         }
         sophia_api::term::TermKind::Literal => {
-            Function::Literal(value_function)
+            Function::Literal {
+                inner_function: value_function,
+            }
         }
         sophia_api::term::TermKind::BlankNode => {
-            Function::BlankNode(value_function)
+            Function::BlankNode {
+                inner_function: value_function,
+            }
         }
         typ => panic!("Unrecognized term kind {:?}", typ),
     };

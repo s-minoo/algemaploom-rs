@@ -107,15 +107,15 @@ pub type RcExtendFunction = Rc<Function>;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Function {
-    Reference(String),
-    Constant(String),
-    Template(String),
-    UriEncode(RcExtendFunction),
-    Iri(RcExtendFunction),
-    Literal(RcExtendFunction),
-    BlankNode(RcExtendFunction),
-    Upper(RcExtendFunction),
-    Lower(RcExtendFunction),
+    Reference { value: String },
+    Constant { value: String },
+    Template { value: String },
+    UriEncode { inner_function: RcExtendFunction },
+    Iri { inner_function: RcExtendFunction },
+    Literal { inner_function: RcExtendFunction },
+    BlankNode { inner_function: RcExtendFunction },
+    Upper { inner_function: RcExtendFunction },
+    Lower { inner_function: RcExtendFunction },
 }
 
 // Post-mapping operators
