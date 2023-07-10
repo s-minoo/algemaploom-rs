@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::fmt::format;
 
 use lazy_static::lazy_static;
 use operator::{
