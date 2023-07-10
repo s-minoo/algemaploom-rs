@@ -11,5 +11,11 @@ members = ["interpreter", "dataio", "operator", "vocab"]
 uuid = { version= "1.3.0", features=["v4"]}
 regex = "1.8.4"
 
+
 [dependencies]
 operator = {path = "./operator/"}
+interpreter = {path = "./interpreter/"}
+csv = "1.2.2"
+anyhow = "1.0.71"
+
+
