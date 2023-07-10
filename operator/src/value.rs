@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Value {
     Null,
 
@@ -15,8 +17,7 @@ pub enum Value {
     Object(HashMap<String, Value>),
 }
 
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Number {
     PosInfinity,
     NegInfinity,
@@ -27,6 +28,22 @@ pub enum Number {
     Int(i64),
     UInt(u64),
     Float(f32),
+}
+
+impl ToString for Number {
+    fn to_string(&self) -> String {
+        match self {
+            Number::PosInfinity => "+∞".to_string(),
+            Number::NegInfinity => "-∞".to_string(),
+            Number::Double(db) => db.to_string(),
+            Number::Byte(byte) => format!("{:b}", byte),
+            Number::Short(sh) => sh.to_string(),
+            Number::UShort(ush) => ush.to_string(),
+            Number::Int(int) => int.to_string(),
+            Number::UInt(uint) => uint.to_string(),
+            Number::Float(float) => float.to_string(),
+        }
+    }
 }
 
 // Conversions traits
@@ -42,13 +59,43 @@ impl From<&str> for Value {
         value.to_string().into()
     }
 }
+impl From<&Value> for &str {
+    fn from(value: &Value) -> Self {
+        value.into()
+    }
+}
+
+impl From<&Value> for String {
+    fn from(value: &Value) -> Self {
+        // TODO: Reomve serde_json serialization to strings <10-07-23, Min Oo> //
+        match value {
+            Value::Null => "null".to_string(),
+            Value::Boolean(bool) => bool.to_string(),
+            Value::Number(num) => num.to_string(),
+            Value::Array(values) => serde_json::to_string(values).unwrap(),
+            Value::String(str) => str.to_owned(),
+            Value::Object(obj) => serde_json::to_string(obj).unwrap(),
+        }
+    }
+}
+
+macro_rules! from_str_val_parse {
+    ($t:ident, $value:expr) => {
+        if let Ok(parsed) = $value.trim().parse::<$t>() {
+            return parsed.into();
+        }
+    };
+}
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        if let Ok(parsed) = value.trim().parse::<f64>() {
-            return parsed.into();
-        }
-
+        from_str_val_parse!(u8, value);
+        from_str_val_parse!(u32, value);
+        from_str_val_parse!(u64, value);
+        from_str_val_parse!(i32, value);
+        from_str_val_parse!(i64, value);
+        from_str_val_parse!(f32, value);
+        from_str_val_parse!(f64, value);
         Self::String(value)
     }
 }

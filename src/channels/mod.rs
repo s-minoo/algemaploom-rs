@@ -28,7 +28,7 @@ impl Channel<MappingTuple> {
         serializer: &'static Box<dyn Serializer>,
     ) -> RcChannel<String> {
         let serialized_iter =
-            self.iterator.map(|tuple| serializer.serialize(&tuple));
+            self.iterator.map(|tuple| serializer.serialize(tuple));
 
         let chan = Channel {
             iterator: Box::new(serialized_iter),
