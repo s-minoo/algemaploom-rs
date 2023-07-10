@@ -6,7 +6,6 @@ use sophia_api::term::TTerm;
 use vocab::ToString;
 
 use crate::{IriString, TermString};
-// TODO: Implement source and target metadata infos <30-03-23, Min Oo>
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {

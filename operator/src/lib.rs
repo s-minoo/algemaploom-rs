@@ -15,10 +15,6 @@ pub type RcOperator = Rc<Operator>;
 #[serde(tag = "type")]
 pub enum Operator {
     SourceOp(Source),
-    TransformOp {
-        config:   Transform,
-        operator: RcOperator,
-    },
     JoinOp {
         config:    Join,
         operators: Vec<RcOperator>,
@@ -120,9 +116,6 @@ pub enum Function {
 
 // Post-mapping operators
 
-// TODO: Unit struct for now since I have
-// no idea which fields are required for the
-// serializer component <26-04-23, Min Oo> //
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Serializer {
     pub template: String,
