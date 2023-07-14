@@ -67,7 +67,7 @@ impl From<&Value> for &str {
 
 impl From<&Value> for String {
     fn from(value: &Value) -> Self {
-        // TODO: Reomve serde_json serialization to strings <10-07-23, Min Oo> //
+        // TODO: Reomve serde_json serialization to strings <10-07-23> //
         match value {
             Value::Null => "null".to_string(),
             Value::Boolean(bool) => bool.to_string(),

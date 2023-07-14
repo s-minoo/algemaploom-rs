@@ -78,7 +78,7 @@ pub struct Join {
 }
 impl Join {
     pub fn is_binary_join(&self) -> bool {
-        // TODO:  <30-05-23, Sitt Min Oo> //
+        // TODO:  <30-05-23> //
 
         todo!()
     }
