@@ -25,4 +25,4 @@ The project is split into the following subprojects:
 
 # Installation
 
-- TODO: <25-04-23, Min Oo> +
+- TODO: <25-04-23> +

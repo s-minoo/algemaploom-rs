@@ -8,6 +8,7 @@ pub mod sources;
 type BoxedOperatorChainOpt = Option<Box<dyn OperatorChain>>;
 
 pub trait OperatorChain {
+    fn into_boxed_opt(self) -> BoxedOperatorChainOpt;
     fn next(&mut self) -> &mut BoxedOperatorChainOpt;
 
     fn process(&mut self, tuple: &mut MappingTuple) {

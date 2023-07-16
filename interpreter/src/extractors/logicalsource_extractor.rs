@@ -34,7 +34,7 @@ impl Extractor<LogicalSource> for LogicalSource {
     }
 }
 
-// TODO: expand to also support other input types <05-04-23, Min Oo> //
+// TODO: expand to also support other input types <05-04-23, > //
 fn extract_input_type(
     subject: &RcTerm,
     graph: &FastGraph,

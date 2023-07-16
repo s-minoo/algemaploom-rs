@@ -3,7 +3,7 @@ use operator::tuples::MappingTuple;
 use super::Serializer;
 
 pub struct RDFSerializer {
-    template: String,
+    pub template: String,
 }
 
 impl Serializer for RDFSerializer {
@@ -16,7 +16,7 @@ impl Serializer for RDFSerializer {
         for (_fragment, solution_sequence) in tuple.into_iter() {
             for solution_mapping in solution_sequence.iter() {
                 for (attr, values) in solution_mapping.into_iter() {
-                    // TODO: Support value sequence serialization! <10-07-23, Min Oo> //
+                    // TODO: Support value sequence serialization! <10-07-23, > //
 
                     let value: &str = values.first().unwrap().into();
 

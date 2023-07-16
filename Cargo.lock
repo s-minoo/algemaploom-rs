@@ -100,7 +100,10 @@ dependencies = [
  "anyhow",
  "csv",
  "interpreter",
+ "lazy_static",
  "operator",
+ "regex",
+ "urlencoding",
 ]
 
 [[package]]
@@ -359,6 +362,12 @@ name = "unicode-ident"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15811caf2415fb889178633e7724bad2509101cde276048e013b9def5e51fa0"
+
+[[package]]
+name = "urlencoding"
+version = "2.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8db7427f936968176eaa7cdf81b7f98b980b18495ec28f1b5791ac3bfe3eea9"
 
 [[package]]
 name = "uuid"

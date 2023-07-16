@@ -10,7 +10,7 @@ use crate::channels::{Channel, RcChannel};
 
 #[derive(Debug, Clone)]
 pub struct CSVFileSource {
-    config: SourceConfig,
+    pub config: SourceConfig,
 }
 
 impl Source for CSVFileSource {

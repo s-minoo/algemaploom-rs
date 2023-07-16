@@ -8,8 +8,8 @@ pub struct ExtendTuple {
 
 #[derive(Default)]
 pub struct ExtendOp {
-    extend_tuples: Vec<ExtendTuple>,
-    next:          BoxedOperatorChainOpt,
+    pub extend_tuples: Vec<ExtendTuple>,
+    pub next:          BoxedOperatorChainOpt,
 }
 
 impl OperatorChain for ExtendOp {
@@ -28,5 +28,32 @@ impl OperatorChain for ExtendOp {
             );
         });
         todo!()
+    }
+
+    fn process(&mut self, tuple: &mut operator::tuples::MappingTuple) {
+        tuple.iter_mut().for_each(|(_fragment, sequence)| {
+            self.process_solution_sequence(sequence)
+        });
+    }
+
+    fn process_solution_sequence(
+        &mut self,
+        sequence: &mut operator::tuples::SolutionSequence,
+    ) {
+        sequence
+            .iter_mut()
+            .for_each(|mapping| self.process_solution_mapping(mapping));
+    }
+
+    fn execute(&mut self, tuple: &mut operator::tuples::MappingTuple) {
+        self.process(tuple);
+
+        if let Some(next_op) = self.next() {
+            next_op.execute(tuple);
+        }
+    }
+
+    fn into_boxed_opt(self) -> BoxedOperatorChainOpt {
+        Some(Box::new(self))
     }
 }

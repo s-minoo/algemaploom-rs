@@ -9,13 +9,19 @@ pub struct Source {
     pub config: SourceConfiguration,
 }
 
-
-impl OperatorChain for Source{
+impl OperatorChain for Source {
     fn next(&mut self) -> &mut super::BoxedOperatorChainOpt {
         todo!()
     }
 
-    fn process_solution_mapping(&mut self, mapping: &mut operator::tuples::SolutionMapping) {
+    fn process_solution_mapping(
+        &mut self,
+        mapping: &mut operator::tuples::SolutionMapping,
+    ) {
+        todo!()
+    }
+
+    fn into_boxed_opt(self) -> super::BoxedOperatorChainOpt {
         todo!()
     }
 }
