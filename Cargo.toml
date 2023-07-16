@@ -17,5 +17,7 @@ operator = {path = "./operator/"}
 interpreter = {path = "./interpreter/"}
 csv = "1.2.2"
 anyhow = "1.0.71"
+clap = {version= "4.3.12", features=["derive"]}
+serde_json = "1.0.99"
 
 
