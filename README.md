@@ -1,28 +1,72 @@
-# Meamer Rs
+<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 
-A modular mapping architecture built in Rust.
-The goal of this project is to provide a set of components commonly found
-in all, if not most, of the KG mapping engines, and to provide
-heterogeneous data to heterogeneous data mapping solution.
+<a name="readme-top"></a>
 
-The project is split into the following subprojects:
+<!--
+*** Thanks for checking out the Best-README-Template. If you have a suggestion
+*** that would make this better, please fork the repo and create a pull request
+*** or simply open an issue with the tag "enhancement".
+*** Don't forget to give the project a star!
+*** Thanks again! Now go create something AMAZING! :D
+-->
 
-- [Meamer](src/):
-  Contains the different mapping components which could be chained with one another
-  to create a working mapping engine. Components are chained based on the
-  intermediate representation as provided by the [operator subproject](operator/).
-- [Operator](operator/):
-  Defines the intermediate representations to describe
-  mapping processes.
-- [Interpreter](interpreter/)
-  Interprets mapping languages, such as RML, and SPARQL-Generate, and translate
-  it to the intermediate representation as defined in [operator subproject](operator/).
-- [DataIO](dataio/)
-  Contains APIs to read different input types and stream them to the rest of the
-  Meamer components.
-- [Vocab](vocab/)
-  RDF vocabularies used throughout this project. 
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+<h3 align="center">CrustMapper: Mapping Algebra for Knowledge Graph Construction</h3>
+</div>
 
-# Installation
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+    </li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#compilation">Compilation</a></li>
+  </ol>
+</details>
 
-- TODO: <25-04-23> +
+<!-- ABOUT THE PROJECT -->
+
+## About The Project
+
+Mapping algebra provides operational semantics to the mapping process, opening
+the door to study of complexity and expressiveness of existing mapping languages.
+This project provides the CLI translator from RML to mapping algebra.
+
+<!-- GETTING STARTED -->
+
+## Prerequisites
+
+To compile the project on your own, you'll need to have
+[Rust toolchain](https://www.rust-lang.org/tools/install) installed.
+
+For Linux-based users:
+
+- Rust
+  ```sh
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  ```
+
+## Running
+
+1. Download this repo
+2. Run cargo build at the root this repo
+   ```sh
+   cd {repo dir}
+   cargo build --release
+   ```
+3. Run the CLI translator app
+   1. From Cargo 
+       ```sh
+       cargo run --bin translator -- {args}
+       ```
+   2. From the compiled translator binary
+       ```sh
+       cd ./target/release/
+       ./translator {args}
+       ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>

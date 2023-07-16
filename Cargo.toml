@@ -3,6 +3,10 @@ name = "meamer-rs"
 version = "0.1.0"
 edition = "2021"
 
+
+[profile.release]
+opt-level = 3
+
 [workspace]
 members = ["interpreter", "dataio", "operator", "vocab"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
