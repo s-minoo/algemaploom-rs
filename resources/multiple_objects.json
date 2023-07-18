@@ -1,0 +1,70 @@
+[
+  {
+    "type": "SerializerOp",
+    "config": {
+      "template": " ?tm0_sm ?tm0_p0-0 ?tm0_o0-0.\n ?tm0_sm ?tm0_p0-0 ?tm0_o0-1.\n",
+      "options": null,
+      "format": "NT"
+    },
+    "operator": {
+      "type": "ExtendOp",
+      "config": {
+        "extend_pairs": {
+          "?tm0_sm": {
+            "type": "Iri",
+            "inner_function": {
+              "type": "UriEncode",
+              "inner_function": {
+                "type": "Template",
+                "value": "http://airport.example.com/{id}"
+              }
+            }
+          },
+          "?tm0_o0-0": {
+            "type": "Literal",
+            "inner_function": {
+              "type": "Reference",
+              "value": "latitude"
+            }
+          },
+          "?tm0_p0-0": {
+            "type": "Iri",
+            "inner_function": {
+              "type": "UriEncode",
+              "inner_function": {
+                "type": "Constant",
+                "value": "http://example2.com/#location"
+              }
+            }
+          },
+          "?tm0_o0-1": {
+            "type": "Literal",
+            "inner_function": {
+              "type": "Reference",
+              "value": "longitude"
+            }
+          }
+        }
+      },
+      "operator": {
+        "type": "ProjectOp",
+        "config": {
+          "projection_attributes": [
+            "longitude",
+            "id",
+            "latitude"
+          ]
+        },
+        "operator": {
+          "type": "SourceOp",
+          "config": {
+            "path": "Airport.csv",
+            "identifier": "_:riog00000001"
+          },
+          "source_type": "File",
+          "data_format": "CSV"
+        }
+      }
+    }
+  }
+]

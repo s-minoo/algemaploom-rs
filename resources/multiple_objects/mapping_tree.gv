@@ -1,0 +1,19 @@
+graph mapping_tree {
+	"0a27c345-74be-491a-a477-d439ec889a10" [label="SerializerOp
+ ?tm0_sm ?tm0_p0-0 ?tm0_o0-0.
+ ?tm0_sm ?tm0_p0-0 ?tm0_o0-1.
+
+ Format:NT"]
+	"3cae0c5b-6e5c-4919-b91a-73e1874f4349" [label="ExtendOp
+?tm0_sm -> Iri(UriEncode(Template(http://airport.example.com/{id})))
+?tm0_o0-0 -> Literal(Reference(latitude))
+?tm0_p0-0 -> Iri(UriEncode(Constant(http://example2.com/#location)))
+?tm0_o0-1 -> Literal(Reference(longitude))"]
+	"0a27c345-74be-491a-a477-d439ec889a10" -- "3cae0c5b-6e5c-4919-b91a-73e1874f4349"
+	"b5e89bbb-dde2-4b50-b8bb-f53af658af96" [label="ProjectOp
+longitude,id,latitude"]
+	"3cae0c5b-6e5c-4919-b91a-73e1874f4349" -- "b5e89bbb-dde2-4b50-b8bb-f53af658af96"
+	"0451acd3-550c-4505-9e2d-1263fd987205" [label="SourceOp
+ file:Airport.csv"]
+	"b5e89bbb-dde2-4b50-b8bb-f53af658af96" -- "0451acd3-550c-4505-9e2d-1263fd987205"
+}

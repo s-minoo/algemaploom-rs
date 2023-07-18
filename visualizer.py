@@ -83,20 +83,20 @@ def main():
     parser.add_argument('json_file', type=str,
                         help="JSON file containing the mapping plan")
 
-    parser.add_argument('rml_doc_name', type=str, nargs=1,
-                        help="Name of the RML document file from \
-                             which the mapping plan was generated")
+    parser.add_argument('output_dir', type=str,
+                        default="output-graphviz",
+                        help="Output dir to generate the image and graphviz \
+                                code.")
 
     args = parser.parse_args()
 
     file = open(args.json_file)
     mapping_plan = json.load(file)
-    dot = graphviz.Graph("mapping_tree", format="png",
-                         comment="The mapping plan for {}".format(args.rml_doc_name))
+    dot = graphviz.Graph("mapping_tree", format="png")
 
     for tree in mapping_plan:
         parse_operator(tree, parent_id=None,  dot=dot)
-    dot.render(directory="output-graphviz")
+    dot.render(directory=args.output_dir)
 
 
 if __name__ == "__main__":
