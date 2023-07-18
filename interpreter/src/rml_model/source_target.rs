@@ -33,7 +33,7 @@ impl Into<operator::Source> for LogicalSource {
         };
 
         operator::Source {
-            configuration: source_config_map(&self),
+            config: source_config_map(&self),
             source_type,
             data_format,
         }

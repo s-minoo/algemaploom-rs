@@ -43,7 +43,7 @@ pub enum Operator {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Source {
-    pub configuration: HashMap<String, String>,
+    pub config: HashMap<String, String>,
     pub source_type:   IOType,
     pub data_format:   DataFormat,
 }
