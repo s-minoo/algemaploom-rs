@@ -15,7 +15,6 @@ use interpreter::rmlalgebra::translate_to_algebra;
 struct Cli {
 
     /// The RML document to be translated into algebra
-    #[arg(short, long)]
     rml_document: PathBuf,
 
     /// The generated output json file containing the algebra tree
@@ -29,7 +28,7 @@ pub fn main() -> ExtractorResult<()> {
     let document = parse_file(args.rml_document.clone())?;
     let operators = translate_to_algebra(document);
 
-    let output_path = args.output.unwrap_or("output".into());
+    let output_path = args.output.unwrap_or("output.json".into());
 
     let output = File::create(output_path.clone())?;
 
