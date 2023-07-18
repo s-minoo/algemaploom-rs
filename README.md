@@ -50,6 +50,13 @@ For Linux-based users:
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   ```
 
+For the visualization of the generated mapping plans, you'll need 
+python version >= 3.10 and the following packages: 
+
+1. graphviz
+
+
+
 ## Running
 
 1. Download this repo
@@ -68,5 +75,10 @@ For Linux-based users:
        cd ./target/release/
        ./translator {args}
        ```
+      
+4. Visualize the created mapping plan 
+   ```sh
+   ./visualizer.py {args}
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

@@ -78,7 +78,7 @@ def main():
     """
 
     parser = argparse.ArgumentParser(
-        prog="MappingAlgViz",
+        prog="visualizer.py",
         description="Graphviz visualizer for mapping algebra trees")
     parser.add_argument('json_file', type=str,
                         help="JSON file containing the mapping plan")
