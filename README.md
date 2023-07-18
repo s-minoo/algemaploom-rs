@@ -16,17 +16,6 @@
 <h3 align="center">CrustMapper: Mapping Algebra for Knowledge Graph Construction</h3>
 </div>
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-    </li>
-    <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#compilation">Compilation</a></li>
-  </ol>
-</details>
 
 <!-- ABOUT THE PROJECT -->
 
