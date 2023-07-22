@@ -25,6 +25,9 @@ Mapping algebra provides operational semantics to the mapping process, opening
 the door to study of complexity and expressiveness of existing mapping languages.
 This project provides the CLI translator from RML to mapping algebra.
 
+## Example use cases
+
+To check the sort of input and the corresponding output of mapping algebra translation from RML to algebraic operators, the files are located under `resources` folder.
 <!-- GETTING STARTED -->
 
 ## Prerequisites
