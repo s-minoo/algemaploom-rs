@@ -9,7 +9,6 @@ use regex::Regex;
 
 use super::{BoxedFunctionChainOpt, FunctionChain};
 
-// TODO: Proper regex replacement!  <12-07-23, > //
 lazy_static! {
     static ref TEMPLATE_REGEX: Regex = Regex::new("{(?<attr>[^}{]+)}").unwrap();
 }
