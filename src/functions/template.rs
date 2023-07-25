@@ -1,17 +1,46 @@
+use core::panicking::panic;
+use std::borrow::Cow;
+use std::collections::HashSet;
+use std::fmt::format;
+
 use lazy_static::lazy_static;
+use operator::value::Value;
 use regex::Regex;
 
 use super::{BoxedFunctionChainOpt, FunctionChain};
 
 // TODO: Proper regex replacement!  <12-07-23, > //
-
-pub struct Template {
-    pub template: String,
-    pub next:     BoxedFunctionChainOpt,
+lazy_static! {
+    static ref TEMPLATE_REGEX: Regex = Regex::new("{(?<attr>[^}{]+)}").unwrap();
 }
 
-lazy_static! {
-    static ref TEMPLATE_REGEX: Regex = Regex::new("({[^}{]+})").unwrap();
+pub struct Template {
+    pub template:         String,
+    pub next:             BoxedFunctionChainOpt,
+    attributes_regex_set: Vec<(String, Regex)>,
+}
+
+impl Template {
+    pub fn new(template: String, next: BoxedFunctionChainOpt) -> Self {
+        let attributes: HashSet<_> = TEMPLATE_REGEX
+            .captures_iter(&template)
+            .map(|cap| cap["attr"].to_string())
+            .collect();
+
+        let regex_iter = attributes.iter().map(|attr| {
+            let pattern = format!("[^{{]*{{{}}}[^}}]*", attr);
+            Regex::new(&pattern).unwrap()
+        });
+
+        let attributes_regex_set =
+            attributes.clone().into_iter().zip(regex_iter).collect();
+
+        Template {
+            template,
+            next,
+            attributes_regex_set,
+        }
+    }
 }
 
 impl FunctionChain for Template {
@@ -27,17 +56,19 @@ impl FunctionChain for Template {
         &self.next
     }
 
-    fn process(
-        &self,
-        mapping: &operator::tuples::SolutionMapping,
-    ) -> operator::value::Value {
-        todo!()
+    fn process(&self, mapping: &operator::tuples::SolutionMapping) -> Value {
+        let mut result = self.template.to_owned();
+        for (attr, regex) in self.attributes_regex_set.iter() {
+            let val = mapping.get(attr).unwrap().to_string();
+            if let Cow::Owned(new) = regex.replace_all(&result, val) {
+                result = new;
+            }
+        }
+
+        Value::String(result)
     }
 
-    fn process_value(
-        &self,
-        value: &operator::value::Value,
-    ) -> operator::value::Value {
-        todo!()
+    fn process_value(&self, value: &Value) -> Value {
+        panic!("Template function cannot process on Value input!")
     }
 }

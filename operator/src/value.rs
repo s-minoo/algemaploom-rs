@@ -79,6 +79,13 @@ impl From<&Value> for String {
     }
 }
 
+
+impl ToString for Value{
+    fn to_string(&self) -> String {
+        self.into()
+    }
+}
+
 macro_rules! from_str_val_parse {
     ($t:ident, $value:expr) => {
         if let Ok(parsed) = $value.trim().parse::<$t>() {
