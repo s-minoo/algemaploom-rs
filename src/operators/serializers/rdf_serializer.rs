@@ -16,10 +16,8 @@ impl Serializer for RDFSerializer {
         for (_fragment, solution_sequence) in tuple.into_iter() {
             for solution_mapping in solution_sequence.iter() {
                 for (attr, value) in solution_mapping.into_iter() {
-                    // TODO: Support value sequence serialization! <10-07-23, > //
 
                     let value: &str = value.into();
-
                     result =
                         result.replace(format!("?{}", attr).as_str(), value);
                 }

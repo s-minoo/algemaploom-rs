@@ -1,7 +1,5 @@
-use core::panicking::panic;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::fmt::format;
 
 use lazy_static::lazy_static;
 use operator::value::Value;
