@@ -15,10 +15,10 @@ impl Serializer for RDFSerializer {
         let mut result = self.template.clone();
         for (_fragment, solution_sequence) in tuple.into_iter() {
             for solution_mapping in solution_sequence.iter() {
-                for (attr, values) in solution_mapping.into_iter() {
+                for (attr, value) in solution_mapping.into_iter() {
                     // TODO: Support value sequence serialization! <10-07-23, > //
 
-                    let value: &str = values.first().unwrap().into();
+                    let value: &str = value.into();
 
                     result =
                         result.replace(format!("?{}", attr).as_str(), value);

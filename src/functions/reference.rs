@@ -17,8 +17,6 @@ impl FunctionChain for Reference {
         let value = mapping
             .get(&self.reference)
             .unwrap()
-            .first()
-            .unwrap()
             .to_owned();
 
         if let Some(next_func) = &self.next {

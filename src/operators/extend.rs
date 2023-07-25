@@ -28,7 +28,7 @@ impl OperatorChain for ExtendOp {
         self.extend_tuples.iter_mut().for_each(|ext_pair| {
             mapping.insert(
                 ext_pair.new_attribute.clone(),
-                vec![ext_pair.function.process(mapping)],
+                ext_pair.function.process(mapping),
             );
         });
         todo!()

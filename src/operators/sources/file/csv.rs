@@ -15,11 +15,10 @@ pub struct CSVFileSource {
 
 impl Source for CSVFileSource {
     fn create_channel(&mut self) -> Result<RcChannel<MappingTuple>> {
-        let file_path =
-            self.config.config.get("path").ok_or(anyhow!(
-                "Path doesn't exist in the source configuration {:?}",
-                self
-            ))?;
+        let file_path = self.config.config.get("path").ok_or(anyhow!(
+            "Path doesn't exist in the source configuration {:?}",
+            self
+        ))?;
 
         let mut reader = Reader::from_path(file_path)?;
         let attributes: Vec<_> =
@@ -32,7 +31,7 @@ impl Source for CSVFileSource {
                 let zipped: SolutionMapping = attributes
                     .iter()
                     .map(|attr| attr.to_owned())
-                    .zip(record.iter().map(|r| vec![r.into()]))
+                    .zip(record.iter().map(|r| r.into()))
                     .collect();
                 zipped
             })
