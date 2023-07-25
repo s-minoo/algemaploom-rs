@@ -1,11 +1,13 @@
 use operator::{tuples::SolutionMapping, value::Value};
 
 
+use crate::functions::BoxedFunctionChain;
+
 use super::{BoxedOperatorChainOpt, OperatorChain};
 
 pub struct ExtendTuple {
     pub new_attribute: String,
-    pub function:      Box<dyn FnMut(&SolutionMapping) -> Value> ,
+    pub function:      BoxedFunctionChain,
 }
 
 #[derive(Default)]
@@ -26,7 +28,7 @@ impl OperatorChain for ExtendOp {
         self.extend_tuples.iter_mut().for_each(|ext_pair| {
             mapping.insert(
                 ext_pair.new_attribute.clone(),
-                vec![(ext_pair.function)(mapping)],
+                vec![ext_pair.function.process(mapping)],
             );
         });
         todo!()

@@ -1,6 +1,6 @@
 use operator::value::Value;
 
-use super::{BoxedFunctionChainOpt, FunctionChain};
+use super::{FunctionChain, BoxedFunctionChainOpt};
 
 pub struct Constant {
     pub constant: String,

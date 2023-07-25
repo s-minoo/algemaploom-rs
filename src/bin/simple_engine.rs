@@ -18,7 +18,7 @@ pub fn main() {
 
     let csv_source = CSVFileSource {
         config: Source {
-            configuration: HashMap::from([(
+            config: HashMap::from([(
                 "path".to_string(),
                 "./Airport.csv".to_string(),
             )]),
