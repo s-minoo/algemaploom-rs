@@ -3,6 +3,10 @@ name = "meamer-rs"
 version = "0.1.0"
 edition = "2021"
 
+
+[profile.release]
+opt-level = 3
+
 [workspace]
 members = ["interpreter", "dataio", "operator", "vocab"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,5 +24,7 @@ anyhow = "1.0.71"
 urlencoding = "2.1.2"
 lazy_static = "1.4.0"
 regex.workspace = true
+clap = {version= "4.3.12", features=["derive"]}
+serde_json = "1.0.99"
 
 

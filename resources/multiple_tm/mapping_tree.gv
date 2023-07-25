@@ -1,0 +1,35 @@
+graph mapping_tree {
+	"6534d60d-5147-4315-b4b2-212d015223fd" [label="SerializerOp
+ ?tm0_sm ?tm0_p0-0 ?tm0_o0-0.
+
+ Format:NT"]
+	"b7ed5aeb-a3f2-41c2-9c4f-9ab20d0eda3c" [label="ExtendOp
+?tm0_o0-0 -> Literal(Reference(stop))
+?tm0_p0-0 -> Iri(UriEncode(Constant(http://vocab.org/transit/terms/route)))
+?tm0_sm -> Iri(UriEncode(Template(http://airport.example.com/{id})))"]
+	"6534d60d-5147-4315-b4b2-212d015223fd" -- "b7ed5aeb-a3f2-41c2-9c4f-9ab20d0eda3c"
+	"6b71c039-0002-4733-b961-c991aa8849ac" [label="ProjectOp
+stop,id"]
+	"b7ed5aeb-a3f2-41c2-9c4f-9ab20d0eda3c" -- "6b71c039-0002-4733-b961-c991aa8849ac"
+	"68c1e1c8-c8b0-4364-86ee-0da321bcd2ef" [label="SourceOp
+ file:Airport.csv"]
+	"6b71c039-0002-4733-b961-c991aa8849ac" -- "68c1e1c8-c8b0-4364-86ee-0da321bcd2ef"
+	"82504ba1-5414-4c70-9d5f-209471b4566d" [label="SerializerOp
+ ?tm1_sm ?tm1_p0-0 ?tm1_o0-0.
+ ?tm1_sm ?tm1_p1-0 ?tm1_o1-0.
+
+ Format:NT"]
+	"14556562-f5c3-410a-9553-88cc6f5d3b70" [label="ExtendOp
+?tm1_o1-0 -> Literal(Reference(longitude))
+?tm1_p1-0 -> Iri(UriEncode(Constant(http://www.w3.org/2003/01/geo/wgs84_pos#long)))
+?tm1_sm -> Iri(UriEncode(Template(http://airport.example.com/positions/{id})))
+?tm1_p0-0 -> Iri(UriEncode(Constant(http://www.w3.org/2003/01/geo/wgs84_pos#lat)))
+?tm1_o0-0 -> Literal(Reference(latitude))"]
+	"82504ba1-5414-4c70-9d5f-209471b4566d" -- "14556562-f5c3-410a-9553-88cc6f5d3b70"
+	"4fe04d58-8a5d-4e3b-9617-27fd858f906b" [label="ProjectOp
+id,longitude,latitude"]
+	"14556562-f5c3-410a-9553-88cc6f5d3b70" -- "4fe04d58-8a5d-4e3b-9617-27fd858f906b"
+	"ed205f61-f522-4370-9d62-8238afd6e4ba" [label="SourceOp
+ file:Airport.csv"]
+	"4fe04d58-8a5d-4e3b-9617-27fd858f906b" -- "ed205f61-f522-4370-9d62-8238afd6e4ba"
+}

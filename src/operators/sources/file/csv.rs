@@ -16,7 +16,7 @@ pub struct CSVFileSource {
 impl Source for CSVFileSource {
     fn create_channel(&mut self) -> Result<RcChannel<MappingTuple>> {
         let file_path =
-            self.config.configuration.get("path").ok_or(anyhow!(
+            self.config.config.get("path").ok_or(anyhow!(
                 "Path doesn't exist in the source configuration {:?}",
                 self
             ))?;

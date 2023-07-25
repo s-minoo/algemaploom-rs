@@ -43,7 +43,7 @@ pub enum Operator {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Source {
-    pub configuration: HashMap<String, String>,
+    pub config: HashMap<String, String>,
     pub source_type:   IOType,
     pub data_format:   DataFormat,
 }
@@ -78,7 +78,7 @@ pub struct Join {
 }
 impl Join {
     pub fn is_binary_join(&self) -> bool {
-        // TODO:  <30-05-23,> //
+        // TODO:  <30-05-23> //
 
         todo!()
     }
