@@ -26,7 +26,7 @@ anyhow = "1.0.71"
 urlencoding = "2.1.2"
 lazy_static.workspace = true 
 regex.workspace = true
-serde.workspace = true
+serde_json.workspace = true
 clap = {version= "4.3.12", features=["derive"]}
 tokio = {version= "1.29.1", features=["full"]}
 
