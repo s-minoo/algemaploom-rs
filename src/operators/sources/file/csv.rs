@@ -6,7 +6,7 @@ use operator::tuples::{MappingTuple, SolutionMapping};
 use operator::Source as SourceConfig;
 
 use super::Source;
-use crate::channels::{Channel, RcChannel};
+use crate::channels::{Channel, RcRefChannel};
 
 #[derive(Debug, Clone)]
 pub struct CSVFileSource {
@@ -14,7 +14,7 @@ pub struct CSVFileSource {
 }
 
 impl Source for CSVFileSource {
-    fn create_channel(&mut self) -> Result<RcChannel<MappingTuple>> {
+    fn create_channel(&mut self) -> Result<RcRefChannel<MappingTuple>> {
         let file_path = self.config.config.get("path").ok_or(anyhow!(
             "Path doesn't exist in the source configuration {:?}",
             self

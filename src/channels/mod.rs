@@ -8,7 +8,7 @@ use operator::tuples::MappingTuple;
 
 use crate::operators::serializers::Serializer;
 
-pub type RcChannel<T> = Rc<RefCell<Channel<T>>>;
+pub type RcRefChannel<T> = Rc<RefCell<Channel<T>>>;
 
 pub struct Channel<T> {
     pub iterator: Box<dyn Iterator<Item = T>>,
@@ -17,7 +17,7 @@ pub struct Channel<T> {
 impl Channel<MappingTuple> {
     pub fn new_rc(
         iterator: Box<dyn Iterator<Item = MappingTuple>>,
-    ) -> RcChannel<MappingTuple> {
+    ) -> RcRefChannel<MappingTuple> {
         let chan = Channel { iterator };
 
         Rc::new(RefCell::new(chan))
@@ -26,7 +26,7 @@ impl Channel<MappingTuple> {
     pub fn serialize(
         self,
         serializer: &'static Box<dyn Serializer>,
-    ) -> RcChannel<String> {
+    ) -> RcRefChannel<String> {
         let serialized_iter =
             self.iterator.map(|tuple| serializer.serialize(tuple));
 
@@ -40,12 +40,12 @@ impl Channel<MappingTuple> {
 
 impl Channel<String> {
     pub fn write<W: std::io::Write>(
-        self,
+        &mut self,
         writer: &mut BufWriter<W>,
     ) -> Result<()> {
-        for line in self.iterator {
-            writer.write(line.as_bytes())?;
-        }
+        self.iterator.try_for_each(|line| {
+            writer.write(line.as_bytes()).ok().map(|_a| ())
+        });
 
         writer.flush()?;
 
