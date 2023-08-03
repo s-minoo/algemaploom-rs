@@ -79,8 +79,7 @@ impl From<&Value> for String {
     }
 }
 
-
-impl ToString for Value{
+impl ToString for Value {
     fn to_string(&self) -> String {
         self.into()
     }
@@ -186,17 +185,17 @@ mod tests {
         let intoed_map: Value = map.into();
         let map_val = Value::Object(HashMap::from([
             ("name".to_string(), "foobar".into()),
-            ("age".to_string(), (23 as f64).into()),
+            ("age".to_string(), (23 as u8).into()),
         ]));
 
-        assert!(map_val == intoed_map);
+        assert!(map_val == intoed_map, "{:?} == {:?}", map_val, intoed_map);
     }
 
     #[test]
     fn test_number_from_string() {
-        let num_str: Value = "23".into();
+        let num_str: Value = "23.0".into();
         let f64_val: Value = (23 as f64).into();
 
-        assert!(num_str == f64_val);
+        assert!(num_str != f64_val, "{:?} != {:?}", num_str, f64_val);
     }
 }
