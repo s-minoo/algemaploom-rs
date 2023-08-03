@@ -5,6 +5,7 @@ pub mod tuples;
 pub mod value;
 
 use std::collections::{HashMap, HashSet};
+use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
@@ -13,34 +14,16 @@ use serde::{Deserialize, Serialize};
 
 pub type RcOperator = Rc<Operator>;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "type")]
 pub enum Operator {
-    SourceOp(Source),
-    JoinOp {
-        config:    Join,
-        operators: Vec<RcOperator>,
-    },
-    ProjectOp {
-        config:   Projection,
-        operator: RcOperator,
-    },
-    ExtendOp {
-        config:   Extend,
-        operator: RcOperator,
-    },
-    RenameOp {
-        config:   Rename,
-        operator: RcOperator,
-    },
-    SerializerOp {
-        config:   Serializer,
-        operator: RcOperator,
-    },
-    TargetOp {
-        config:   Target,
-        operator: RcOperator,
-    },
+    SourceOp { config: Source },
+    JoinOp { config: Join },
+    ProjectOp { config: Projection },
+    ExtendOp { config: Extend },
+    RenameOp { config: Rename },
+    SerializerOp { config: Serializer },
+    TargetOp { config: Target },
 }
 
 fn hash_hashmap<H, K, V>(hash_map: &HashMap<K, V>, state: &mut H)
@@ -57,7 +40,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     pub config:      HashMap<String, String>,
     pub source_type: IOType,
@@ -78,7 +61,7 @@ pub type FFIConfig = HashMap<String, String>;
 
 /// Enums for transformation operators where the data item can be
 /// processed/transformed through the use of FFI's or built-in functions.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transform {
     ArbitraryTransform(FFIConfig),
     Lower(String),
@@ -101,13 +84,13 @@ impl Hash for Transform {
 
 // Join operators
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum JoinType {
     LeftJoin,
     EquiJoin,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Join {
     pub left_right_pairs: HashMap<String, String>,
     pub join_type:        JoinType,
@@ -128,7 +111,7 @@ impl Join {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Projection {
     pub projection_attributes: HashSet<String>,
 }
@@ -141,7 +124,7 @@ impl Hash for Projection {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rename {
     pub rename_pairs: HashMap<String, String>,
 }
@@ -151,7 +134,7 @@ impl Hash for Rename {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Extend {
     pub extend_pairs: HashMap<String, Function>,
 }
@@ -163,7 +146,7 @@ impl Hash for Extend {
 }
 
 pub type RcExtendFunction = Rc<Function>;
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "type")]
 pub enum Function {
     Reference { value: String },
@@ -179,7 +162,7 @@ pub enum Function {
 
 // Post-mapping operators
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Serializer {
     pub template: String,
     pub options:  Option<HashMap<String, String>>,
@@ -190,13 +173,13 @@ impl Hash for Serializer {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.template.hash(state);
         if let Some(option_map) = self.options.as_ref() {
-            hash_hashmap(option_map, state);
+            hash_hashmap(&option_map, state);
         }
         self.format.hash(state);
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
     pub configuration: HashMap<String, String>,
     pub target_type:   IOType,
@@ -211,7 +194,7 @@ impl Hash for Target {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum IOType {
     File,
     Kafka,
