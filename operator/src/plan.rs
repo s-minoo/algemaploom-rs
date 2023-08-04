@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -223,7 +222,7 @@ impl Display for PlanNode {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use std::collections::{HashSet, HashMap};
 
     use super::*;
     use crate::{Projection, Rename};
