@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
+use operator::plan::{Plan, PlanError, SerializedPlan};
+use operator::tuples::MappingTuple;
 use operator::{
-    Extend, Function, Operator, Projection, RcExtendFunction, RcOperator,
-    Serializer,
+    Extend, Function, Operator, Projection, RcExtendFunction, Serializer,
+    Source, Target,
 };
 use regex::Regex;
 use sophia_api::term::TTerm;
@@ -11,25 +13,42 @@ use sophia_api::term::TTerm;
 use crate::rml_model::term_map::{self, TermMapInfo, TermMapType, TriplesMap};
 use crate::rml_model::Document;
 
-pub fn translate_to_algebra(doc: Document) -> Vec<RcOperator> {
+fn file_target(count: usize) -> Target {
+    let mut config = HashMap::new();
+    config.insert("path".to_string(), format!("{}_output.nt", count));
+    Target {
+        configuration: config,
+        target_type:   operator::IOType::File,
+        data_format:   operator::formats::DataFormat::NT,
+    }
+}
+
+pub fn translate_to_algebra(doc: Document) -> Result<Plan<()>, PlanError> {
+    let mut plan: Plan<()> = Plan::<()>::new();
     doc.triples_maps
         .iter()
         .enumerate()
-        .map(|(count, tm)| {
+        .try_for_each(|(count, tm)| {
             let source_op = translate_source_op(&tm);
-            let projection_op = translate_projection_op(&tm, source_op);
+            let projection_op = translate_projection_op(&tm);
             let prefix_id = format!("?tm{}", count);
-            let extend_op = translate_extend_op(&tm, projection_op, &prefix_id);
-            let serializer_op =
-                translate_serializer_op(&tm, extend_op, &prefix_id);
+            let extend_op = translate_extend_op(&tm, &prefix_id);
+            let serializer_op = translate_serializer_op(&tm, &prefix_id);
+            let target = file_target(count);
+            plan.source(source_op)
+                .apply(&projection_op, "Projection")?
+                .apply(&extend_op, "Extension")?
+                .serialize(serializer_op)?
+                .sink(target)?;
 
-            serializer_op
-        })
-        .collect()
+            Ok(())
+        })?;
+
+    Ok(plan)
 }
 
-fn translate_source_op(tm: &TriplesMap) -> RcOperator {
-    Operator::SourceOp(tm.logical_source.clone().into()).into()
+fn translate_source_op(tm: &TriplesMap) -> Source {
+    tm.logical_source.clone().into()
 }
 
 lazy_static! {
@@ -55,10 +74,7 @@ fn get_attributes_from_term_map(tm_info: &TermMapInfo) -> HashSet<String> {
     }
 }
 
-fn translate_projection_op(
-    tm: &TriplesMap,
-    parent_op: RcOperator,
-) -> RcOperator {
+fn translate_projection_op(tm: &TriplesMap) -> Operator {
     let mut projection_attributes =
         get_attributes_from_term_map(&tm.subject_map.tm_info);
     let gm_attributes = tm.graph_map.clone().map_or(HashSet::new(), |gm| {
@@ -87,12 +103,10 @@ fn translate_projection_op(
     projection_attributes.extend(gm_attributes);
 
     Operator::ProjectOp {
-        config:   Projection {
+        config: Projection {
             projection_attributes,
         },
-        operator: parent_op,
     }
-    .into()
 }
 
 fn extract_extend_function_from_term_map(
@@ -132,11 +146,7 @@ fn extract_extend_function_from_term_map(
     (attribute, type_function)
 }
 
-fn translate_extend_op(
-    tm: &TriplesMap,
-    parent_op: RcOperator,
-    prefix_id: &str,
-) -> RcOperator {
+fn translate_extend_op(tm: &TriplesMap, prefix_id: &str) -> Operator {
     let sub_extend = vec![extract_extend_function_from_term_map(
         &tm.subject_map.tm_info,
         format!("{}_sm", prefix_id),
@@ -170,12 +180,10 @@ fn translate_extend_op(
         poms_extend.chain(sub_extend).collect();
 
     operator::Operator::ExtendOp {
-        config:   Extend {
+        config: Extend {
             extend_pairs: extend_ops_map,
         },
-        operator: parent_op,
     }
-    .into()
 }
 
 fn extract_serializer_template(tm: &TriplesMap, prefix_id: &str) -> String {
@@ -210,21 +218,13 @@ fn extract_serializer_template(tm: &TriplesMap, prefix_id: &str) -> String {
     triple_graph_pattern
 }
 
-fn translate_serializer_op(
-    tm: &TriplesMap,
-    parent_op: RcOperator,
-    prefix_id: &str,
-) -> RcOperator {
+fn translate_serializer_op(tm: &TriplesMap, prefix_id: &str) -> Serializer {
     let template = extract_serializer_template(tm, prefix_id);
-    Operator::SerializerOp {
-        config:   Serializer {
-            template,
-            options: None,
-            format: operator::formats::DataFormat::NT,
-        },
-        operator: parent_op,
+    Serializer {
+        template,
+        options: None,
+        format: operator::formats::DataFormat::NT,
     }
-    .into()
 }
 
 #[cfg(test)]
@@ -292,14 +292,10 @@ mod tests {
 
         let triples_map = triples_map_vec.pop().unwrap();
         let source_op = translate_source_op(&triples_map);
-        let projection_ops =
-            translate_projection_op(&triples_map, source_op.clone());
+        let projection_ops = translate_projection_op(&triples_map);
 
         let projection = match projection_ops.borrow() {
-            Operator::ProjectOp {
-                config: proj,
-                operator: _,
-            } => proj,
+            Operator::ProjectOp { config: proj } => proj,
             _ => panic!("Parsed wrong! Operator should be projection"),
         };
 
@@ -326,11 +322,9 @@ mod tests {
         assert_eq!(triples_map_vec.len(), 1);
         let triples_map = triples_map_vec.pop().unwrap();
         let source_op = translate_source_op(&triples_map);
-        let projection_ops =
-            translate_projection_op(&triples_map, source_op.clone());
+        let projection_ops = translate_projection_op(&triples_map);
 
-        let extend_op =
-            translate_extend_op(&triples_map, projection_ops, "?tm1");
+        let extend_op = translate_extend_op(&triples_map, "?tm1");
 
         println!("{:#?}", extend_op);
         Ok(())
@@ -342,7 +336,6 @@ mod tests {
         let operators = translate_to_algebra(document);
 
         let output = File::create("op_trans_output.json")?;
-        serde_json::to_writer_pretty(output, &operators).unwrap();
         println!("{:#?}", operators);
         Ok(())
     }
@@ -353,7 +346,6 @@ mod tests {
         let operators = translate_to_algebra(document);
 
         let output = File::create("op_trans_complex_output.json")?;
-        serde_json::to_writer_pretty(output, &operators).unwrap();
         println!("{:#?}", operators);
         Ok(())
     }

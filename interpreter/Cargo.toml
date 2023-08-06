@@ -12,6 +12,7 @@ sophia_turtle = "0.7.2"
 vocab  = {path= "../vocab/"}
 operator = {path= "../operator/"}
 
+anyhow.workspace = true
 uuid.workspace = true
 regex.workspace = true
 lazy_static.workspace = true

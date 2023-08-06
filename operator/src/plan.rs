@@ -38,6 +38,9 @@ pub enum PlanError {
 
     #[error("The given operator needs to be connected to a previous opeartor: \n{0:?}")]
     DanglingApplyOperator(Operator),
+
+    #[error("Something else happened: {0:?}")]
+    AuxError(String),
 }
 
 impl<T> Plan<T> {
@@ -48,7 +51,7 @@ impl<T> Plan<T> {
         Ok(())
     }
 
-    pub fn new() -> Plan<MappingTuple> {
+    pub fn new() -> Plan<()> {
         Plan {
             _t:        PhantomData,
             graph:     Rc::new(RefCell::new(DiGraph::new())),
@@ -56,19 +59,6 @@ impl<T> Plan<T> {
         }
     }
 
-    pub fn write(&mut self, path: PathBuf) -> Result<()> {
-        let graph = &*self.graph.borrow_mut();
-        let dot_string =
-            format!("{}", Dot::with_config(graph, &[Config::EdgeNoLabel]));
-
-        let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
-        write!(writer, "{}", dot_string)?;
-        Ok(())
-    }
-}
-
-impl<MappingTuple> Plan<MappingTuple> {
     pub fn source(&mut self, source: Source) -> Plan<MappingTuple> {
         let graph = &mut *self.graph.borrow_mut();
         let source_op = Operator::SourceOp { config: source };
@@ -85,6 +75,19 @@ impl<MappingTuple> Plan<MappingTuple> {
         }
     }
 
+    pub fn write(&mut self, path: PathBuf) -> Result<()> {
+        let graph = &*self.graph.borrow_mut();
+        let dot_string =
+            format!("{}", Dot::with_config(graph, &[Config::EdgeNoLabel]));
+
+        let file = File::create(path)?;
+        let mut writer = BufWriter::new(file);
+        write!(writer, "{}", dot_string)?;
+        Ok(())
+    }
+}
+
+impl<MappingTuple> Plan<MappingTuple> {
     pub fn apply(
         &mut self,
         operator: &Operator,
@@ -222,7 +225,7 @@ impl Display for PlanNode {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashSet, HashMap};
+    use std::collections::{HashMap, HashSet};
 
     use super::*;
     use crate::{Projection, Rename};
@@ -270,7 +273,6 @@ mod tests {
             },
         };
 
-        plan.source(source.clone());
         let _ = plan
             .source(source.clone())
             .apply(&project_op, "Projection")?
@@ -278,8 +280,16 @@ mod tests {
 
         let graph = plan.graph.borrow();
 
-        assert!(graph.node_count() == 3, "Number of nodes should be 3");
-        assert!(graph.edge_count() == 2, "Number of edges should be 2");
+        assert!(
+            graph.node_count() == 3,
+            "Number of nodes should be 3 but it is instead: {}",
+            graph.node_count()
+        );
+        assert!(
+            graph.edge_count() == 2,
+            "Number of edges should be 2 but it is instead: {}",
+            graph.edge_count()
+        );
 
         Ok(())
     }
