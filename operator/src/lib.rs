@@ -1,3 +1,4 @@
+pub mod display;
 pub mod formats;
 pub mod plan;
 mod test_util;
@@ -8,6 +9,8 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
+use anyhow::Result;
+use display::{JsonDisplay, PrettyDisplay};
 use formats::DataFormat;
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +26,40 @@ pub enum Operator {
     RenameOp { config: Rename },
     SerializerOp { config: Serializer },
     TargetOp { config: Target },
+}
+
+impl JsonDisplay for Operator {
+    fn json_string(&self) -> Result<String> {
+        Ok(serde_json::to_string(self)?)
+    }
+}
+
+impl PrettyDisplay for Operator {
+    fn pretty_string(&self) -> Result<String> {
+        let (title_string, content_string) = match self {
+            Operator::SourceOp { config } => {
+                ("Source Opeartor".to_string(), config.pretty_string()?)
+            }
+            Operator::ProjectOp { config } => {
+                ("Projection Operator".to_string(), config.pretty_string()?)
+            }
+            Operator::ExtendOp { config } => {
+                ("Extension Operator".to_string(), config.pretty_string()?)
+            }
+            Operator::RenameOp { config } => {
+                ("Rename Operator".to_string(), config.pretty_string()?)
+            }
+            Operator::SerializerOp { config } => {
+                ("Serializer Operator".to_string(), config.pretty_string()?)
+            }
+            Operator::TargetOp { config } => {
+                ("Target Operator".to_string(), config.pretty_string()?)
+            }
+            Operator::JoinOp { config } => todo!(),
+        };
+
+        Ok(format!("{}\n{}", title_string, content_string))
+    }
 }
 
 fn hash_hashmap<H, K, V>(hash_map: &HashMap<K, V>, state: &mut H)
@@ -41,9 +78,27 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
-    pub config:      HashMap<String, String>,
-    pub source_type: IOType,
-    pub data_format: DataFormat,
+    pub config:              HashMap<String, String>,
+    pub source_type:         IOType,
+    pub data_format:         DataFormat,
+    pub reference_iterators: Vec<String>,
+}
+
+impl PrettyDisplay for Source {
+    fn pretty_string(&self) -> Result<String> {
+        let result = format!(
+            "type: {:?} \n
+             data format: {:?} \n
+             reference iterators: {:?} \n 
+             config: {}
+             ",
+            self.source_type,
+            self.data_format,
+            self.reference_iterators,
+            serde_json::to_string_pretty(&self.config)?
+        );
+        Ok(result)
+    }
 }
 
 impl Hash for Source {
@@ -115,6 +170,17 @@ pub struct Projection {
     pub projection_attributes: HashSet<String>,
 }
 
+impl PrettyDisplay for Projection {
+    fn pretty_string(&self) -> Result<String> {
+        let attributes = self
+            .projection_attributes
+            .iter()
+            .fold(String::new(), |acc, val| acc + val + ", ");
+
+        Ok(format!("Projected attributes: {}", attributes))
+    }
+}
+
 impl Hash for Projection {
     fn hash<H: Hasher>(&self, state: &mut H) {
         for val in self.projection_attributes.iter() {
@@ -127,6 +193,20 @@ impl Hash for Projection {
 pub struct Rename {
     pub rename_pairs: HashMap<String, String>,
 }
+
+impl PrettyDisplay for Rename {
+    fn pretty_string(&self) -> Result<String> {
+        let pairs_string = self
+            .rename_pairs
+            .iter()
+            .map(|kv_pair| format!("{} -> {}", kv_pair.0, kv_pair.1))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        Ok(format!("Renaming pairs:\n {}", pairs_string))
+    }
+}
+
 impl Hash for Rename {
     fn hash<H: Hasher>(&self, state: &mut H) {
         hash_hashmap(&self.rename_pairs, state);
@@ -136,6 +216,18 @@ impl Hash for Rename {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Extend {
     pub extend_pairs: HashMap<String, Function>,
+}
+
+impl PrettyDisplay for Extend {
+    fn pretty_string(&self) -> Result<String> {
+        let vec_pairs: Vec<_> = self
+            .extend_pairs
+            .iter()
+            .map(|pair| format!("{} -> {:?}", pair.0, pair.1))
+            .collect();
+
+        Ok(format!("Extended pairs: \n {}", vec_pairs.join("\n")))
+    }
 }
 
 impl Hash for Extend {
@@ -168,6 +260,14 @@ pub struct Serializer {
     pub format:   DataFormat,
 }
 
+impl PrettyDisplay for Serializer {
+    fn pretty_string(&self) -> Result<String> {
+        let format_type = format!("Format type: {:?}", self.format);
+
+        Ok(format!("{}\nTemplate: {}", format_type, self.template))
+    }
+}
+
 impl Hash for Serializer {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.template.hash(state);
@@ -183,6 +283,21 @@ pub struct Target {
     pub configuration: HashMap<String, String>,
     pub target_type:   IOType,
     pub data_format:   DataFormat,
+}
+
+impl PrettyDisplay for Target {
+    fn pretty_string(&self) -> Result<String> {
+        let result = format!(
+            "type: {:?} \n
+             data format: {:?} \n
+             config: {}
+             ",
+            self.target_type,
+            self.data_format,
+            serde_json::to_string_pretty(&self.configuration)?
+        );
+        Ok(result)
+    }
 }
 
 impl Hash for Target {

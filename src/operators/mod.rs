@@ -1,13 +1,32 @@
 use operator::tuples::{MappingTuple, SolutionMapping, SolutionSequence};
+use operator::Operator;
+
+use self::sources::to_physical_source;
 
 pub mod extend;
 pub mod project;
 pub mod serializers;
 pub mod sources;
 
-type BoxedOperatorChainOpt = Option<Box<dyn OperatorChain>>;
+pub type BoxedOperatorChain = Box<dyn OperatorChain>;
+pub type BoxedOperatorChainOpt = Option<BoxedOperatorChain>;
 
 pub trait OperatorChain {
+    fn from_logical_operator(log_op: Operator) -> BoxedOperatorChainOpt
+    where
+        Self: Sized,
+    {
+        match log_op {
+            Operator::SourceOp { config } => to_physical_source(config),
+            Operator::JoinOp { config } => todo!(),
+            Operator::ProjectOp { config } => todo!(),
+            Operator::ExtendOp { config } => todo!(),
+            Operator::RenameOp { config } => todo!(),
+            Operator::SerializerOp { config } => todo!(),
+            Operator::TargetOp { config } => todo!(),
+        }
+    }
+
     fn into_boxed_opt(self) -> BoxedOperatorChainOpt;
     fn next(&mut self) -> &mut BoxedOperatorChainOpt;
 

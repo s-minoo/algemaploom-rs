@@ -1,27 +1,26 @@
-use operator::Source as SourceConfiguration;
+use operator::{Source as SourceConfig, tuples::MappingTuple};
 
-use super::OperatorChain;
+use super::{BoxedOperatorChainOpt, OperatorChain};
+use anyhow::{anyhow, Result};
 
 pub mod file;
 
-#[derive(Debug, Clone)]
-pub struct Source {
-    pub config: SourceConfiguration,
+
+pub trait Source: OperatorChain {
+
+    fn create_channel(&mut self) -> Result<crate::channels::RcRefChannel<MappingTuple>> ;
+    
 }
 
-impl OperatorChain for Source {
-    fn next(&mut self) -> &mut super::BoxedOperatorChainOpt {
-        todo!()
-    }
-
-    fn process_solution_mapping(
-        &mut self,
-        mapping: &mut operator::tuples::SolutionMapping,
-    ) {
-        todo!()
-    }
-
-    fn into_boxed_opt(self) -> super::BoxedOperatorChainOpt {
-        todo!()
+pub fn to_physical_source(
+    logical_source: SourceConfig,
+) -> BoxedOperatorChainOpt {
+    match logical_source.source_type {
+        operator::IOType::File => todo!(),
+        operator::IOType::Kafka => todo!(),
+        operator::IOType::Websocket => todo!(),
+        operator::IOType::MySQL => todo!(),
+        operator::IOType::PostgreSQL => todo!(),
+        operator::IOType::SPARQLEndpoint => todo!(),
     }
 }

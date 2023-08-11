@@ -31,7 +31,6 @@ impl OperatorChain for ExtendOp {
                 ext_pair.function.process(mapping),
             );
         });
-        todo!()
     }
 
     fn process(&mut self, tuple: &mut operator::tuples::MappingTuple) {

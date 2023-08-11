@@ -1,10 +1,12 @@
-use anyhow::Result;
-use operator::tuples::MappingTuple;
+use std::path::PathBuf;
 
-use crate::channels::RcRefChannel;
+
+use super::Source;
 
 pub mod csv;
 
-pub trait Source {
-    fn create_channel(&mut self) -> Result<RcRefChannel<MappingTuple>>;
+pub trait FileSource: Source {
+    fn file(&self) -> PathBuf;
+    fn close(&mut self); 
+
 }

@@ -44,8 +44,9 @@ impl Channel<String> {
         writer: &mut BufWriter<W>,
     ) -> Result<()> {
         self.iterator.try_for_each(|line| {
-            writer.write(line.as_bytes()).ok().map(|_a| ())
+            writer.write(line.as_bytes()).map(|_a| ())
         });
+
 
         writer.flush()?;
 

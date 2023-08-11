@@ -5,19 +5,34 @@ use csv::Reader;
 use operator::tuples::{MappingTuple, SolutionMapping};
 use operator::Source as SourceConfig;
 
-use super::Source;
+use super::{FileSource, Source};
 use crate::channels::{Channel, RcRefChannel};
+use crate::operators::{BoxedOperatorChainOpt, OperatorChain};
 
-#[derive(Debug, Clone)]
 pub struct CSVFileSource {
     pub config: SourceConfig,
+    pub next:   BoxedOperatorChainOpt,
+}
+
+impl OperatorChain for CSVFileSource {
+    fn into_boxed_opt(self) -> crate::operators::BoxedOperatorChainOpt {
+        Some(Box::new(self))
+    }
+
+    fn next(&mut self) -> &mut crate::operators::BoxedOperatorChainOpt {
+        &mut self.next
+    }
+
+    fn process_solution_mapping(&mut self, mapping: &mut SolutionMapping) {
+        todo!()
+    }
 }
 
 impl Source for CSVFileSource {
     fn create_channel(&mut self) -> Result<RcRefChannel<MappingTuple>> {
         let file_path = self.config.config.get("path").ok_or(anyhow!(
             "Path doesn't exist in the source configuration {:?}",
-            self
+            self.config
         ))?;
 
         let mut reader = Reader::from_path(file_path)?;
@@ -45,5 +60,15 @@ impl Source for CSVFileSource {
             });
 
         Ok(Channel::new_rc(Box::new(mapping_tuple_iter)))
+    }
+}
+
+impl FileSource for CSVFileSource {
+    fn file(&self) -> std::path::PathBuf {
+        todo!()
+    }
+
+    fn close(&mut self) {
+        todo!()
     }
 }
