@@ -10,6 +10,7 @@ use anyhow::Result;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 
+use crate::display::PrettyDisplay;
 use crate::tuples::MappingTuple;
 use crate::{Operator, Serializer, Source, Target};
 
@@ -74,17 +75,52 @@ impl<T> Plan<T> {
             last_node: idx,
         }
     }
+    pub fn write_with(
+        &mut self,
+        config: &[Config],
+        get_node_attributes: &dyn Fn(
+            &DiGraphOperators,
+            (NodeIndex, &PlanNode),
+        ) -> String,
+    ) -> String {
+        let graph = &*self.graph.borrow_mut();
+        Dot::with_attr_getters(
+            graph,
+            config,
+            &|_graph, edge| format!("{}", edge.weight()),
+            get_node_attributes,
+        )
+        .to_string()
+    }
+
+    pub fn write_pretty(&mut self, path: PathBuf) -> Result<()> {
+        let dot_string = self
+            .write_with(&[Config::EdgeNoLabel], &|_graph, node| {
+                node.1.pretty_string().unwrap()
+            });
+
+        write_string_to_file(path, dot_string)?;
+        Ok(())
+    }
 
     pub fn write(&mut self, path: PathBuf) -> Result<()> {
         let graph = &*self.graph.borrow_mut();
         let dot_string =
-            format!("{}", Dot::with_config(graph, &[Config::EdgeNoLabel]));
+            Dot::with_config(graph, &[Config::EdgeNoLabel]).to_string();
 
-        let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
-        write!(writer, "{}", dot_string)?;
+        write_string_to_file(path, dot_string)?;
         Ok(())
     }
+}
+
+fn write_string_to_file(
+    path: PathBuf,
+    content: String,
+) -> Result<(), anyhow::Error> {
+    let file = File::create(path)?;
+    let mut writer = BufWriter::new(file);
+    write!(writer, "{}", content)?;
+    Ok(())
 }
 
 impl<MappingTuple> Plan<MappingTuple> {
@@ -212,6 +248,14 @@ pub struct PlanNode {
     pub operator: Operator,
 }
 
+impl PrettyDisplay for PlanNode {
+    fn pretty_string(&self) -> Result<String> {
+        let content = self.operator.pretty_string()?;
+
+        Ok(format!("Id: {}\n{}", self.id, content))
+    }
+}
+
 impl Display for PlanNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -234,9 +278,10 @@ mod tests {
     fn test_plan_source() {
         let mut plan = Plan::<MappingTuple>::new();
         let source = Source {
-            config:      HashMap::new(),
-            source_type: crate::IOType::File,
-            data_format: crate::formats::DataFormat::CSV,
+            config:              HashMap::new(),
+            source_type:         crate::IOType::File,
+            reference_iterators: vec![],
+            data_format:         crate::formats::DataFormat::CSV,
         };
         plan.source(source.clone());
         let graph = plan.graph.borrow();
@@ -254,9 +299,10 @@ mod tests {
     fn test_plan_apply() -> std::result::Result<(), PlanError> {
         let mut plan = Plan::<MappingTuple>::new();
         let source = Source {
-            config:      HashMap::new(),
-            source_type: crate::IOType::File,
-            data_format: crate::formats::DataFormat::CSV,
+            config:              HashMap::new(),
+            source_type:         crate::IOType::File,
+            reference_iterators: vec![],
+            data_format:         crate::formats::DataFormat::CSV,
         };
 
         let project_op = Operator::ProjectOp {
