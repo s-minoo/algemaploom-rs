@@ -75,40 +75,24 @@ impl<T> Plan<T> {
             last_node: idx,
         }
     }
-    pub fn write_with(
+    pub fn write_fmt(
         &mut self,
-        config: &[Config],
-        get_node_attributes: &dyn Fn(
-            &DiGraphOperators,
-            (NodeIndex, &PlanNode),
-        ) -> String,
-    ) -> String {
+        path: PathBuf,
+        fmt: &dyn Fn(Dot<&DiGraphOperators>) -> String,
+    ) -> Result<()> {
         let graph = &*self.graph.borrow_mut();
-        Dot::with_attr_getters(
-            graph,
-            config,
-            &|_graph, edge| format!("{}", edge.weight()),
-            get_node_attributes,
-        )
-        .to_string()
-    }
-
-    pub fn write_pretty(&mut self, path: PathBuf) -> Result<()> {
-        let dot_string = self
-            .write_with(&[Config::EdgeNoLabel], &|_graph, node| {
-                node.1.pretty_string().unwrap()
-            });
-
+        let dot_string = fmt(Dot::with_config(graph, &[Config::EdgeNoLabel]));
         write_string_to_file(path, dot_string)?;
         Ok(())
     }
 
-    pub fn write(&mut self, path: PathBuf) -> Result<()> {
-        let graph = &*self.graph.borrow_mut();
-        let dot_string =
-            Dot::with_config(graph, &[Config::EdgeNoLabel]).to_string();
+    pub fn write_pretty(&mut self, path: PathBuf) -> Result<()> {
+        self.write_fmt(path, &|dot| format!("{}", dot))?;
+        Ok(())
+    }
 
-        write_string_to_file(path, dot_string)?;
+    pub fn write(&mut self, path: PathBuf) -> Result<()> {
+        self.write_fmt(path, &|dot| format!("{:?}", dot))?;
         Ok(())
     }
 }
@@ -262,7 +246,7 @@ impl Display for PlanNode {
             f,
             "id:{} \n{}",
             self.id,
-            serde_json::to_string_pretty(&self.operator).unwrap()
+            self.operator.pretty_string().unwrap()
         )
     }
 }

@@ -21,7 +21,8 @@ impl Into<operator::Source> for LogicalSource {
             Source::FileInput { path: _ } => IOType::File,
         };
 
-        let data_format = match &self.reference_formulation.value().to_string() {
+        let data_format = match &self.reference_formulation.value().to_string()
+        {
             p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
             p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
                 DataFormat::JSON
@@ -32,8 +33,14 @@ impl Into<operator::Source> for LogicalSource {
             p => panic!("Data format not supported {} ", p),
         };
 
+        let reference_iterators = match &self.iterator{
+            Some(iter) => vec![iter.to_owned()],
+            None => vec![],
+        };
+
         operator::Source {
             config: source_config_map(&self),
+            reference_iterators,
             source_type,
             data_format,
         }
@@ -89,4 +96,3 @@ fn source_config_map(ls: &LogicalSource) -> HashMap<String, String> {
 
     map
 }
-

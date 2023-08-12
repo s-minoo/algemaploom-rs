@@ -87,10 +87,7 @@ pub struct Source {
 impl PrettyDisplay for Source {
     fn pretty_string(&self) -> Result<String> {
         let result = format!(
-            "type: {:?} \n
-             data format: {:?} \n
-             reference iterators: {:?} \n 
-             config: {}
+            "type: {:?} \ndata format: {:?} \nreference iterators: {:?} \nconfig: {}
              ",
             self.source_type,
             self.data_format,
@@ -288,9 +285,7 @@ pub struct Target {
 impl PrettyDisplay for Target {
     fn pretty_string(&self) -> Result<String> {
         let result = format!(
-            "type: {:?} \n
-             data format: {:?} \n
-             config: {}
+            "type: {:?} \ndata format: {:?} \nconfig: {}
              ",
             self.target_type,
             self.data_format,

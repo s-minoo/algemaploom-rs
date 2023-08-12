@@ -19,9 +19,9 @@ struct Cli {
     /// The RML document to be translated into algebra
     rml_document: PathBuf,
 
-    /// The generated output json file containing the algebra tree
+    /// The generated output dot file containing the algebra tree
     #[arg(short, long)]
-    output: Option<PathBuf>,
+    output: Option<String>,
 }
 
 pub fn main() -> Result<(), PlanError> {
@@ -31,10 +31,16 @@ pub fn main() -> Result<(), PlanError> {
         .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
     let mut mapping_plan = translate_to_algebra(document)?;
 
-    let output_path = args.output.unwrap_or("output.json".into());
+    let output_path: String = args.output.unwrap_or("output.dot".into());
 
     mapping_plan
-        .write(output_path.clone())
+        .write(output_path.clone().into())
+        .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
+
+    let pretty_path = output_path.clone() + ".pretty";
+
+    mapping_plan
+        .write_pretty(pretty_path.into())
         .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
 
     println!(
