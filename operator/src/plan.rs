@@ -17,10 +17,14 @@ use crate::{Operator, Serializer, Source, Target};
 type DiGraphOperators = DiGraph<PlanNode, PlanEdge>;
 pub type RcRefCellDiGraph = Rc<RefCell<DiGraphOperators>>;
 
+type VSourceIdxs = Vec<NodeIndex>;
+pub type RcRefCellVSourceIdxs = Rc<RefCell<VSourceIdxs>>;
+
 #[derive(Debug, Clone)]
 pub struct Plan<T> {
     _t:            PhantomData<T>,
     pub graph:     RcRefCellDiGraph,
+    pub sources:   RcRefCellVSourceIdxs,
     pub last_node: Option<NodeIndex>,
 }
 
@@ -56,22 +60,29 @@ impl<T> Plan<T> {
         Plan {
             _t:        PhantomData,
             graph:     Rc::new(RefCell::new(DiGraph::new())),
+            sources:   Rc::new(RefCell::new(Vec::new())),
             last_node: None,
         }
     }
 
     pub fn source(&mut self, source: Source) -> Plan<MappingTuple> {
         let graph = &mut *self.graph.borrow_mut();
-        let source_op = Operator::SourceOp { config: source };
+        let source_op = Operator::SourceOp {
+            config: source.clone(),
+        };
+        let sources = &mut *self.sources.borrow_mut();
+
         let plan_node = PlanNode {
             id:       format!("Source_{}", graph.node_count()),
             operator: source_op,
         };
         let idx = Some(graph.add_node(plan_node));
+        sources.push(idx.unwrap());
 
         Plan {
             _t:        PhantomData,
             graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
             last_node: idx,
         }
     }
@@ -147,6 +158,7 @@ impl<MappingTuple> Plan<MappingTuple> {
         Ok(Plan {
             _t:        PhantomData,
             graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
             last_node: Some(new_node_idx),
         })
     }
