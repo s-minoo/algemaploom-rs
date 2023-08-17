@@ -1,8 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
-use operator::plan::{Plan, PlanError, SerializedPlan};
-use operator::tuples::MappingTuple;
+use operator::plan::{Plan, PlanError, Init, Serialized, Sunk, Processed};
 use operator::{
     Extend, Function, Operator, Projection, RcExtendFunction, Serializer,
     Source, Target,
@@ -23,8 +22,8 @@ fn file_target(count: usize) -> Target {
     }
 }
 
-pub fn translate_to_algebra(doc: Document) -> Result<Plan<()>, PlanError> {
-    let mut plan: Plan<()> = Plan::<()>::new();
+pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
+    let mut plan = Plan::<()>::new();
     doc.triples_maps
         .iter()
         .enumerate()

@@ -20,6 +20,17 @@ pub type RcRefCellDiGraph = Rc<RefCell<DiGraphOperators>>;
 type VSourceIdxs = Vec<NodeIndex>;
 pub type RcRefCellVSourceIdxs = Rc<RefCell<VSourceIdxs>>;
 
+// Plan states in unit structs
+
+#[derive(Debug, Clone)]
+pub struct Init {}
+#[derive(Debug, Clone)]
+pub struct Processed {}
+#[derive(Debug, Clone)]
+pub struct Serialized {}
+#[derive(Debug, Clone)]
+pub struct Sunk {}
+
 #[derive(Debug, Clone)]
 pub struct Plan<T> {
     _t:            PhantomData<T>,
@@ -47,7 +58,6 @@ pub enum PlanError {
     #[error("Something else happened: {0:?}")]
     AuxError(String),
 }
-
 impl<T> Plan<T> {
     fn empty_plan_apply_check(&self) -> Result<(), PlanError> {
         if self.graph.borrow().node_count() == 0 {
@@ -56,36 +66,6 @@ impl<T> Plan<T> {
         Ok(())
     }
 
-    pub fn new() -> Plan<()> {
-        Plan {
-            _t:        PhantomData,
-            graph:     Rc::new(RefCell::new(DiGraph::new())),
-            sources:   Rc::new(RefCell::new(Vec::new())),
-            last_node: None,
-        }
-    }
-
-    pub fn source(&mut self, source: Source) -> Plan<MappingTuple> {
-        let graph = &mut *self.graph.borrow_mut();
-        let source_op = Operator::SourceOp {
-            config: source.clone(),
-        };
-        let sources = &mut *self.sources.borrow_mut();
-
-        let plan_node = PlanNode {
-            id:       format!("Source_{}", graph.node_count()),
-            operator: source_op,
-        };
-        let idx = Some(graph.add_node(plan_node));
-        sources.push(idx.unwrap());
-
-        Plan {
-            _t:        PhantomData,
-            graph:     Rc::clone(&self.graph),
-            sources:   Rc::clone(&self.sources),
-            last_node: idx,
-        }
-    }
     pub fn write_fmt(
         &mut self,
         path: PathBuf,
@@ -108,6 +88,17 @@ impl<T> Plan<T> {
     }
 }
 
+impl Plan<()> {
+    pub fn new() -> Plan<Init> {
+        Plan {
+            _t:        PhantomData,
+            graph:     Rc::new(RefCell::new(DiGraph::new())),
+            sources:   Rc::new(RefCell::new(Vec::new())),
+            last_node: None,
+        }
+    }
+}
+
 fn write_string_to_file(
     path: PathBuf,
     content: String,
@@ -118,12 +109,36 @@ fn write_string_to_file(
     Ok(())
 }
 
-impl<MappingTuple> Plan<MappingTuple> {
+impl Plan<Init> {
+    pub fn source(&mut self, source: Source) -> Plan<Processed> {
+        let graph = &mut *self.graph.borrow_mut();
+        let source_op = Operator::SourceOp {
+            config: source.clone(),
+        };
+        let sources = &mut *self.sources.borrow_mut();
+
+        let plan_node = PlanNode {
+            id:       format!("Source_{}", graph.node_count()),
+            operator: source_op,
+        };
+        let idx = Some(graph.add_node(plan_node));
+        sources.push(idx.unwrap());
+
+        Plan {
+            _t:        PhantomData,
+            graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
+            last_node: idx,
+        }
+    }
+}
+
+impl Plan<Processed> {
     pub fn apply(
         &mut self,
         operator: &Operator,
         node_id_prefix: &str,
-    ) -> Result<Plan<MappingTuple>, PlanError> {
+    ) -> Result<Plan<Processed>, PlanError> {
         self.empty_plan_apply_check()?;
         let prev_node_idx = self
             .last_node
@@ -166,7 +181,7 @@ impl<MappingTuple> Plan<MappingTuple> {
     pub fn serialize(
         &mut self,
         serializer: Serializer,
-    ) -> Result<SerializedPlan, PlanError> {
+    ) -> Result<Plan<Serialized>, PlanError> {
         self.empty_plan_apply_check()?;
         let prev_node_idx = self.last_node.ok_or(
             PlanError::DanglingApplyOperator(Operator::SerializerOp {
@@ -188,21 +203,17 @@ impl<MappingTuple> Plan<MappingTuple> {
         };
 
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
-        Ok(SerializedPlan {
+        Ok(Plan {
+            _t:        PhantomData,
             graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
             last_node: Some(node_idx),
         })
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct SerializedPlan {
-    pub graph:     RcRefCellDiGraph,
-    pub last_node: Option<NodeIndex>,
-}
-
-impl SerializedPlan {
-    pub fn sink(&mut self, sink: Target) -> Result<(), PlanError> {
+impl Plan<Serialized> {
+    pub fn sink(&mut self, sink: Target) -> Result<Plan<Sunk>, PlanError> {
         if self.last_node.is_none() {
             return Err(PlanError::EmptyPlan);
         }
@@ -222,7 +233,12 @@ impl SerializedPlan {
         };
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
 
-        Ok(())
+        Ok(Plan {
+            _t:        PhantomData,
+            graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
+            last_node: Some(node_idx),
+        })
     }
 }
 
@@ -272,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_plan_source() {
-        let mut plan = Plan::<MappingTuple>::new();
+        let mut plan = Plan::new();
         let source = Source {
             config:              HashMap::new(),
             source_type:         crate::IOType::File,
@@ -293,7 +309,7 @@ mod tests {
 
     #[test]
     fn test_plan_apply() -> std::result::Result<(), PlanError> {
-        let mut plan = Plan::<MappingTuple>::new();
+        let mut plan = Plan::new();
         let source = Source {
             config:              HashMap::new(),
             source_type:         crate::IOType::File,
