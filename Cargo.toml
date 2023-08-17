@@ -23,16 +23,17 @@ uuid = { version= "1.3.0", features=["v4"]}
 
 [dependencies]
 anyhow.workspace = true
-operator = {path = "./operator/"}
-interpreter = {path = "./interpreter/"}
-csv = "1.2.2"
-urlencoding = "2.1.2"
 lazy_static.workspace = true 
+petgraph.workspace = true
 regex.workspace = true
 serde_json.workspace = true
-clap = {version= "4.3.12", features=["derive"]}
 thiserror.workspace = true
-tokio = {version= "1.29.1", features=["full"]}
-petgraph.workspace = true
 
+interpreter = {path = "./interpreter/"}
+operator = {path = "./operator/"}
+
+csv = "1.2.2"
+clap = {version= "4.3.12", features=["derive"]}
+tokio = {version= "1.29.1", features=["full"]}
+urlencoding = "2.1.2"
 
