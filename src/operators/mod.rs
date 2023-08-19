@@ -1,8 +1,8 @@
+use anyhow::Result;
 use operator::tuples::{MappingTuple, SolutionMapping, SolutionSequence};
 use operator::Operator;
 
 use self::sources::to_physical_source;
-
 pub mod extend;
 pub mod project;
 pub mod serializers;
@@ -10,6 +10,18 @@ pub mod sources;
 
 pub type BoxedOperatorChain = Box<dyn OperatorChain>;
 pub type BoxedOperatorChainOpt = Option<BoxedOperatorChain>;
+
+
+
+pub trait AsyncOperatorExecute {
+
+    fn next(&mut self) -> BoxedOperatorChain;
+
+
+    async fn execute(&mut self) -> Result<()> {
+        Ok(())
+    }
+}
 
 pub trait OperatorChain {
     fn from_logical_operator(log_op: Operator) -> BoxedOperatorChainOpt

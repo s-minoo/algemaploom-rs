@@ -1,55 +1,24 @@
-use std::cell::RefCell;
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::rc::Rc;
+use std::sync::Arc;
 
-use anyhow::Result;
-use operator::tuples::MappingTuple;
+use tokio::sync::mpsc::{self};
 
-use crate::operators::serializers::Serializer;
-
-pub type RcRefChannel<T> = Rc<RefCell<Channel<T>>>;
-
+#[derive(Debug)]
 pub struct Channel<T> {
-    pub iterator: Box<dyn Iterator<Item = T>>,
+    pub sender:   mpsc::Sender<T>,
+    pub receiver: mpsc::Receiver<T>,
 }
 
-impl Channel<MappingTuple> {
-    pub fn new_rc(
-        iterator: Box<dyn Iterator<Item = MappingTuple>>,
-    ) -> RcRefChannel<MappingTuple> {
-        let chan = Channel { iterator };
-
-        Rc::new(RefCell::new(chan))
+impl<T> Channel<T> {
+    pub fn new_arc() -> Arc<Channel<T>> {
+        Channel::<T>::new().to_arc()
     }
 
-    pub fn serialize(
-        self,
-        serializer: &'static Box<dyn Serializer>,
-    ) -> RcRefChannel<String> {
-        let serialized_iter =
-            self.iterator.map(|tuple| serializer.serialize(tuple));
-
-        let chan = Channel {
-            iterator: Box::new(serialized_iter),
-        };
-
-        Rc::new(RefCell::new(chan))
+    pub fn new() -> Channel<T> {
+        let (sender, receiver) = mpsc::channel(256);
+        Channel { receiver, sender }
     }
-}
 
-impl Channel<String> {
-    pub fn write<W: std::io::Write>(
-        &mut self,
-        writer: &mut BufWriter<W>,
-    ) -> Result<()> {
-        self.iterator.try_for_each(|line| {
-            writer.write(line.as_bytes()).map(|_a| ())
-        });
-
-
-        writer.flush()?;
-
-        Ok(())
+    pub fn to_arc(self) -> Arc<Channel<T>> {
+        Arc::new(self)
     }
 }

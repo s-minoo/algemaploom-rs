@@ -1,15 +1,20 @@
-use operator::{Source as SourceConfig, tuples::MappingTuple};
+use std::sync::Arc;
+
+use anyhow::{anyhow, Result};
+use operator::tuples::MappingTuple;
+use operator::Source as SourceConfig;
 
 use super::{BoxedOperatorChainOpt, OperatorChain};
-use anyhow::{anyhow, Result};
+use crate::channels::Channel;
 
 pub mod file;
 
+pub trait Source {
+    fn create_channel(&mut self) -> Result<Channel<MappingTuple>>;
 
-pub trait Source: OperatorChain {
+    fn output(&mut self) -> Vec<Arc<Channel<MappingTuple>>>;
 
-    fn create_channel(&mut self) -> Result<crate::channels::RcRefChannel<MappingTuple>> ;
-    
+    async fn execute(&mut self);
 }
 
 pub fn to_physical_source(

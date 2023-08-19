@@ -6,7 +6,7 @@ use operator::tuples::{MappingTuple, SolutionMapping};
 use operator::Source as SourceConfig;
 
 use super::{FileSource, Source};
-use crate::channels::{Channel, RcRefChannel};
+use crate::channels::Channel;
 use crate::operators::{BoxedOperatorChainOpt, OperatorChain};
 
 pub struct CSVFileSource {
@@ -29,7 +29,7 @@ impl OperatorChain for CSVFileSource {
 }
 
 impl Source for CSVFileSource {
-    fn create_channel(&mut self) -> Result<RcRefChannel<MappingTuple>> {
+    fn create_channel(&mut self) -> Result<Channel<MappingTuple>> {
         let file_path = self.config.config.get("path").ok_or(anyhow!(
             "Path doesn't exist in the source configuration {:?}",
             self.config
@@ -58,8 +58,15 @@ impl Source for CSVFileSource {
 
                 map_tuple
             });
+        todo!()
+    }
 
-        Ok(Channel::new_rc(Box::new(mapping_tuple_iter)))
+    fn output(&mut self) -> Vec<std::sync::Arc<Channel<MappingTuple>>> {
+        todo!()
+    }
+
+    async fn execute(&mut self) {
+        todo!()
     }
 }
 
