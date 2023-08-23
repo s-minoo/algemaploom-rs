@@ -9,8 +9,9 @@ use std::rc::Rc;
 use anyhow::Result;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
+use serde_json::json;
 
-use crate::display::PrettyDisplay;
+use crate::display::{PrettyDisplay, JsonDisplay};
 use crate::tuples::MappingTuple;
 use crate::{Operator, Serializer, Source, Target};
 
@@ -254,10 +255,17 @@ impl Display for PlanEdge {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Clone, Hash)]
 pub struct PlanNode {
     pub id:       String,
     pub operator: Operator,
+}
+
+impl Debug for PlanNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let json = json!({"id": self.id, "operator": self.operator});
+        f.write_str(&serde_json::to_string(&json).unwrap())
+    }
 }
 
 impl PrettyDisplay for PlanNode {
