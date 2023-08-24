@@ -105,33 +105,6 @@ impl Hash for Source {
     }
 }
 
-// Transformation operators
-/// Alias type to define Foreign Function Interface (FFI) configurations.
-pub type FFIConfig = HashMap<String, String>;
-
-/// Enums for transformation operators where the data item can be
-/// processed/transformed through the use of FFI's or built-in functions.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Transform {
-    ArbitraryTransform(FFIConfig),
-    Lower(String),
-    Upper(String),
-}
-
-impl Hash for Transform {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        core::mem::discriminant(self).hash(state);
-
-        match self {
-            Transform::ArbitraryTransform(data) => hash_hashmap(&data, state),
-            Transform::Lower(data) => data.hash(state),
-            Transform::Upper(data) => data.hash(state),
-        }
-    }
-}
-
-////
-
 // Join operators
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
