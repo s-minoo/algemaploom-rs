@@ -13,7 +13,7 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
         subj_ref: &RcTerm,
         graph_ref: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<SubjectMap> {
-        let mut tm_info = TermMapInfo::extract(subj_ref, graph_ref)?;
+        let mut tm_info = TermMapInfo::extract_self(subj_ref, graph_ref)?;
 
         tm_info = match tm_info.term_type {
             Some(ttype)

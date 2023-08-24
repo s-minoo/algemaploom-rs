@@ -12,7 +12,7 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<PredicateMap> {
-        let mut tm_info = TermMapInfo::extract(subj_ref, graph_ref)?;
+        let mut tm_info = TermMapInfo::extract_self(subj_ref, graph_ref)?;
 
         tm_info = match tm_info.term_type {
             Some(ttype) if ttype != TermKind::Iri => {

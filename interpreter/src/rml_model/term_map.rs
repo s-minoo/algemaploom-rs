@@ -4,7 +4,7 @@ use sophia_api::term::{TTerm, TermKind};
 use sophia_term::{Term, RcTerm};
 
 use super::join::JoinCondition;
-use super::source_target::{LogicalSource, LogicalTarget};
+use super::source_target::LogicalTarget;
 use crate::{IriString, TermString};
 
 #[derive(Debug, Clone)]
@@ -39,7 +39,7 @@ pub struct PredicateMap {
 #[derive(Debug, Clone)]
 pub struct ObjectMap {
     pub tm_info:        TermMapInfo,
-    pub parent_tm:      Option<String>,
+    pub parent_tm:      Option<IriString>,
     pub join_condition: Option<JoinCondition>,
     pub data_type:      Option<IriString>,
     pub language:       Option<String>,

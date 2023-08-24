@@ -83,14 +83,15 @@ pub trait TermMapExtractor<T> {
         Self::create_constant_map(tm_info)
     }
 
-    fn extract_term_map(
+    fn extract_from_container(
         graph_ref: &FastGraph,
         container_map_subj_ref: &RcTerm,
     ) -> ExtractorResult<T> {
-        Self::extract_term_maps(graph_ref, container_map_subj_ref)
+        Self::extract_many_from_container(graph_ref, container_map_subj_ref)
             .and_then(|mut vec| vec.pop().ok_or(ParseError::Infallible))
     }
-    fn extract_term_maps(
+
+    fn extract_many_from_container(
         graph_ref: &FastGraph,
         container_map_subj_ref: &RcTerm,
     ) -> ExtractorResult<Vec<T>> {
@@ -128,7 +129,7 @@ pub trait TermMapExtractor<T> {
 }
 
 pub trait Extractor<T> {
-    fn extract(
+    fn extract_self(
         subject_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> ExtractorResult<T>;

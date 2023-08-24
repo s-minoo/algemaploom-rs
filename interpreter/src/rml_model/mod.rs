@@ -5,6 +5,7 @@ use crate::TermString;
 pub mod join;
 pub mod source_target;
 pub mod term_map;
+pub mod expression_map;
 
 pub struct Document {
     pub triples_maps: Vec<TriplesMap>,

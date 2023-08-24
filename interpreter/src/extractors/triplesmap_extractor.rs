@@ -13,22 +13,22 @@ use crate::rml_model::term_map::SubjectMap;
 use crate::rml_model::{PredicateObjectMap, TriplesMap};
 
 impl Extractor<TriplesMap> for TriplesMap {
-    fn extract(
+    fn extract_self(
         subject: &RcTerm,
         graph: &FastGraph,
     ) -> ExtractorResult<TriplesMap> {
-        let subject_map = SubjectMap::extract_term_map(graph, subject)?;
+        let subject_map = SubjectMap::extract_from_container(graph, subject)?;
 
         let ls_term = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
         let logical_source_subj = get_object(graph, subject, &ls_term)?;
         let logical_source =
-            LogicalSource::extract(&logical_source_subj, graph)?;
+            LogicalSource::extract_self(&logical_source_subj, graph)?;
 
         let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_term();
         let po_maps: Vec<_> = get_objects(graph, subject, &pom)
             .into_iter()
             .filter_map(|pom_subj| {
-                PredicateObjectMap::extract(&pom_subj, graph).ok()
+                PredicateObjectMap::extract_self(&pom_subj, graph).ok()
             })
             .collect();
 
@@ -52,6 +52,6 @@ pub fn extract_triples_maps(
     Ok(graph
         .triples_with_po(&ptype, &otm)
         .filter_map(|triple| triple.ok())
-        .filter_map(|triple| TriplesMap::extract(triple.s(), graph).ok())
+        .filter_map(|triple| TriplesMap::extract_self(triple.s(), graph).ok())
         .collect())
 }

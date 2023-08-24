@@ -8,7 +8,7 @@ use crate::extractors::FromVocab;
 use crate::rml_model::source_target::{LogicalSource, Source};
 
 impl Extractor<LogicalSource> for LogicalSource {
-    fn extract(
+    fn extract_self(
         subject: &RcTerm,
         graph: &FastGraph,
     ) -> super::ExtractorResult<LogicalSource> {
@@ -79,7 +79,7 @@ mod tests {
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
 
         let sub_ref = triple.o();
-        let logical_source = LogicalSource::extract(sub_ref, &graph)?;
+        let logical_source = LogicalSource::extract_self(sub_ref, &graph)?;
 
         assert_eq!(
             logical_source.reference_formulation,

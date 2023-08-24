@@ -9,7 +9,7 @@ use super::{extract_term_map_type_value, Extractor, FromVocab};
 use crate::rml_model::term_map::TermMapInfo;
 
 impl Extractor<TermMapInfo> for TermMapInfo {
-    fn extract(
+    fn extract_self(
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<TermMapInfo> {
@@ -77,7 +77,7 @@ mod tests {
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
         let sub_ref = triple.o();
 
-        let tm_info = TermMapInfo::extract(sub_ref, &graph)?;
+        let tm_info = TermMapInfo::extract_self(sub_ref, &graph)?;
 
         assert!(tm_info.term_type.is_none());
         assert!(tm_info.term_map_type == TermMapType::Template);
