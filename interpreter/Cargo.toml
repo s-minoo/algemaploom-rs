@@ -11,6 +11,7 @@ sophia_inmem = "0.7.2"
 sophia_turtle = "0.7.2"
 vocab  = {path= "../vocab/"}
 operator = {path= "../operator/"}
+plangenerator = {path = "../plangenerator/"}
 
 anyhow.workspace = true
 uuid.workspace = true

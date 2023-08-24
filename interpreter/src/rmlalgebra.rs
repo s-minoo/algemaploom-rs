@@ -1,11 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
-use operator::plan::{Plan, PlanError, Init, Serialized, Sunk, Processed};
 use operator::{
     Extend, Function, Operator, Projection, RcExtendFunction, Serializer,
     Source, Target,
 };
+use plangenerator::error::PlanError;
+use plangenerator::plan::{Init, Plan};
 use regex::Regex;
 use sophia_api::term::TTerm;
 

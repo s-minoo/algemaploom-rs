@@ -1,6 +1,5 @@
 pub mod display;
 pub mod formats;
-pub mod plan;
 mod test_util;
 pub mod tuples;
 pub mod value;

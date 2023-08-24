@@ -283,6 +283,7 @@ dependencies = [
  "anyhow",
  "lazy_static",
  "operator",
+ "plangenerator",
  "regex",
  "serde_json",
  "sophia_api",
