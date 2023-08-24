@@ -6,6 +6,7 @@ pub mod join;
 pub mod source_target;
 pub mod term_map;
 
+#[derive(Debug, Clone)]
 pub struct Document {
     pub triples_maps: Vec<TriplesMap>,
 }
