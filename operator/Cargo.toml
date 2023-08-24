@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow.workspace = true
 petgraph.workspace = true
-serde = {version="1.0.164", features= ["derive", "rc"]}
+serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
