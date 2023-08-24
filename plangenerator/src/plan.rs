@@ -116,6 +116,15 @@ impl Plan<Init> {
 }
 
 impl Plan<Processed> {
+    pub fn join(
+        &mut self,
+        left_operator: &Operator,
+        right_operator: &Operator,
+        node_id_prefix: &str,
+    ) -> Result<Plan<Processed>, PlanError> {
+        todo!()
+    }
+
     pub fn apply(
         &mut self,
         operator: &Operator,
