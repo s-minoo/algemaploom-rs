@@ -23,14 +23,6 @@ pub enum TermMapType {
     Template,
 }
 
-#[derive(Debug, Clone)]
-pub struct TriplesMap {
-    pub identifier:     TermString,
-    pub logical_source: LogicalSource,
-    pub subject_map:    SubjectMap,
-    pub po_maps:        Vec<PredicateObjectMap>,
-    pub graph_map:      Option<GraphMap>,
-}
 
 #[derive(Debug, Clone)]
 pub struct SubjectMap {
@@ -38,11 +30,6 @@ pub struct SubjectMap {
     pub classes: Vec<IriString>,
 }
 
-#[derive(Debug, Clone)]
-pub struct PredicateObjectMap {
-    pub predicate_maps: Vec<PredicateMap>,
-    pub object_maps:    Vec<ObjectMap>,
-}
 
 #[derive(Debug, Clone)]
 pub struct PredicateMap {

@@ -10,8 +10,8 @@ use plangenerator::plan::{Init, Plan};
 use regex::Regex;
 use sophia_api::term::TTerm;
 
-use crate::rml_model::term_map::{self, TermMapInfo, TermMapType, TriplesMap};
-use crate::rml_model::Document;
+use crate::rml_model::term_map::{self, TermMapInfo, TermMapType};
+use crate::rml_model::{Document, TriplesMap};
 
 fn file_target(count: usize) -> Target {
     let mut config = HashMap::new();

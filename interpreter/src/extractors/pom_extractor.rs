@@ -2,7 +2,8 @@ use sophia_term::RcTerm;
 
 use super::Extractor;
 use crate::extractors::TermMapExtractor;
-use crate::rml_model::term_map::{ObjectMap, PredicateMap, PredicateObjectMap};
+use crate::rml_model::term_map::{ObjectMap, PredicateMap};
+use crate::rml_model::PredicateObjectMap;
 
 impl Extractor<PredicateObjectMap> for PredicateObjectMap {
     fn extract(
