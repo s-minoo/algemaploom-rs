@@ -1,12 +1,9 @@
-use std::fs::File;
 use std::path::PathBuf;
 
 use clap::Parser;
-use interpreter::extractors::error::ParseError;
 use interpreter::extractors::io::parse_file;
-use interpreter::extractors::ExtractorResult;
 use interpreter::rmlalgebra::translate_to_algebra;
-use operator::plan::PlanError;
+use plangenerator::error::PlanError;
 
 #[derive(Debug, Clone, Parser)]
 #[command(

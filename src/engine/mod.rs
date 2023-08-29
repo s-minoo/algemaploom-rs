@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use operator::plan::{Plan, Sunk};
+use plangenerator::plan::{Plan, Sunk};
 use petgraph::Direction;
 use tokio::runtime::Runtime;
 

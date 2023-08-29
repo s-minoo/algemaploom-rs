@@ -34,6 +34,7 @@ clap.workspace = true
 
 interpreter = {path = "./interpreter/"}
 operator = {path = "./operator/"}
+plangenerator = {path = "./plangenerator/"}
 
 csv = "1.2.2"
 tokio = {version= "1.29.1", features=["full"]}
