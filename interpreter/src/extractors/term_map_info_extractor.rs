@@ -1,14 +1,64 @@
 use std::collections::HashSet;
 
+use sophia_api::graph::Graph;
 use sophia_api::term::TermKind;
+use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
+use sophia_term::matcher::ANY;
 use sophia_term::RcTerm;
 
+use super::error::ParseError;
 use super::store::get_object;
-use super::{extract_term_map_type_value, Extractor, FromVocab};
-use crate::rml_model::term_map::TermMapInfo;
+use super::{Extractor, ExtractorResult, FromVocab};
+use crate::rml_model::term_map::{TermMapInfo, TermMapType};
+use crate::TermString;
+
+pub fn extract_term_map_type_value(
+    subject_ref: &RcTerm,
+    graph_ref: &FastGraph,
+) -> ExtractorResult<(TermMapType, TermString)> {
+    //template-map
+    let temp_pred: RcTerm = vocab::r2rml::PROPERTY::TEMPLATE.to_term();
+
+    //constant-map
+    let const_pred: RcTerm = vocab::r2rml::PROPERTY::CONSTANT.to_term();
+
+    //reference-map
+    let ref_pred: RcTerm = vocab::rml::PROPERTY::REFERENCE.to_term();
+    let col_pred: RcTerm = vocab::r2rml::PROPERTY::COLUMN.to_term();
+
+    let pred_query = &[&ref_pred, &col_pred, &const_pred, &temp_pred];
+
+    let mut results_query: Vec<_> = graph_ref
+        .triples_matching(subject_ref, pred_query, &ANY)
+        .filter_map(|trip| trip.ok())
+        .collect();
+
+    if results_query.len() > 1 {
+        return Err(ParseError::GenericError(
+                    format!("More than one occurences of rr:template, rml:reference, rr:constant, or rr:column")
+                    ));
+    }
+
+    let trip = results_query.pop().ok_or(ParseError::GenericError("Term map doesn't have rr:constant, rr:template, rr:reference nor rr:column.".to_string()))?;
+    let fetched_pred = trip.p();
+
+    let term_map_type_res = match fetched_pred {
+        ref_map if *ref_map == ref_pred || *ref_map == col_pred => {
+            Ok(TermMapType::Reference)
+        }
+        const_map if *const_map == const_pred => Ok(TermMapType::Constant),
+        temp_map if *temp_map == temp_pred => Ok(TermMapType::Template),
+        _ => Err(ParseError::Infallible),
+    };
+
+    let term_value = trip.o().to_owned().map(|i| i.to_string());
+
+    term_map_type_res.map(|map_type| (map_type, term_value))
+}
 
 impl Extractor<TermMapInfo> for TermMapInfo {
+    // TODO: Logical targets parsing <29-08-23, Sitt Min Oo> //
     fn extract_self(
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use sophia_api::term::{TTerm, TermKind};
-use sophia_term::{Term, RcTerm};
+use sophia_term::{RcTerm, Term};
 
 use super::join::JoinCondition;
 use super::source_target::LogicalTarget;
@@ -16,6 +16,18 @@ pub struct TermMapInfo {
     pub term_type:       Option<TermKind>,
 }
 
+impl Default for TermMapInfo {
+    fn default() -> Self {
+        Self {
+            identifier:      Term::new_bnode_unchecked(""),
+            logical_targets: Default::default(),
+            term_map_type:   TermMapType::Constant,
+            term_value:      Term::new_bnode_unchecked(""),
+            term_type:       Default::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TermMapType {
     Constant,
@@ -23,13 +35,11 @@ pub enum TermMapType {
     Template,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct SubjectMap {
     pub tm_info: TermMapInfo,
     pub classes: Vec<IriString>,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct PredicateMap {

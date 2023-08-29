@@ -2,6 +2,7 @@ use sophia_api::term::{TTerm, TermKind};
 use sophia_inmem::graph::FastGraph;
 use sophia_term::RcTerm;
 
+use super::error::ParseError;
 use super::{ExtractorResult, FromVocab, TermMapExtractor};
 use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::Extractor;
@@ -40,7 +41,7 @@ fn extract_parent_tm(
 ) -> ExtractorResult<IriString> {
     let parent_tm_pred = vocab::r2rml::PROPERTY::PARENTTRIPLESMAP.to_term();
     get_object(graph_ref, subject_ref, &parent_tm_pred)
-        .map(|rcterm| IriString::new(rcterm.to_string()).unwrap())
+        .map(|rcterm| IriString::new(rcterm.value()).unwrap())
 }
 
 impl TermMapExtractor<ObjectMap> for ObjectMap {
@@ -48,10 +49,7 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         if tm_info.term_type == Some(TermKind::BlankNode) {
             panic!("Constant-valued ObjectMap has to have an IRI or a Literal as value");
         }
-
-        if tm_info.term_type.is_none() {
-            tm_info.term_type = Some(tm_info.term_value.kind());
-        }
+        tm_info.term_type = Some(tm_info.term_value.kind());
 
         ObjectMap {
             tm_info,
@@ -78,8 +76,25 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         let language = get_object(graph_ref, subj_ref, &lang_pred)
             .ok()
             .map(|tshared| tshared.to_string());
+        let parent_tm = extract_parent_tm(subj_ref, graph_ref).ok();
+        let join_condition = extract_join_condition(subj_ref, graph_ref).ok();
 
-        let mut tm_info = TermMapInfo::extract_self(subj_ref, graph_ref)?;
+        let mut tm_info_res = TermMapInfo::extract_self(subj_ref, graph_ref);
+        if tm_info_res.is_err() && parent_tm.is_none() {
+            return Err(ParseError::GenericError("Object Map doesn't have either parent triplesmap nor term map type".to_string()));
+        }
+
+        if tm_info_res.is_err() && parent_tm.is_some() {
+            let identifier =
+                subj_ref.to_owned().map(|i| i.to_string()).try_into()?;
+            tm_info_res = Ok(TermMapInfo {
+                identifier,
+                term_type: Some(TermKind::Iri),
+                ..Default::default()
+            });
+        }
+
+        let mut tm_info = tm_info_res?;
 
         if tm_info.term_type.is_none() {
             tm_info.term_type = Some(tm_info.term_value.kind());
@@ -87,8 +102,8 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
 
         Ok(ObjectMap {
             tm_info,
-            parent_tm: extract_parent_tm(subj_ref, graph_ref).ok(),
-            join_condition: extract_join_condition(subj_ref, graph_ref).ok(),
+            parent_tm,
+            join_condition,
             data_type,
             language,
         })
