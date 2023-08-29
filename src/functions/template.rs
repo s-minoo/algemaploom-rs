@@ -65,7 +65,7 @@ impl FunctionChain for Template {
         Value::String(result)
     }
 
-    fn process_value(&self, value: &Value) -> Value {
+    fn process_value(&self, _value: &Value) -> Value {
         panic!("Template function cannot process on Value input!")
     }
 }

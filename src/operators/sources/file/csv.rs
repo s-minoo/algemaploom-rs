@@ -23,7 +23,7 @@ impl OperatorChain for CSVFileSource {
         &mut self.next
     }
 
-    fn process_solution_mapping(&mut self, mapping: &mut SolutionMapping) {
+    fn process_solution_mapping(&mut self, _mapping: &mut SolutionMapping) {
         todo!()
     }
 }
@@ -39,7 +39,7 @@ impl Source for CSVFileSource {
         let attributes: Vec<_> =
             reader.headers()?.iter().map(|i| i.to_string()).collect();
 
-        let mapping_tuple_iter = reader
+        let _mapping_tuple_iter = reader
             .into_records()
             .filter_map(|record_res| record_res.ok())
             .map(move |record| {

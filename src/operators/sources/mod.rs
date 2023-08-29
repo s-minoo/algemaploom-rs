@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result};
 use operator::tuples::MappingTuple;
 use operator::Source as SourceConfig;
 
-use super::{BoxedOperatorChainOpt, OperatorChain};
+use super::{BoxedOperatorChainOpt};
 use crate::channels::Channel;
 
 pub mod file;

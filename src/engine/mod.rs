@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+
 
 use anyhow::Result;
 use plangenerator::plan::{Plan, Sunk};
@@ -24,11 +24,11 @@ impl Executor {
         let source_idxs = plan.sources.borrow();
         let graph = plan.graph.borrow();
 
-        let rt = &self.rt;
+        let _rt = &self.rt;
 
         source_idxs.iter().for_each(|source_id| {
-            let source = graph.node_weight(*source_id);
-            let operators =
+            let _source = graph.node_weight(*source_id);
+            let _operators =
                 graph.neighbors_directed(*source_id, Direction::Outgoing);
         });
 

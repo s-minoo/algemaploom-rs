@@ -30,12 +30,12 @@ pub trait OperatorChain {
     {
         match log_op {
             Operator::SourceOp { config } => to_physical_source(config),
-            Operator::JoinOp { config } => todo!(),
-            Operator::ProjectOp { config } => todo!(),
-            Operator::ExtendOp { config } => todo!(),
-            Operator::RenameOp { config } => todo!(),
-            Operator::SerializerOp { config } => todo!(),
-            Operator::TargetOp { config } => todo!(),
+            Operator::JoinOp { config: _ } => todo!(),
+            Operator::ProjectOp { config: _ } => todo!(),
+            Operator::ExtendOp { config: _ } => todo!(),
+            Operator::RenameOp { config: _ } => todo!(),
+            Operator::SerializerOp { config: _ } => todo!(),
+            Operator::TargetOp { config: _ } => todo!(),
         }
     }
 
