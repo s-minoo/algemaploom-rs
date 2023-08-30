@@ -44,14 +44,7 @@ pub struct Plan<T> {
     pub last_node: Option<NodeIndex>,
 }
 
-impl<T> Plan<T> {
-    fn empty_plan_apply_check(&self) -> Result<(), PlanError> {
-        if self.graph.borrow().node_count() == 0 {
-            return Err(PlanError::EmptyPlan);
-        }
-        Ok(())
-    }
-
+impl Plan<()> {
     pub fn new() -> Plan<Init> {
         Plan {
             _t:        PhantomData,
@@ -59,6 +52,15 @@ impl<T> Plan<T> {
             sources:   Rc::new(RefCell::new(Vec::new())),
             last_node: None,
         }
+    }
+}
+
+impl<T> Plan<T> {
+    fn empty_plan_apply_check(&self) -> Result<(), PlanError> {
+        if self.graph.borrow().node_count() == 0 {
+            return Err(PlanError::EmptyPlan);
+        }
+        Ok(())
     }
 
     pub fn next_idx<O>(&self, idx: Option<NodeIndex>) -> Plan<O> {
