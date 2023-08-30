@@ -63,7 +63,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<ObjectMap> {
-        // TODO:Implement term map join parsing correctly!  <05-04-23> //
 
         let dtype_pred = vocab::r2rml::PROPERTY::DATATYPE.to_term();
         let data_type: Option<IriString> =
