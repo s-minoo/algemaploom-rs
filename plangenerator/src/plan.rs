@@ -28,6 +28,10 @@ pub struct Init {}
 #[derive(Debug, Clone)]
 pub struct Processed {}
 #[derive(Debug, Clone)]
+pub struct Joined {}
+#[derive(Debug, Clone)]
+pub struct Where {}
+#[derive(Debug, Clone)]
 pub struct Serialized {}
 #[derive(Debug, Clone)]
 pub struct Sunk {}
@@ -46,6 +50,24 @@ impl<T> Plan<T> {
             return Err(PlanError::EmptyPlan);
         }
         Ok(())
+    }
+
+    pub fn new() -> Plan<Init> {
+        Plan {
+            _t:        PhantomData,
+            graph:     Rc::new(RefCell::new(DiGraph::new())),
+            sources:   Rc::new(RefCell::new(Vec::new())),
+            last_node: None,
+        }
+    }
+
+    pub fn next_idx<O>(&self, idx: Option<NodeIndex>) -> Plan<O> {
+        Plan {
+            _t:        PhantomData,
+            graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
+            last_node: idx,
+        }
     }
 
     pub fn write_fmt(
@@ -67,17 +89,6 @@ impl<T> Plan<T> {
     pub fn write(&mut self, path: PathBuf) -> Result<()> {
         self.write_fmt(path, &|dot| format!("{:?}", dot))?;
         Ok(())
-    }
-}
-
-impl Plan<()> {
-    pub fn new() -> Plan<Init> {
-        Plan {
-            _t:        PhantomData,
-            graph:     Rc::new(RefCell::new(DiGraph::new())),
-            sources:   Rc::new(RefCell::new(Vec::new())),
-            last_node: None,
-        }
     }
 }
 
@@ -105,23 +116,23 @@ impl Plan<Init> {
         };
         let idx = Some(graph.add_node(plan_node));
         sources.push(idx.unwrap());
-
-        Plan {
-            _t:        PhantomData,
-            graph:     Rc::clone(&self.graph),
-            sources:   Rc::clone(&self.sources),
-            last_node: idx,
-        }
+        self.next_idx(idx)
+    }
+}
+impl Plan<Joined> {
+    pub fn where_by<T>(&mut self, atttribute_left: T)
+    where
+        T: From<String>,
+    {
     }
 }
 
 impl Plan<Processed> {
     pub fn join(
         &mut self,
-        left_operator: &Operator,
-        right_operator: &Operator,
+        other_op: &Operator,
         node_id_prefix: &str,
-    ) -> Result<Plan<Processed>, PlanError> {
+    ) -> Result<Plan<Joined>, PlanError> {
         todo!()
     }
 
@@ -161,12 +172,7 @@ impl Plan<Processed> {
 
         graph.add_edge(prev_node_idx, new_node_idx, plan_edge);
 
-        Ok(Plan {
-            _t:        PhantomData,
-            graph:     Rc::clone(&self.graph),
-            sources:   Rc::clone(&self.sources),
-            last_node: Some(new_node_idx),
-        })
+        Ok(self.next_idx(Some(new_node_idx)))
     }
 
     pub fn serialize(
@@ -194,12 +200,7 @@ impl Plan<Processed> {
         };
 
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
-        Ok(Plan {
-            _t:        PhantomData,
-            graph:     Rc::clone(&self.graph),
-            sources:   Rc::clone(&self.sources),
-            last_node: Some(node_idx),
-        })
+        Ok(self.next_idx(Some(node_idx)))
     }
 }
 
@@ -224,12 +225,7 @@ impl Plan<Serialized> {
         };
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
 
-        Ok(Plan {
-            _t:        PhantomData,
-            graph:     Rc::clone(&self.graph),
-            sources:   Rc::clone(&self.sources),
-            last_node: Some(node_idx),
-        })
+        Ok(self.next_idx(Some(node_idx)))
     }
 }
 
