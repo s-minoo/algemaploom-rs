@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use operator::display::PrettyDisplay;
-use operator::{Operator, Serializer, Source, Target};
+use operator::{Join, Operator, Serializer, Source, Target};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use serde_json::json;
@@ -27,10 +27,6 @@ pub type RcRefCellVSourceIdxs = Rc<RefCell<VSourceIdxs>>;
 pub struct Init {}
 #[derive(Debug, Clone)]
 pub struct Processed {}
-#[derive(Debug, Clone)]
-pub struct Joined {}
-#[derive(Debug, Clone)]
-pub struct Where {}
 #[derive(Debug, Clone)]
 pub struct Serialized {}
 #[derive(Debug, Clone)]
@@ -121,21 +117,20 @@ impl Plan<Init> {
         self.next_idx(idx)
     }
 }
-impl Plan<Joined> {
-    pub fn where_by<T>(&mut self, atttribute_left: T)
-    where
-        T: From<String>,
-    {
-    }
-}
 
 impl Plan<Processed> {
     pub fn join(
         &mut self,
-        other_op: &Operator,
-        node_id_prefix: &str,
-    ) -> Result<Plan<Joined>, PlanError> {
-        todo!()
+        other_op: &Plan<Processed>
+    ) -> Result<JoinedPlan<Processed>, PlanError> {
+        let left_node = self.last_node.unwrap();
+        let right_node = other_op.last_node.unwrap();
+
+        Ok(JoinedPlan {
+            plan: self.clone(),
+            left_node,
+            right_node,
+        })
     }
 
     pub fn apply(
@@ -203,6 +198,96 @@ impl Plan<Processed> {
 
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
         Ok(self.next_idx(Some(node_idx)))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct JoinedPlan<T> {
+    plan:       Plan<T>,
+    left_node:  NodeIndex,
+    right_node: NodeIndex,
+}
+
+impl JoinedPlan<Processed>
+{
+    pub fn where_by<A>(
+        &mut self,
+        attributes: Vec<A>,
+    ) -> Result<WhereByPlan<Processed>, PlanError>
+    where
+        A: Into<String>,
+    {
+        let left_attributes: Vec<String> =
+            attributes.into_iter().map(|a| a.into()).collect();
+        Ok(WhereByPlan {
+            joined_plan: self.clone(),
+            left_attributes,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WhereByPlan<T> {
+    joined_plan:     JoinedPlan<T>,
+    left_attributes: Vec<String>,
+}
+
+impl WhereByPlan<Processed> {
+    // TODO: Allow choice in join type and predicate type <30-08-23, Min Oo> //
+    pub fn compared_to<A>(
+        &mut self,
+        attributes: Vec<A>,
+    ) -> Result<Plan<Processed>, PlanError>
+    where
+        A: Into<String>,
+    {
+        let joined_plan = &self.joined_plan;
+        let plan = &joined_plan.plan;
+        let graph = &mut *plan.graph.borrow_mut();
+
+        let left_attributes = self.left_attributes.to_owned();
+        let right_attributes: Vec<String> =
+            attributes.into_iter().map(|a| a.into()).collect();
+
+        let left_right_attr_pairs: Vec<(String, String)> = left_attributes
+            .clone()
+            .into_iter()
+            .zip(right_attributes.clone().into_iter())
+            .collect();
+
+        let join_op = Operator::JoinOp {
+            config: Join {
+                left_right_attr_pairs,
+                join_type: operator::JoinType::InnerJoin,
+                predicate_type: operator::PredicateType::Equal,
+            },
+        };
+
+        let join_node = PlanNode {
+            id:       format!("Join_{}", graph.node_count()),
+            operator: join_op,
+        };
+
+        let node_idx = graph.add_node(join_node);
+
+        let left_node = joined_plan.left_node;
+        let left_edge = PlanEdge {
+            key:   format!("{:?}", left_attributes),
+            value: "MappingTuple".to_string(),
+        };
+
+        graph.add_edge(left_node, node_idx, left_edge);
+
+        let right_node = joined_plan.right_node;
+        let right_edge = PlanEdge {
+            key:   format!("{:?}", right_attributes),
+            value: "MappingTuple".to_string(),
+        };
+
+        graph.add_edge(right_node, node_idx, right_edge);
+
+
+        Ok(plan.next_idx(Some(node_idx)))
     }
 }
 
