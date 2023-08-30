@@ -54,7 +54,9 @@ impl PrettyDisplay for Operator {
             Operator::TargetOp { config } => {
                 ("Target Operator".to_string(), config.pretty_string()?)
             }
-            Operator::JoinOp { config } => todo!(),
+            Operator::JoinOp { config } => {
+                ("Join Operator".to_string(), config.pretty_string()?)
+            }
         };
 
         Ok(format!("{}\n{}", title_string, content_string))
@@ -110,27 +112,44 @@ impl Hash for Source {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum JoinType {
     LeftJoin,
-    EquiJoin,
+    RightJoin,
+    InnerJoin,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub enum PredicateType {
+    Greater,
+    GEqual,
+    Less,
+    LEqual,
+    Equal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Join {
-    pub left_right_pairs: HashMap<String, String>,
-    pub join_type:        JoinType,
+    pub left_right_attr_pairs: Vec<(String, String)>,
+    pub join_type:             JoinType,
+    pub predicate_type:        PredicateType,
 }
 
 impl Hash for Join {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        hash_hashmap(&self.left_right_pairs, state);
+        self.left_right_attr_pairs.hash(state);
         self.join_type.hash(state);
+        self.predicate_type.hash(state);
     }
 }
 
-impl Join {
-    pub fn is_binary_join(&self) -> bool {
-        // TODO:  <30-05-23> //
+impl PrettyDisplay for Join {
+    fn pretty_string(&self) -> Result<String> {
+        let result = format!(
+            "type: {:?}\npredicate_type: {:?}\nattribute_pairs: {}",
+            self.join_type,
+            self.predicate_type,
+            serde_json::to_string_pretty(&self.left_right_attr_pairs)?
+        );
 
-        todo!()
+        Ok(result)
     }
 }
 
