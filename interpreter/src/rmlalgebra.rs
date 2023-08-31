@@ -2,16 +2,17 @@ use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
 use operator::{
-    Extend, Function, Operator, Projection, RcExtendFunction, Serializer,
+    Extend, Function, Join, Operator, Projection, RcExtendFunction, Serializer,
     Source, Target,
 };
 use plangenerator::error::PlanError;
-use plangenerator::plan::{Init, Plan};
+use plangenerator::plan::{Init, Plan, Processed};
 use regex::Regex;
 use sophia_api::term::TTerm;
 
 use crate::rml_model::term_map::{self, TermMapInfo, TermMapType};
 use crate::rml_model::{Document, TriplesMap};
+use crate::{IriString, TermString};
 
 fn file_target(count: usize) -> Target {
     let mut config = HashMap::new();
@@ -25,26 +26,28 @@ fn file_target(count: usize) -> Target {
 
 pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let mut plan = Plan::<()>::new();
-    doc.triples_maps
+    let tm_projected_pairs_res: Result<Vec<_>, PlanError> = doc
+        .triples_maps
         .iter()
-        .enumerate()
-        .try_for_each(|(count, tm)| {
+        .map(|tm| {
             let source_op = translate_source_op(&tm);
             let projection_op = translate_projection_op(&tm);
-            let prefix_id = format!("?tm{}", count);
-            let extend_op = translate_extend_op(&tm, &prefix_id);
-            let serializer_op = translate_serializer_op(&tm, &prefix_id);
-            let target = file_target(count);
-            plan.source(source_op)
-                .apply(&projection_op, "Projection")?
-                .apply(&extend_op, "Extension")?
-                .serialize(serializer_op)?
-                .sink(target)?;
+            Ok((
+                tm,
+                plan.source(source_op).apply(&projection_op, "Projection")?,
+            ))
+        })
+        .collect();
 
-            Ok(())
-        })?;
+    let tm_projected_pairs = tm_projected_pairs_res?;
 
-    Ok(plan)
+    let haystack = tm_projected_pairs.iter();
+
+    todo!();
+}
+
+fn translate_join_op(needle: &TriplesMap, hay_stack: &Vec<TriplesMap>) -> Join {
+    todo!()
 }
 
 fn translate_source_op(tm: &TriplesMap) -> Source {
@@ -85,10 +88,16 @@ fn translate_projection_op(tm: &TriplesMap) -> Operator {
         .po_maps
         .iter()
         .flat_map(|pom| {
-            let om_attrs = pom
-                .object_maps
-                .iter()
-                .flat_map(|om| get_attributes_from_term_map(&om.tm_info));
+            let om_attrs = pom.object_maps.iter().flat_map(|om| {
+                if let Some(join_cond) = &om.join_condition {
+                    let mut child_attr = join_cond.child_attributes.clone();
+                    let mut parent_attr = join_cond.parent_attributes.clone();
+                    child_attr.append(&mut parent_attr);
+                    child_attr.into_iter().collect()
+                } else {
+                    get_attributes_from_term_map(&om.tm_info)
+                }
+            });
             let pm_attrs = pom
                 .predicate_maps
                 .iter()
