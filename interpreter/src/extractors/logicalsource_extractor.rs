@@ -26,7 +26,7 @@ impl Extractor<LogicalSource> for LogicalSource {
         let input = extract_input_type(subject, graph)?;
 
         Ok(LogicalSource {
-            identifier: subject.to_owned().map(|i|i.to_string()),
+            identifier: subject.to_string(),
             iterator,
             source: input,
             reference_formulation,

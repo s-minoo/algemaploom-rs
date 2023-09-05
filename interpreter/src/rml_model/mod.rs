@@ -13,7 +13,7 @@ pub struct Document {
 
 #[derive(Debug, Clone)]
 pub struct TriplesMap {
-    pub identifier:     TermString,
+    pub identifier:     String,
     pub logical_source: LogicalSource,
     pub subject_map:    SubjectMap,
     pub po_maps:        Vec<PredicateObjectMap>,
@@ -24,4 +24,14 @@ pub struct TriplesMap {
 pub struct PredicateObjectMap {
     pub predicate_maps: Vec<PredicateMap>,
     pub object_maps:    Vec<ObjectMap>,
+}
+
+impl PredicateObjectMap {
+    pub fn contains_ptm(&self) -> bool {
+        self.object_maps
+            .iter()
+            .filter(|om| om.parent_tm.is_some())
+            .next()
+            .is_some()
+    }
 }

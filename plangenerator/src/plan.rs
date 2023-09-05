@@ -121,12 +121,12 @@ impl Plan<Init> {
 impl Plan<Processed> {
     pub fn join(
         &mut self,
-        other_op: &Plan<Processed>
-    ) -> Result<JoinedPlan<Processed>, PlanError> {
+        other_op: &Plan<Processed>,
+    ) -> Result<NotAliasedJoinedPlan<Processed>, PlanError> {
         let left_node = self.last_node.unwrap();
         let right_node = other_op.last_node.unwrap();
 
-        Ok(JoinedPlan {
+        Ok(NotAliasedJoinedPlan {
             plan: self.clone(),
             left_node,
             right_node,
@@ -202,14 +202,35 @@ impl Plan<Processed> {
 }
 
 #[derive(Debug, Clone)]
-pub struct JoinedPlan<T> {
+pub struct NotAliasedJoinedPlan<T> {
     plan:       Plan<T>,
     left_node:  NodeIndex,
     right_node: NodeIndex,
 }
 
-impl JoinedPlan<Processed>
-{
+impl NotAliasedJoinedPlan<Processed> {
+    pub fn alias(
+        &mut self,
+        alias: &str,
+    ) -> Result<AliasedJoinedPlan<Processed>, PlanError> {
+        Ok(AliasedJoinedPlan {
+            plan:       self.plan.clone(),
+            alias:      alias.to_string(),
+            left_node:  self.left_node,
+            right_node: self.right_node,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AliasedJoinedPlan<T> {
+    plan:       Plan<T>,
+    alias:      String,
+    left_node:  NodeIndex,
+    right_node: NodeIndex,
+}
+
+impl AliasedJoinedPlan<Processed> {
     pub fn where_by<A>(
         &mut self,
         attributes: Vec<A>,
@@ -224,11 +245,36 @@ impl JoinedPlan<Processed>
             left_attributes,
         })
     }
+
+    pub fn cross(&mut self) -> Result<Plan<Processed>, PlanError> {
+        let graph = &mut *self.plan.graph.borrow_mut();
+
+        let join_config = Join {
+            join_type: operator::JoinType::CrossJoin,
+            join_alias: self.alias.clone(),
+            ..Default::default()
+        };
+
+        let join_node = PlanNode {
+            id:       format!(
+                "Join_{:?}_{:?}",
+                self.left_node, self.right_node
+            ),
+            operator: Operator::JoinOp {
+                config: join_config,
+            },
+        };
+
+        // TODO: Cross join node to the plan <01-09-23, yourname> //
+        let node_idx = graph.add_node(join_node);
+
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct WhereByPlan<T> {
-    joined_plan:     JoinedPlan<T>,
+    joined_plan:     AliasedJoinedPlan<T>,
     left_attributes: Vec<String>,
 }
 
@@ -257,6 +303,7 @@ impl WhereByPlan<Processed> {
 
         let join_op = Operator::JoinOp {
             config: Join {
+                join_alias: joined_plan.alias.clone(),
                 left_right_attr_pairs,
                 join_type: operator::JoinType::InnerJoin,
                 predicate_type: operator::PredicateType::Equal,
@@ -285,7 +332,6 @@ impl WhereByPlan<Processed> {
         };
 
         graph.add_edge(right_node, node_idx, right_edge);
-
 
         Ok(plan.next_idx(Some(node_idx)))
     }

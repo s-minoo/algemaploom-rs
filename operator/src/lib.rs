@@ -114,6 +114,7 @@ pub enum JoinType {
     LeftJoin,
     RightJoin,
     InnerJoin,
+    CrossJoin,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -130,6 +131,18 @@ pub struct Join {
     pub left_right_attr_pairs: Vec<(String, String)>,
     pub join_type:             JoinType,
     pub predicate_type:        PredicateType,
+    pub join_alias:            String,
+}
+
+impl Default for Join {
+    fn default() -> Self {
+        Self {
+            left_right_attr_pairs: Default::default(),
+            join_type:             JoinType::InnerJoin,
+            predicate_type:        PredicateType::Equal,
+            join_alias:            "pseudo_other".to_string(),
+        }
+    }
 }
 
 impl Hash for Join {
@@ -143,10 +156,11 @@ impl Hash for Join {
 impl PrettyDisplay for Join {
     fn pretty_string(&self) -> Result<String> {
         let result = format!(
-            "type: {:?}\npredicate_type: {:?}\nattribute_pairs: {}",
+            "type: {:?}\npredicate_type: {:?}\nattribute_pairs: {}\nptm_alias: {}",
             self.join_type,
             self.predicate_type,
-            serde_json::to_string_pretty(&self.left_right_attr_pairs)?
+            serde_json::to_string_pretty(&self.left_right_attr_pairs)?, 
+            self.join_alias
         );
 
         Ok(result)
@@ -204,6 +218,19 @@ impl Hash for Rename {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Extend {
     pub extend_pairs: HashMap<String, Function>,
+}
+
+impl Extend {
+    pub fn extend_with(self, other: Self) -> Self {
+        let mut this_pairs = self.extend_pairs;
+        let other_pairs = other.extend_pairs;
+
+        this_pairs.extend(other_pairs.into_iter());
+
+        Extend {
+            extend_pairs: this_pairs,
+        }
+    }
 }
 
 impl PrettyDisplay for Extend {

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use sophia_api::graph::Graph;
-use sophia_api::term::TermKind;
+use sophia_api::term::{TTerm, TermKind};
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
 use sophia_term::matcher::ANY;
@@ -91,8 +91,7 @@ impl Extractor<TermMapInfo> for TermMapInfo {
             };
         }
 
-        let identifier =
-            subj_ref.to_owned().map(|i| i.to_string()).try_into()?;
+        let identifier = subj_ref.to_string();
 
         Ok(TermMapInfo {
             identifier,
@@ -111,7 +110,6 @@ mod tests {
     use std::path::PathBuf;
 
     use sophia_api::graph::Graph;
-    use sophia_api::term::TTerm;
     use sophia_api::triple::Triple;
 
     use super::*;
@@ -131,9 +129,8 @@ mod tests {
 
         assert!(tm_info.term_type.is_none());
         assert!(tm_info.term_map_type == TermMapType::Template);
-        assert!(
-            tm_info.term_value.value() == "http://airport.example.com/{id}"
-        );
+        println!("{:?}", tm_info);
+        assert!(tm_info.term_value.value() == "http://airport.example.com/{id}");
 
         Ok(())
     }

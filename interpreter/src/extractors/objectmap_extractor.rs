@@ -49,7 +49,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         if tm_info.term_type == Some(TermKind::BlankNode) {
             panic!("Constant-valued ObjectMap has to have an IRI or a Literal as value");
         }
-        tm_info.term_type = Some(tm_info.term_value.kind());
 
         ObjectMap {
             tm_info,
@@ -63,7 +62,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,
     ) -> super::ExtractorResult<ObjectMap> {
-
         let dtype_pred = vocab::r2rml::PROPERTY::DATATYPE.to_term();
         let data_type: Option<IriString> =
             get_object(graph_ref, subj_ref, &dtype_pred)
@@ -84,8 +82,7 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         }
 
         if tm_info_res.is_err() && parent_tm.is_some() {
-            let identifier =
-                subj_ref.to_owned().map(|i| i.to_string()).try_into()?;
+            let identifier = subj_ref.to_string();
             tm_info_res = Ok(TermMapInfo {
                 identifier,
                 term_type: Some(TermKind::Iri),
@@ -94,7 +91,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         }
 
         let mut tm_info = tm_info_res?;
-
         if tm_info.term_type.is_none() {
             tm_info.term_type = Some(tm_info.term_value.kind());
         }

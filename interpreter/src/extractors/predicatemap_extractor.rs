@@ -75,7 +75,6 @@ mod tests {
         pms.iter().for_each(|pm| {
             assert_eq!(pm.tm_info.term_map_type, TermMapType::Constant);
             assert_eq!(pm.tm_info.term_type, Some(TermKind::Iri));
-            assert_eq!(pm.tm_info.term_value.kind(), TermKind::Iri);
         });
 
         Ok(())

@@ -9,7 +9,7 @@ use crate::{IriString, TermString};
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {
-    pub identifier:            TermString,
+    pub identifier:            String,
     pub iterator:              Option<String>,
     pub source:                Source,
     pub reference_formulation: IriString,
@@ -48,7 +48,7 @@ impl Into<operator::Source> for LogicalSource {
 }
 #[derive(Debug, Clone)]
 pub struct LogicalTarget {
-    pub identifier:    TermString,
+    pub identifier:    String,
     pub compression:   Option<IriString>,
     pub serialization: IriString,
     pub output:        Output,

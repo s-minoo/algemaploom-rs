@@ -33,7 +33,7 @@ impl Extractor<TriplesMap> for TriplesMap {
             .collect();
 
         Ok(TriplesMap {
-            identifier: subject.to_owned().map(|i| i.to_string()),
+            identifier: subject.to_string(),
             logical_source,
             subject_map,
             po_maps,
