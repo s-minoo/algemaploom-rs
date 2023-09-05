@@ -31,7 +31,7 @@
 
 <#PositionMapping> a rr:TriplesMap; 
   rml:logicalSource [
-    rml:source "Airport.csv" ;
+    rml:source "Positions.csv" ;
     rml:referenceFormulation ql:CSV
   ];
   rr:subjectMap [
