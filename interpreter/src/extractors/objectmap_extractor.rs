@@ -20,13 +20,13 @@ fn extract_join_condition(
     let child_pred = vocab::r2rml::PROPERTY::CHILD.to_term();
     let child_attributes = get_objects(graph_ref, &jc_iri, &child_pred)
         .iter()
-        .map(|term| term.to_string())
+        .map(|term| term.value().to_string())
         .collect();
 
     let parent_pred = vocab::r2rml::PROPERTY::PARENT.to_term();
     let parent_attributes = get_objects(graph_ref, &jc_iri, &parent_pred)
         .iter()
-        .map(|term| term.to_string())
+        .map(|term| term.value().to_string())
         .collect();
 
     Ok(JoinCondition {

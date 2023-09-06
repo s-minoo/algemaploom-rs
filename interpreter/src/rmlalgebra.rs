@@ -388,7 +388,7 @@ fn extract_serializer_template<'a>(
 
     let triple_graph_pattern = predicate_objects
         .map(|(predicate, object)| {
-            format!(" {} {} {}.", subject, predicate, object)
+            format!(" ?{} ?{} ?{}.", subject, predicate, object)
         })
         .fold(String::new(), |a, b| a + &b + "\n");
 
