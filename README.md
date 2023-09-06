@@ -16,7 +16,6 @@
 <h3 align="center">CrustMapper: Mapping Algebra for Knowledge Graph Construction</h3>
 </div>
 
-
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
@@ -39,12 +38,10 @@ For Linux-based users:
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   ```
 
-For the visualization of the generated mapping plans, you'll need 
-python version >= 3.10 and the following packages: 
+For the visualization of the generated mapping plans, you'll need
+python version >= 3.10 and the following packages:
 
 1. graphviz
-
-
 
 ## Running
 
@@ -55,19 +52,22 @@ python version >= 3.10 and the following packages:
    cargo build --release
    ```
 3. Run the CLI translator app
-   1. From Cargo 
-       ```sh
-       cargo run --bin translator -- {args}
-       ```
+   1. From Cargo
+      ```sh
+      cargo run --bin translator -- {args}
+      ```
    2. From the compiled translator binary
-       ```sh
-       cd ./target/release/
-       ./translator {args}
-       ```
-      
-4. Visualize the created mapping plan 
+      ```sh
+      cd ./target/release/
+      ./translator {args}
+      ```
+4. Visualize the created mapping plan
    ```sh
-   ./visualizer.py {args}
+   dot -Tpng {generated dot file} > output.png
+   ```
+5. Simple plain text format of the mapping plan for parsing
+   ```sh
+   dot -Tplain {generated dot file} > output.txt
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
