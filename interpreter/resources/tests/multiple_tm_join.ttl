@@ -37,6 +37,21 @@
   rr:subjectMap [
     rr:template "http://airport.example.com/positions/{id}";
     rr:class transit:Stop
-  ].
+  ];
+  rr:predicateObjectMap [
+    rr:predicate ex:long;
+    rr:objectMap [
+        rml:reference "long"
+    ]; 
+  ]; 
+
+
+  rr:predicateObjectMap [
+    rr:predicate ex:lat;
+    rr:objectMap [
+        rr:template "positional/{lat}"
+    ]; 
+  ]. 
+
 
 
