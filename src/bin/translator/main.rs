@@ -44,6 +44,7 @@ pub fn main() -> Result<(), PlanError> {
         "The following mapping tree have been translated from {:?} at {:?}",
         args.rml_document, output_path
     );
+    println!("The pretty dot file version for visualization is generated at: {:?}", pretty_path); 
 
     Ok(())
 }
