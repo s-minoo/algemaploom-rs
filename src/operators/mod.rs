@@ -11,12 +11,8 @@ pub mod sources;
 pub type BoxedOperatorChain = Box<dyn OperatorChain>;
 pub type BoxedOperatorChainOpt = Option<BoxedOperatorChain>;
 
-
-
 pub trait AsyncOperatorExecute {
-
     fn next(&mut self) -> BoxedOperatorChain;
-
 
     async fn execute(&mut self) -> Result<()> {
         Ok(())
@@ -36,6 +32,7 @@ pub trait OperatorChain {
             Operator::RenameOp { config: _ } => todo!(),
             Operator::SerializerOp { config: _ } => todo!(),
             Operator::TargetOp { config: _ } => todo!(),
+            Operator::FragmentOp { config: _ } => todo!(),
         }
     }
 

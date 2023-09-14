@@ -25,6 +25,7 @@ pub enum Operator {
     RenameOp { config: Rename },
     SerializerOp { config: Serializer },
     TargetOp { config: Target },
+    FragmentOp { config: Fragmenter },
 }
 
 impl JsonDisplay for Operator {
@@ -56,6 +57,9 @@ impl PrettyDisplay for Operator {
             }
             Operator::JoinOp { config } => {
                 ("Join Operator".to_string(), config.pretty_string()?)
+            }
+            Operator::FragmentOp { config } => {
+                ("Fragment Operator".to_string(), config.pretty_string()?)
             }
         };
 
@@ -293,6 +297,16 @@ impl Hash for Serializer {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub enum IOType {
+    File,
+    Kafka,
+    Websocket,
+    MySQL,
+    PostgreSQL,
+    SPARQLEndpoint,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
     pub configuration: HashMap<String, String>,
@@ -321,12 +335,23 @@ impl Hash for Target {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub enum IOType {
-    File,
-    Kafka,
-    Websocket,
-    MySQL,
-    PostgreSQL,
-    SPARQLEndpoint,
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Fragmenter {
+    pub from: String, 
+    pub to: String, 
 }
+
+
+impl PrettyDisplay for Fragmenter {
+    fn pretty_string(&self) -> Result<String> {
+       let result = format!(
+           "from_fragment: {} \n to_fragment: {}", 
+           self.from, 
+           self.to, 
+           ) ;
+
+       Ok(result)
+    }
+}
+

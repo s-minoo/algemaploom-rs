@@ -37,14 +37,17 @@ pub fn main() -> Result<(), PlanError> {
     let pretty_path = output_path.clone() + ".pretty";
 
     mapping_plan
-        .write_pretty(pretty_path.into())
+        .write_pretty(pretty_path.clone().into())
         .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
 
     println!(
         "The following mapping tree have been translated from {:?} at {:?}",
         args.rml_document, output_path
     );
-    println!("The pretty dot file version for visualization is generated at: {:?}", pretty_path); 
+    println!(
+        "The pretty dot file version for visualization is generated at: {:?}",
+        pretty_path
+    );
 
     Ok(())
 }

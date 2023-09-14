@@ -1,4 +1,4 @@
-use anyhow::Result; 
+use anyhow::Result;
 pub trait PrettyDisplay {
     fn pretty_string(&self) -> Result<String>;
 }
