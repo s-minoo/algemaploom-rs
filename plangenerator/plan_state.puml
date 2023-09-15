@@ -1,0 +1,32 @@
+@startuml
+title "State transition diagram of Plan"
+hide empty description
+state "Plan<()>" as EmptyPlan
+state "Plan<Init>" as InitPlan
+state "Plan<Processed>" as ProcessedPlan
+state "UnAliasedJoinedPlan" as UnAliasedJoinedPlan
+state "AliasedJoinedPlan" as AliasedJoinedPlan
+state "WhereByPlan" as WhereByPlan
+state "Plan<Serialized>" as SerializedPlan
+state "Plan<Sunk>" as SunkPlan
+
+
+
+[*] --> EmptyPlan
+EmptyPlan --> InitPlan: new()
+InitPlan --> ProcessedPlan: source(SourceOperator)
+ProcessedPlan --> ProcessedPlan: apply(Operator)
+ProcessedPlan --> UnAliasedJoinedPlan: join(Plan<ProcessedPlan>)
+ProcessedPlan --> SerializedPlan: serialize(SerializeOperator)
+
+UnAliasedJoinedPlan --> AliasedJoinedPlan: alias(String)
+AliasedJoinedPlan --> WhereByPlan: where_by(Attributes)
+AliasedJoinedPlan --> ProcessedPlan: cross_join()
+
+WhereByPlan --> ProcessedPlan: equal_to(Attributes)
+
+
+SerializedPlan --> SunkPlan: sunk(TargetOperator)
+SunkPlan --> [*]
+
+@enduml

@@ -8,9 +8,10 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use operator::display::PrettyDisplay;
-use operator::{Join, Operator, Serializer, Source, Target};
+use operator::{Fragmenter, Join, Operator, Serializer, Source, Target};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
+use serde::de::Error;
 use serde_json::json;
 
 use crate::error::PlanError;
@@ -38,6 +39,7 @@ pub struct Plan<T> {
     pub graph:     RcRefCellDiGraph,
     pub sources:   RcRefCellVSourceIdxs,
     pub last_node: Option<NodeIndex>,
+    pub fragment:  Option<String>,
 }
 
 impl Plan<()> {
@@ -46,6 +48,7 @@ impl Plan<()> {
             _t:        PhantomData,
             graph:     Rc::new(RefCell::new(DiGraph::new())),
             sources:   Rc::new(RefCell::new(Vec::new())),
+            fragment:  None,
             last_node: None,
         }
     }
@@ -64,6 +67,21 @@ impl<T> Plan<T> {
             _t:        PhantomData,
             graph:     Rc::clone(&self.graph),
             sources:   Rc::clone(&self.sources),
+            fragment:  self.fragment.clone(),
+            last_node: idx,
+        }
+    }
+
+    pub fn next_idx_fragment<O>(
+        &self,
+        idx: Option<NodeIndex>,
+        fragment: String,
+    ) -> Plan<O> {
+        Plan {
+            _t:        PhantomData,
+            graph:     Rc::clone(&self.graph),
+            sources:   Rc::clone(&self.sources),
+            fragment:  Some(fragment),
             last_node: idx,
         }
     }
@@ -74,7 +92,7 @@ impl<T> Plan<T> {
         fmt: &dyn Fn(Dot<&DiGraphOperators>) -> String,
     ) -> Result<()> {
         let graph = &*self.graph.borrow_mut();
-        let dot_string = fmt(Dot::with_config(graph, &[Config::EdgeNoLabel]));
+        let dot_string = fmt(Dot::with_config(graph, &[]));
         write_string_to_file(path, dot_string)?;
         Ok(())
     }
@@ -143,8 +161,10 @@ impl Plan<Processed> {
             .last_node
             .ok_or(PlanError::DanglingApplyOperator(operator.clone()))?;
 
+        //blacklist check for illegal operator argument
         match operator {
             Operator::SourceOp { .. }
+            | Operator::FragmentOp { .. }
             | Operator::TargetOp { .. }
             | Operator::SerializerOp { .. } => {
                 return Err(PlanError::WrongApplyOperator(operator.clone()))
@@ -163,13 +183,62 @@ impl Plan<Processed> {
         let new_node_idx = graph.add_node(plan_node);
 
         let plan_edge = PlanEdge {
-            key:   std::any::type_name::<()>().to_string(),
-            value: "MappingTuple".to_string(),
+            fragment: "default".to_string(),
         };
 
         graph.add_edge(prev_node_idx, new_node_idx, plan_edge);
 
         Ok(self.next_idx(Some(new_node_idx)))
+    }
+
+    pub fn fragment(
+        &mut self,
+        fragment: Fragmenter,
+    ) -> Result<Plan<Processed>, PlanError> {
+        let previous_fragment_opt = self.fragment.as_ref();
+        if self.last_node.is_none() {
+            return Err(PlanError::AuxError(format!(
+                "Fragment operator can't be the first operator in the plan \n
+                Number of nodes in plan: {}
+                ",
+                self.graph.borrow().node_count()
+            )));
+        }
+
+        if let Some(previous_fragment) = previous_fragment_opt {
+            if &fragment.from == previous_fragment {
+                return Err(PlanError::AuxError(format!("Previous operator's output fragment, {}, doesn't match with the 
+                                               input fragment, {}, of the Fragmenter", previous_fragment, fragment.from)));
+            }
+        } else {
+            if &fragment.from != "default" {
+                return Err(PlanError::AuxError(format!(
+                    "Fragmenter's input fragment is not default: {}",
+                    fragment.from
+                )));
+            }
+        }
+
+        let mut graph = self.graph.borrow_mut();
+        let id_num = graph.node_count();
+
+        let new_fragment_string = fragment.to.clone();
+
+        let fragment_node = PlanNode {
+            id:       format!("Fragmenter_{}", id_num),
+            operator: Operator::FragmentOp { config: fragment },
+        };
+
+        let node_idx = graph.add_node(fragment_node);
+        let prev_node_idx = self.last_node.unwrap();
+
+        let edge = PlanEdge {
+            fragment: new_fragment_string.clone(),
+        };
+
+        graph.add_edge(prev_node_idx, node_idx, edge);
+
+        Ok(self.next_idx_fragment(Some(node_idx), new_fragment_string))
     }
 
     pub fn serialize(
@@ -191,10 +260,7 @@ impl Plan<Processed> {
 
         let node_idx = graph.add_node(plan_node);
 
-        let plan_edge = PlanEdge {
-            key:   std::any::type_name::<()>().to_string(),
-            value: "MappingTuple".to_string(),
-        };
+        let plan_edge = PlanEdge::default();
 
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
         Ok(self.next_idx(Some(node_idx)))
@@ -318,18 +384,12 @@ impl WhereByPlan<Processed> {
         let node_idx = graph.add_node(join_node);
 
         let left_node = joined_plan.left_node;
-        let left_edge = PlanEdge {
-            key:   format!("{:?}", left_attributes),
-            value: "MappingTuple".to_string(),
-        };
+        let left_edge = PlanEdge::default();
 
         graph.add_edge(left_node, node_idx, left_edge);
 
         let right_node = joined_plan.right_node;
-        let right_edge = PlanEdge {
-            key:   format!("{:?}", right_attributes),
-            value: "MappingTuple".to_string(),
-        };
+        let right_edge = PlanEdge::default();
 
         graph.add_edge(right_node, node_idx, right_edge);
 
@@ -352,25 +412,35 @@ impl Plan<Serialized> {
         let node_idx = graph.add_node(plan_node);
         let prev_node_idx = self.last_node.unwrap();
 
-        let plan_edge = PlanEdge {
-            key:   std::any::type_name::<()>().to_string(),
-            value: "Serialized Format".to_string(),
-        };
+        let plan_edge = PlanEdge::default();
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
 
         Ok(self.next_idx(Some(node_idx)))
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PlanEdge {
-    pub key:   String,
-    pub value: String,
+    pub fragment: String,
+}
+
+impl Default for PlanEdge {
+    fn default() -> Self {
+        Self {
+            fragment: "default".to_string(),
+        }
+    }
 }
 
 impl Display for PlanEdge {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {} {}", self.key, "->", self.value)
+        write!(f, "Fragment:{}", self.fragment)
+    }
+}
+
+impl Debug for PlanEdge {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{{\"fragment\": {}}}", self.fragment))
     }
 }
 
