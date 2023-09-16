@@ -4,6 +4,9 @@ pub mod r2rml;
 pub mod rdf;
 pub mod rml;
 pub mod xsd;
+pub mod rmlt;
+mod comp;
+pub mod void;
 
 pub type PAIR<'a> = (&'a str, &'a str);
 
