@@ -17,7 +17,7 @@ impl Extractor<LogicalSource> for LogicalSource {
 
         let iterator = get_object(graph, subject, &iter_pred)
             .ok()
-            .map(|it| it.to_string());
+            .map(|it| it.value().to_string());
 
         let reference_formulation = get_object(graph, subject, &refform_pred)?
             .map(|inner| (*inner).to_string())
