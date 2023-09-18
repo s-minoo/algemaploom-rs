@@ -8,8 +8,9 @@ use sophia_term::matcher::ANY;
 use sophia_term::RcTerm;
 
 use super::error::ParseError;
-use super::store::get_object;
+use super::store::{get_object, get_objects};
 use super::{Extractor, ExtractorResult, FromVocab};
+use crate::rml_model::source_target::LogicalTarget;
 use crate::rml_model::term_map::{TermMapInfo, TermMapType};
 use crate::TermString;
 
@@ -91,11 +92,21 @@ impl Extractor<TermMapInfo> for TermMapInfo {
             };
         }
 
+        let logical_target_iris = get_objects(
+            graph_ref,
+            subj_ref,
+            &vocab::rml::PROPERTY::LOGICALTARGET.to_term(),
+        );
+        let logical_targets =
+            logical_target_iris.into_iter().flat_map(|log_targ_iri| {
+                LogicalTarget::extract_self(&log_targ_iri, graph_ref)
+            }).collect();
+
         let identifier = subj_ref.to_string();
 
         Ok(TermMapInfo {
             identifier,
-            logical_targets: HashSet::new(),
+            logical_targets,
             term_map_type,
             term_value,
             term_type,
@@ -130,7 +141,9 @@ mod tests {
         assert!(tm_info.term_type.is_none());
         assert!(tm_info.term_map_type == TermMapType::Template);
         println!("{:?}", tm_info);
-        assert!(tm_info.term_value.value() == "http://airport.example.com/{id}");
+        assert!(
+            tm_info.term_value.value() == "http://airport.example.com/{id}"
+        );
 
         Ok(())
     }

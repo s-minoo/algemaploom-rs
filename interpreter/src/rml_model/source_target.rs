@@ -1,4 +1,5 @@
 use std::collections::{hash_map, HashMap};
+use std::hash::Hash;
 use std::path::PathBuf;
 
 use operator::formats::DataFormat;
@@ -68,13 +69,19 @@ pub fn default_file_output(path: String) -> Output {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogicalTarget {
     pub identifier:    String,
     pub compression:   Option<IriString>,
     pub serialization: IriString,
     pub output_type:   IOType,
     pub config:        HashMap<String, String>,
+}
+
+impl Hash for LogicalTarget {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.identifier.hash(state);
+    }
 }
 
 fn serialization_to_dataformat(serialization: &IriString) -> DataFormat {
