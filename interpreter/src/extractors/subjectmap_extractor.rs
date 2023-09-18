@@ -15,9 +15,10 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
     ) -> super::ExtractorResult<SubjectMap> {
         let mut tm_info = TermMapInfo::extract_self(subj_ref, graph_ref)?;
 
+        
         tm_info = match tm_info.term_type {
             Some(ttype)
-                if ttype != TermKind::Iri || ttype != TermKind::BlankNode =>
+                if ttype != TermKind::Iri && ttype != TermKind::BlankNode =>
             {
                 return Err(ParseError::GenericError(format!(
                     "PredicateMap can only have rr:Iri as rr:termType!",
@@ -31,6 +32,7 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
                 }
             }
         };
+
 
         let class_pred = vocab::r2rml::PROPERTY::CLASS.to_term();
 
