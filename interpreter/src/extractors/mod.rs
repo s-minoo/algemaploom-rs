@@ -19,6 +19,7 @@ mod store;
 mod subjectmap_extractor;
 mod term_map_info_extractor;
 pub mod triplesmap_extractor;
+mod logicaltarget_extractor;
 
 pub type ExtractorResult<T> = Result<T, ParseError>;
 

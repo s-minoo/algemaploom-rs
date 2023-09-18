@@ -13,7 +13,7 @@ use super::{Extractor, ExtractorResult, FromVocab};
 use crate::rml_model::term_map::{TermMapInfo, TermMapType};
 use crate::TermString;
 
-pub fn extract_term_map_type_value(
+fn extract_term_map_type_value(
     subject_ref: &RcTerm,
     graph_ref: &FastGraph,
 ) -> ExtractorResult<(TermMapType, TermString)> {

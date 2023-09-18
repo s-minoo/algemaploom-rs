@@ -22,7 +22,7 @@ fn file_target(count: usize) -> Target {
     Target {
         configuration: config,
         target_type:   operator::IOType::File,
-        data_format:   operator::formats::DataFormat::NT,
+        data_format:   operator::formats::DataFormat::NTriples,
     }
 }
 
@@ -403,7 +403,7 @@ fn translate_serializer_op<'a>(
     Serializer {
         template,
         options: None,
-        format: operator::formats::DataFormat::NT,
+        format: operator::formats::DataFormat::NTriples,
     }
 }
 
