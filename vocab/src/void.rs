@@ -7,6 +7,7 @@ pub mod PROPERTY {
 
     pub const DATA_DUMP: PAIR = (IRI, "dataDump");
     pub const URI_LOOKUP_ENDPOINT: PAIR = (IRI, "uriLookupEndpoint");
+    pub const SPARQL_ENDPOINT: PAIR = (IRI, "sparqlEndpoint");
 }
 
 pub mod CLASS {
