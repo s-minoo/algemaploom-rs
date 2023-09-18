@@ -83,6 +83,7 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
+    #[serde(flatten)]
     pub config:              HashMap<String, String>,
     pub source_type:         IOType,
     pub data_format:         DataFormat,
@@ -197,6 +198,7 @@ impl Hash for Projection {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rename {
+    #[serde(flatten)]
     pub rename_pairs: HashMap<String, String>,
 }
 
@@ -221,6 +223,7 @@ impl Hash for Rename {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Extend {
+    #[serde(flatten)]
     pub extend_pairs: HashMap<String, Function>,
 }
 
@@ -275,6 +278,7 @@ pub enum Function {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Serializer {
     pub template: String,
+    #[serde(flatten)]
     pub options:  Option<HashMap<String, String>>,
     pub format:   DataFormat,
 }
@@ -309,6 +313,7 @@ pub enum IOType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
+    #[serde(flatten)]
     pub configuration: HashMap<String, String>,
     pub target_type:   IOType,
     pub data_format:   DataFormat,
