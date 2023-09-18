@@ -6,7 +6,7 @@ cd ../
 cargo b -r 
 cd interpreter 
 cargo b -r 
-../target/release/translator ./resources/tests/multiple_tm_join.ttl 
+../target/release/translator $1
 mkdir output/ > /dev/null  2>&1
 dot -Tpng ./output.dot.pretty > ./output/pretty.png
 dot -Tpng ./output.dot > ./output/output.png
