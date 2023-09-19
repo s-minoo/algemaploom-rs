@@ -8,7 +8,7 @@ edition = "2021"
 opt-level = 3
 
 [workspace]
-members = ["interpreter",  "operator", "vocab", "plangenerator"]
+members = ["interpreter",  "operator", "vocab", "plangenerator", "translator"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
@@ -35,6 +35,7 @@ clap.workspace = true
 interpreter = {path = "./interpreter/"}
 operator = {path = "./operator/"}
 plangenerator = {path = "./plangenerator/"}
+translator = {path = "./translator/"}
 
 csv = "1.2.2"
 tokio = {version= "1.29.1", features=["full"]}

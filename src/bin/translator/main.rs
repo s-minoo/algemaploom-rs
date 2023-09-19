@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use interpreter::extractors::io::parse_file;
-use interpreter::rmlalgebra::translate_to_algebra;
+use translator::rmlalgebra::translate_to_algebra;
 use plangenerator::error::PlanError;
 
 #[derive(Debug, Clone, Parser)]

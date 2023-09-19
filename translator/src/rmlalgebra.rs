@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
+use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use operator::{
     Extend, Function, Operator, Projection, RcExtendFunction, Serializer,
     Source, Target,
@@ -7,14 +9,6 @@ use operator::{
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan, Processed};
 use sophia_api::term::TTerm;
-use sophia_term::iri::Iri;
-use sophia_term::Term;
-
-use crate::rml_model::join::JoinCondition;
-use crate::rml_model::term_map::{
-    self, ObjectMap, SubjectMap, TermMapInfo, TermMapType,
-};
-use crate::rml_model::{Document, PredicateObjectMap, TriplesMap};
 
 fn file_target(count: usize) -> Target {
     let mut config = HashMap::new();
@@ -412,12 +406,14 @@ mod tests {
     use std::borrow::Borrow;
     use std::collections::HashSet;
 
+    use interpreter::extractors::io::parse_file;
+    use interpreter::extractors::triplesmap_extractor::{
+        self, extract_triples_maps,
+    };
+    use interpreter::import_test_mods;
     use sophia_term::Term;
 
     use super::*;
-    use crate::extractors::io::parse_file;
-    use crate::extractors::triplesmap_extractor::{self, extract_triples_maps};
-    use crate::import_test_mods;
     import_test_mods!();
 
     #[test]

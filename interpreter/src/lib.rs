@@ -6,7 +6,6 @@ use sophia_term::Term;
 
 pub mod extractors;
 pub mod rml_model;
-pub mod rmlalgebra;
 mod test_util;
 
 type TermString = Term<String>;

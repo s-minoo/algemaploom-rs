@@ -353,6 +353,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+ "translator",
  "urlencoding",
 ]
 
@@ -800,6 +801,27 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "translator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "interpreter",
+ "lazy_static",
+ "operator",
+ "plangenerator",
+ "regex",
+ "serde",
+ "serde_json",
+ "sophia_api",
+ "sophia_inmem",
+ "sophia_term",
+ "sophia_turtle",
+ "uuid",
+ "vocab",
 ]
 
 [[package]]
