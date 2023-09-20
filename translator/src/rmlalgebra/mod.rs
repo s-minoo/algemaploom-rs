@@ -185,7 +185,6 @@ fn add_join_related_ops(
                 config: Extend { extend_pairs },
             };
 
-            todo!();
 
             let _ = joined_plan.apply(&extend_op, "Extend")?;
             //.serialize(serializer_op)?;
