@@ -185,7 +185,6 @@ fn add_join_related_ops(
                 config: Extend { extend_pairs },
             };
 
-
             let _ = joined_plan.apply(&extend_op, "Extend")?;
             //.serialize(serializer_op)?;
             //.sink(file_target(count));
@@ -415,11 +414,13 @@ mod tests {
 
     use interpreter::extractors::io::parse_file;
     use interpreter::extractors::triplesmap_extractor::extract_triples_maps;
-    use interpreter::import_test_mods;
     use interpreter::rml_model::term_map;
     use sophia_term::Term;
 
+    use crate::import_test_mods;
+
     use super::*;
+
     import_test_mods!();
 
     #[test]

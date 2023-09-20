@@ -20,11 +20,8 @@ macro_rules! import_test_mods {
         use std::io::BufReader;
         use std::path::PathBuf;
 
-        use sophia_api::graph::Graph;
-        use sophia_api::triple::Triple;
-
         use interpreter::extractors::io::load_graph_bread;
-        use interpreter::extractors::{ExtractorResult, FromVocab, TermMapExtractor};
+        use interpreter::extractors::ExtractorResult;
         use crate::{load_graph, test_case};
     };
 }
