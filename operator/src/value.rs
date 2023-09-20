@@ -185,7 +185,7 @@ mod tests {
         let intoed_map: Value = map.into();
         let map_val = Value::Object(HashMap::from([
             ("name".to_string(), "foobar".into()),
-            ("age".to_string(), (23 as u8).into()),
+            ("age".to_string(), 23_u8.into()),
         ]));
 
         assert!(map_val == intoed_map, "{:?} == {:?}", map_val, intoed_map);
@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn test_number_from_string() {
         let num_str: Value = "23.0".into();
-        let f64_val: Value = (23 as f64).into();
+        let f64_val: Value = 23_f64.into();
 
         assert!(num_str != f64_val, "{:?} != {:?}", num_str, f64_val);
     }

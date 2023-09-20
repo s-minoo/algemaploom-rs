@@ -232,7 +232,7 @@ impl Extend {
         let mut this_pairs = self.extend_pairs;
         let other_pairs = other.extend_pairs;
 
-        this_pairs.extend(other_pairs.into_iter());
+        this_pairs.extend(other_pairs);
 
         Extend {
             extend_pairs: this_pairs,
@@ -295,7 +295,7 @@ impl Hash for Serializer {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.template.hash(state);
         if let Some(option_map) = self.options.as_ref() {
-            hash_hashmap(&option_map, state);
+            hash_hashmap(option_map, state);
         }
         self.format.hash(state);
     }
