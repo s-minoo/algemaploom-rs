@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use interpreter::rml_model::source_target::LogicalTarget;
-use interpreter::rml_model::Document;
+use interpreter::rml_model::{Document, TriplesMap};
 use operator::Target;
+use plangenerator::plan::{Plan, Processed};
 
 use super::types::TermMapEnum;
 
@@ -16,32 +17,31 @@ pub fn file_target(count: usize) -> Target {
     }
 }
 
-pub fn partition_by_logical_target(
+pub fn generate_lt_tm_search_map(
     tm: &Document,
 ) -> HashMap<String, Vec<TermMapEnum>> {
-    // TODO:  <20-09-23, yourname> //
     todo!()
 }
 
 pub fn generate_logtarget_map(
     doc: &Document,
-) -> HashMap<String, &LogicalTarget> {
+) -> HashMap<String, LogicalTarget> {
     let logical_targets =
         doc.triples_maps.iter().fold(HashSet::new(), |mut set, tm| {
-            set.extend(&tm.subject_map.tm_info.logical_targets);
+            set.extend(tm.subject_map.tm_info.logical_targets.clone());
 
             tm.po_maps.iter().for_each(|pom| {
                 let pms_lts = pom
                     .predicate_maps
                     .iter()
-                    .flat_map(|pm| &pm.tm_info.logical_targets);
+                    .flat_map(|pm| pm.tm_info.logical_targets.clone());
 
                 set.extend(pms_lts);
 
                 let oms_lts = pom
                     .object_maps
                     .iter()
-                    .flat_map(|om| &om.tm_info.logical_targets);
+                    .flat_map(|om| om.tm_info.logical_targets.clone());
 
                 set.extend(oms_lts);
             });
@@ -86,4 +86,12 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
     }
 
     result_map
+}
+
+#[derive(Debug, Clone)]
+pub struct SearchMap {
+    pub tm_plan_map:        HashMap<String, (TriplesMap, Plan<Processed>)>,
+    pub variable_map:       HashMap<String, String>,
+    pub logtarget_map:      HashMap<String, LogicalTarget>,
+    pub lt_id_tm_group_map: HashMap<String, Vec<TermMapEnum>>,
 }

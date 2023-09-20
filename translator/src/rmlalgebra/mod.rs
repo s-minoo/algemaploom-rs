@@ -3,6 +3,7 @@ mod util;
 
 use std::collections::{HashMap, HashSet};
 
+use interpreter::rml_model::source_target::LogicalTarget;
 use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
 use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use operator::{
@@ -13,7 +14,10 @@ use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan, Processed};
 use sophia_api::term::TTerm;
 
-use self::util::generate_variable_map;
+use crate::rmlalgebra::util::{
+    generate_logtarget_map, generate_lt_tm_search_map, generate_variable_map,
+    SearchMap,
+};
 
 fn partition_pom_join_nonjoin(
     poms: Vec<PredicateObjectMap>,
@@ -50,11 +54,10 @@ fn partition_pom_join_nonjoin(
 
 pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let mut plan = Plan::<()>::new();
-    let var_map = generate_variable_map(&doc);
 
     let tm_projected_pairs_res: Result<Vec<_>, PlanError> = doc
         .triples_maps
-        .into_iter()
+        .iter()
         .map(|tm| {
             let source_op = translate_source_op(&tm);
             let projection_op = translate_projection_op(&tm);
@@ -67,13 +70,25 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
         })
         .collect();
 
+    // Search dictionaries instantiations
+    let variable_map = generate_variable_map(&doc);
+    let logtarget_map = generate_logtarget_map(&doc);
+    let lt_id_tm_group_map = generate_lt_tm_search_map(&doc);
     let mut tm_projected_pairs = tm_projected_pairs_res?;
-
-    let search_tm_plan_map: HashMap<_, _> = tm_projected_pairs
+    let tm_plan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
         .into_iter()
-        .map(|(tm, plan)| (tm.identifier.clone(), (tm, plan)))
+        .map(|(tm, plan)| (tm.identifier.clone(), (tm.clone(), plan)))
         .collect();
+
+    let search_map = SearchMap {
+        tm_plan_map,
+        variable_map,
+        logtarget_map,
+        lt_id_tm_group_map,
+    };
+
+    // Finish search dictionaries instantiations
 
     let _ = tm_projected_pairs.iter_mut().try_for_each(|(tm, plan)| {
         let sm_ref = &tm.subject_map;
@@ -89,7 +104,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
                     .map(|(idx, pom)| (*idx, pom))
                     .collect(),
                 sm_ref,
-                &var_map,
+                &search_map,
                 plan,
             )?;
         }
@@ -100,9 +115,8 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
                     .iter()
                     .map(|(idx, pom)| (*idx, pom))
                     .collect(),
-                &search_tm_plan_map,
                 sm_ref,
-                &var_map,
+                &search_map,
                 plan,
             )?;
         }
@@ -115,13 +129,15 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
 
 fn add_join_related_ops(
     join_idx_poms: Vec<(usize, &PredicateObjectMap)>,
-    search_tm_plan_map: &HashMap<String, (TriplesMap, Plan<Processed>)>,
     sm: &SubjectMap,
-    variable_map: &HashMap<String, String>,
+    search_map: &SearchMap,
     plan: &mut Plan<Processed>,
 ) -> Result<(), PlanError> {
     // HashMap pairing the attribute with the function generated from
     // PTM's subject map
+
+    let search_tm_plan_map = &search_map.tm_plan_map;
+    let variable_map = &search_map.variable_map;
 
     for (pom_idx, pom) in join_idx_poms {
         let pms = &pom.predicate_maps;
@@ -146,10 +162,8 @@ fn add_join_related_ops(
             let child_attributes = &join_cond.child_attributes;
             let parent_attributes = &join_cond.parent_attributes;
             let ptm_variable = variable_map.get(&ptm.identifier).unwrap();
-            let ptm_alias = format!(
-                "join_{}",
-                &ptm_variable[ptm_variable.len() - 1..]
-            );
+            let ptm_alias =
+                format!("join_{}", &ptm_variable[ptm_variable.len() - 1..]);
 
             let mut joined_plan = plan
                 .join(other_plan)?
@@ -197,10 +211,11 @@ fn add_join_related_ops(
 fn add_non_join_related_ops(
     no_join_idx_poms: Vec<(usize, &PredicateObjectMap)>,
     sm: &SubjectMap,
-    variable_map: &HashMap<String, String>,
+    search_map: &SearchMap,
     plan: &mut Plan<Processed>,
 ) -> Result<(), PlanError> {
     let no_join_idx_poms_iter = no_join_idx_poms.into_iter();
+    let variable_map = &search_map.variable_map;
     let extend_op =
         translate_extend_op(sm, no_join_idx_poms_iter.clone(), variable_map);
     let serializer_op =
@@ -266,8 +281,6 @@ fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
     }
     .into();
 
-    
-
     match tm_info.term_type.unwrap() {
         sophia_api::term::TermKind::Iri => {
             Function::Iri {
@@ -324,19 +337,17 @@ fn translate_extend_pairs<'a>(
                 },
             );
 
-            let object_extends =
-                pom.object_maps
-                    .iter()
-                    .enumerate()
-                    .map(move |(_o_count, om)| {
-                        (
-                            variable_map
-                                .get(&om.tm_info.identifier)
-                                .unwrap()
-                                .clone(),
-                            extract_extend_function_from_term_map(&om.tm_info),
-                        )
-                    });
+            let object_extends = pom.object_maps.iter().enumerate().map(
+                move |(_o_count, om)| {
+                    (
+                        variable_map
+                            .get(&om.tm_info.identifier)
+                            .unwrap()
+                            .clone(),
+                        extract_extend_function_from_term_map(&om.tm_info),
+                    )
+                },
+            );
             predicate_extends.chain(object_extends)
         });
 
@@ -375,16 +386,12 @@ fn extract_serializer_template<'a>(
             .iter()
             .flat_map(|om| variable_map.get(&om.tm_info.identifier));
 
-        
-
         predicates.flat_map(move |p_string| {
             objects
                 .clone()
                 .map(move |o_string| (p_string.clone(), o_string.clone()))
         })
     });
-
-    
 
     predicate_objects
         .map(|(predicate, object)| {
@@ -416,9 +423,8 @@ mod tests {
     use interpreter::rml_model::term_map;
     use sophia_term::Term;
 
-    use crate::import_test_mods;
-
     use super::*;
+    use crate::import_test_mods;
 
     import_test_mods!();
 

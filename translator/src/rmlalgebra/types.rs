@@ -1,18 +1,23 @@
-use interpreter::rml_model::term_map::{SubjectMap, PredicateMap, ObjectMap, GraphMap};
-use interpreter::rml_model::{PredicateObjectMap, TriplesMap};
+use std::collections::HashMap;
+
+use interpreter::rml_model::source_target::LogicalTarget;
+use interpreter::rml_model::term_map::{
+    GraphMap, ObjectMap, PredicateMap, SubjectMap,
+};
+use interpreter::rml_model::TriplesMap;
+use plangenerator::plan::{Plan, Processed};
 
 
-pub type PrefixTriplesMap= (String, TriplesMap); 
-pub type VariableSubjectMap = (String, SubjectMap); 
-pub type PrefixPOM = (String, PredicateObjectMap); 
-pub type VariablePM = (String, PredicateMap); 
-pub type VariableOM = (String, ObjectMap);
 
 
 
+
+
+
+#[derive(Debug, Clone)]
 pub enum TermMapEnum {
-    SubjectMapEnum(SubjectMap), 
+    SubjectMapEnum(SubjectMap),
     PredicateMapEnum(PredicateMap),
     ObjectMapEnum(ObjectMap),
-    GraphMapEnum(GraphMap)
+    GraphMapEnum(GraphMap),
 }
