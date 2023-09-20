@@ -16,9 +16,7 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
 
         tm_info = match tm_info.term_type {
             Some(ttype) if ttype != TermKind::Iri => {
-                return Err(ParseError::GenericError(format!(
-                    "PredicateMap can only have rr:Iri as rr:termType!",
-                )))
+                return Err(ParseError::GenericError("PredicateMap can only have rr:Iri as rr:termType!".to_string()))
             }
             Some(_) => tm_info,
             None => {
@@ -50,7 +48,7 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
 
 #[cfg(test)]
 mod tests {
-    use sophia_api::term::TTerm;
+    
 
     use super::*;
     use crate::import_test_mods;

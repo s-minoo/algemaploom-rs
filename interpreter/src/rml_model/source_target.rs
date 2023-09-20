@@ -1,15 +1,15 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::{HashMap};
 use std::hash::Hash;
-use std::path::PathBuf;
+
 
 use operator::formats::DataFormat;
-use operator::{IOType, Operator, Target};
-use serde::ser::SerializeMap;
+use operator::{IOType, Target};
+
 use sophia_api::term::TTerm;
 use vocab::ToString;
 
 use crate::extractors::FromVocab;
-use crate::{IriString, TermString};
+use crate::{IriString};
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {
@@ -19,13 +19,13 @@ pub struct LogicalSource {
     pub reference_formulation: IriString,
 }
 
-impl Into<operator::Source> for LogicalSource {
-    fn into(self) -> operator::Source {
-        let source_type = match &self.source {
+impl From<LogicalSource> for operator::Source {
+    fn from(val: LogicalSource) -> Self {
+        let source_type = match &val.source {
             Source::FileInput { path: _ } => IOType::File,
         };
 
-        let data_format = match &self.reference_formulation.value().to_string()
+        let data_format = match &val.reference_formulation.value().to_string()
         {
             p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
             p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
@@ -37,13 +37,13 @@ impl Into<operator::Source> for LogicalSource {
             p => panic!("Data format not supported {} ", p),
         };
 
-        let reference_iterators = match &self.iterator {
+        let reference_iterators = match &val.iterator {
             Some(iter) => vec![iter.to_owned()],
             None => vec![],
         };
 
         operator::Source {
-            config: source_config_map(&self),
+            config: source_config_map(&val),
             reference_iterators,
             source_type,
             data_format,
@@ -159,7 +159,7 @@ fn source_config_map(ls: &LogicalSource) -> HashMap<String, String> {
 
     let source_map: HashMap<String, String> = ls.source.clone().into();
 
-    map.extend(source_map.into_iter());
+    map.extend(source_map);
 
     map
 }

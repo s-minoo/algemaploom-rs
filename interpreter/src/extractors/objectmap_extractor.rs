@@ -45,7 +45,7 @@ fn extract_parent_tm(
 }
 
 impl TermMapExtractor<ObjectMap> for ObjectMap {
-    fn create_constant_map(mut tm_info: TermMapInfo) -> ObjectMap {
+    fn create_constant_map(tm_info: TermMapInfo) -> ObjectMap {
         if tm_info.term_type == Some(TermKind::BlankNode) {
             panic!("Constant-valued ObjectMap has to have an IRI or a Literal as value");
         }

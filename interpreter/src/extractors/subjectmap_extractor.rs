@@ -20,9 +20,7 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
             Some(ttype)
                 if ttype != TermKind::Iri && ttype != TermKind::BlankNode =>
             {
-                return Err(ParseError::GenericError(format!(
-                    "PredicateMap can only have rr:Iri as rr:termType!",
-                )))
+                return Err(ParseError::GenericError("PredicateMap can only have rr:Iri as rr:termType!".to_string()))
             }
             Some(_) => tm_info,
             None => {

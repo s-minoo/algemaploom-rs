@@ -1,6 +1,6 @@
 use self::source_target::LogicalSource;
 use self::term_map::{GraphMap, ObjectMap, PredicateMap, SubjectMap};
-use crate::TermString;
+
 
 pub mod join;
 pub mod source_target;
@@ -29,9 +29,6 @@ pub struct PredicateObjectMap {
 impl PredicateObjectMap {
     pub fn contains_ptm(&self) -> bool {
         self.object_maps
-            .iter()
-            .filter(|om| om.parent_tm.is_some())
-            .next()
-            .is_some()
+            .iter().any(|om| om.parent_tm.is_some())
     }
 }

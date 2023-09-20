@@ -60,7 +60,7 @@ pub trait TermMapExtractor<T> {
             return Ok(map_subj_vec
                 .iter()
                 .flat_map(|map_subj| {
-                    Self::create_term_map(&map_subj, graph_ref)
+                    Self::create_term_map(map_subj, graph_ref)
                 })
                 .collect());
         } else if !map_const_obj_vec.is_empty() {

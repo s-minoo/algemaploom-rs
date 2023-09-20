@@ -24,7 +24,7 @@ impl Default for TermMapInfo {
             identifier:      Default::default(),
             logical_targets: Default::default(),
             term_map_type:   TermMapType::Constant,
-            term_value:      Term::new_bnode("qsdkfldsfj".to_string()).unwrap(),
+            term_value:      Term::new_bnode("qsdkfldsfj").unwrap(),
             term_type:       Default::default(),
         }
     }

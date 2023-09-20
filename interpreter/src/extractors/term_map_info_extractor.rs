@@ -1,7 +1,7 @@
-use std::collections::HashSet;
+
 
 use sophia_api::graph::Graph;
-use sophia_api::term::{TTerm, TermKind};
+use sophia_api::term::{TermKind};
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
 use sophia_term::matcher::ANY;
@@ -37,7 +37,7 @@ fn extract_term_map_type_value(
 
     if results_query.len() > 1 {
         return Err(ParseError::GenericError(
-                    format!("More than one occurences of rr:template, rml:reference, rr:constant, or rr:column")
+                    "More than one occurences of rr:template, rml:reference, rr:constant, or rr:column".to_string()
                     ));
     }
 

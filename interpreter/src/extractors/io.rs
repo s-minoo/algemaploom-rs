@@ -13,9 +13,9 @@ use crate::rml_model::Document;
 
 pub fn load_graph_bread(buf_read: impl BufRead) -> ExtractorResult<FastGraph> {
     match turtle::parse_bufread(buf_read).collect_triples() {
-        Ok(it) => return Ok(it),
+        Ok(it) => Ok(it),
         Err(err) => {
-            return Err(ParseError::GenericError(format!(
+            Err(ParseError::GenericError(format!(
                 "Something went wrong with sophia's turtle parsing: {}",
                 err
             )))
@@ -25,9 +25,9 @@ pub fn load_graph_bread(buf_read: impl BufRead) -> ExtractorResult<FastGraph> {
 
 pub fn load_graph_str(input_str: &str) -> ExtractorResult<FastGraph> {
     match turtle::parse_str(input_str).collect_triples() {
-        Ok(it) => return Ok(it),
+        Ok(it) => Ok(it),
         Err(err) => {
-            return Err(ParseError::GenericError(format!(
+            Err(ParseError::GenericError(format!(
                 "Something went wrong with sophia's turtle parsing: {}",
                 err
             )))
@@ -38,7 +38,7 @@ pub fn load_graph_str(input_str: &str) -> ExtractorResult<FastGraph> {
 pub fn parse_str(input_str: &str) -> ExtractorResult<Document> {
     let graph = load_graph_str(input_str)?;
     let triples_maps = extract_triples_maps(&graph)?;
-    return Ok(Document { triples_maps });
+    Ok(Document { triples_maps })
 }
 
 pub fn parse_file(path: PathBuf) -> ExtractorResult<Document> {

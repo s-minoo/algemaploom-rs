@@ -23,8 +23,8 @@ macro_rules! import_test_mods {
         use sophia_api::graph::Graph;
         use sophia_api::triple::Triple;
 
-        use crate::extractors::io::load_graph_bread;
-        use crate::extractors::{ExtractorResult, FromVocab, TermMapExtractor};
+        use $crate::extractors::io::load_graph_bread;
+        use $crate::extractors::{ExtractorResult, FromVocab, TermMapExtractor};
         use crate::{load_graph, test_case};
     };
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use operator::formats::DataFormat;
+
 use operator::IOType;
 use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
@@ -8,7 +8,7 @@ use sophia_term::iri::Iri;
 use sophia_term::RcTerm;
 
 use super::{Extractor, ExtractorResult};
-use crate::extractors::store::{get_object, get_objects};
+use crate::extractors::store::{get_object};
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::LogicalTarget;
 
