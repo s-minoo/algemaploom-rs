@@ -205,7 +205,6 @@ fn add_non_join_related_ops(
         translate_extend_op(&sm, no_join_idx_poms_iter.clone(), &variable_map);
     let serializer_op =
         translate_serializer_op(no_join_idx_poms_iter, sm, &variable_map);
-    todo!();
     let _ = plan
         .apply(&extend_op, "ExtendOp")?
         .serialize(serializer_op)?;
