@@ -127,7 +127,7 @@ fn add_join_related_ops(
         let pms = &pom.predicate_maps;
         let oms = &pom.object_maps;
 
-        for (om_idx, om) in oms.iter().enumerate() {
+        for (_om_idx, om) in oms.iter().enumerate() {
             let ptm_iri = om
                 .parent_tm
                 .as_ref()
@@ -148,7 +148,7 @@ fn add_join_related_ops(
             let ptm_variable = variable_map.get(&ptm.identifier).unwrap();
             let ptm_alias = format!(
                 "join_{}",
-                ptm_variable[ptm_variable.len() - 1..].to_string()
+                &ptm_variable[ptm_variable.len() - 1..]
             );
 
             let mut joined_plan = plan
@@ -202,9 +202,9 @@ fn add_non_join_related_ops(
 ) -> Result<(), PlanError> {
     let no_join_idx_poms_iter = no_join_idx_poms.into_iter();
     let extend_op =
-        translate_extend_op(&sm, no_join_idx_poms_iter.clone(), &variable_map);
+        translate_extend_op(sm, no_join_idx_poms_iter.clone(), variable_map);
     let serializer_op =
-        translate_serializer_op(no_join_idx_poms_iter, sm, &variable_map);
+        translate_serializer_op(no_join_idx_poms_iter, sm, variable_map);
     let _ = plan
         .apply(&extend_op, "ExtendOp")?
         .serialize(serializer_op)?;
@@ -266,7 +266,9 @@ fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
     }
     .into();
 
-    let type_function = match tm_info.term_type.unwrap() {
+    
+
+    match tm_info.term_type.unwrap() {
         sophia_api::term::TermKind::Iri => {
             Function::Iri {
                 inner_function: Function::UriEncode {
@@ -286,9 +288,7 @@ fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
             }
         }
         typ => panic!("Unrecognized term kind {:?}", typ),
-    };
-
-    type_function
+    }
 }
 
 fn translate_extend_op<'a>(
@@ -311,9 +311,9 @@ fn translate_extend_pairs<'a>(
     let sub_extend = sm_extract_extend_pair(variable_map, sm);
 
     let poms_extend =
-        idx_poms.flat_map(|(pom_count, pom)| {
+        idx_poms.flat_map(|(_pom_count, pom)| {
             let predicate_extends = pom.predicate_maps.iter().enumerate().map(
-                move |(p_count, pm)| {
+                move |(_p_count, pm)| {
                     (
                         variable_map
                             .get(&pm.tm_info.identifier)
@@ -328,7 +328,7 @@ fn translate_extend_pairs<'a>(
                 pom.object_maps
                     .iter()
                     .enumerate()
-                    .map(move |(o_count, om)| {
+                    .map(move |(_o_count, om)| {
                         (
                             variable_map
                                 .get(&om.tm_info.identifier)
@@ -362,9 +362,9 @@ fn extract_serializer_template<'a>(
     variable_map: &HashMap<String, String>,
 ) -> String {
     let subject = variable_map.get(&sm.tm_info.identifier).unwrap().clone();
-    let predicate_objects = pom.flat_map(|(idx, pom)| {
-        let p_length = pom.predicate_maps.len();
-        let o_length = pom.object_maps.len();
+    let predicate_objects = pom.flat_map(|(_idx, pom)| {
+        let _p_length = pom.predicate_maps.len();
+        let _o_length = pom.object_maps.len();
 
         let predicates = pom
             .predicate_maps
@@ -375,22 +375,22 @@ fn extract_serializer_template<'a>(
             .iter()
             .flat_map(|om| variable_map.get(&om.tm_info.identifier));
 
-        let pairs = predicates.flat_map(move |p_string| {
+        
+
+        predicates.flat_map(move |p_string| {
             objects
                 .clone()
                 .map(move |o_string| (p_string.clone(), o_string.clone()))
-        });
-
-        pairs
+        })
     });
 
-    let triple_graph_pattern = predicate_objects
+    
+
+    predicate_objects
         .map(|(predicate, object)| {
             format!(" ?{} ?{} ?{}.", subject, predicate, object)
         })
-        .fold(String::new(), |a, b| a + &b + "\n");
-
-    triple_graph_pattern
+        .fold(String::new(), |a, b| a + &b + "\n")
 }
 
 fn translate_serializer_op<'a>(
@@ -456,7 +456,7 @@ mod tests {
         assert_eq!(triples_map_vec.len(), 1);
 
         let triples_map = triples_map_vec.pop().unwrap();
-        let source_op = translate_source_op(&triples_map);
+        let _source_op = translate_source_op(&triples_map);
         let projection_ops = translate_projection_op(&triples_map);
 
         let projection = match projection_ops.borrow() {
@@ -486,8 +486,8 @@ mod tests {
         let mut triples_map_vec = extract_triples_maps(&graph)?;
         assert_eq!(triples_map_vec.len(), 1);
         let triples_map = triples_map_vec.pop().unwrap();
-        let source_op = translate_source_op(&triples_map);
-        let projection_ops = translate_projection_op(&triples_map);
+        let _source_op = translate_source_op(&triples_map);
+        let _projection_ops = translate_projection_op(&triples_map);
 
         let variable_map = generate_variable_map(&Document {
             triples_maps: triples_map_vec,
@@ -508,7 +508,7 @@ mod tests {
         let document = parse_file(test_case!("sample_mapping.ttl").into())?;
         let operators = translate_to_algebra(document);
 
-        let output = File::create("op_trans_output.json")?;
+        let _output = File::create("op_trans_output.json")?;
         println!("{:#?}", operators);
         Ok(())
     }
@@ -518,7 +518,7 @@ mod tests {
         let document = parse_file(test_case!("multiple_tm.ttl").into())?;
         let operators = translate_to_algebra(document);
 
-        let output = File::create("op_trans_complex_output.json")?;
+        let _output = File::create("op_trans_complex_output.json")?;
         println!("{:#?}", operators);
         Ok(())
     }

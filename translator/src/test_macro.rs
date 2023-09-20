@@ -22,6 +22,6 @@ macro_rules! import_test_mods {
 
         use interpreter::extractors::io::load_graph_bread;
         use interpreter::extractors::ExtractorResult;
-        use crate::{load_graph, test_case};
+        use $crate::{load_graph, test_case};
     };
 }

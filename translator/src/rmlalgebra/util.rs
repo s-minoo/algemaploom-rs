@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use interpreter::rml_model::{Document, TriplesMap};
+use interpreter::rml_model::{Document};
 use operator::Target;
 
 pub fn file_target(count: usize) -> Target {
