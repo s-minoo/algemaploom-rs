@@ -1,7 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use interpreter::rml_model::{Document};
+use interpreter::rml_model::source_target::LogicalTarget;
+use interpreter::rml_model::Document;
 use operator::Target;
+
+use super::types::TermMapEnum;
 
 pub fn file_target(count: usize) -> Target {
     let mut config = HashMap::new();
@@ -11,6 +14,45 @@ pub fn file_target(count: usize) -> Target {
         target_type:   operator::IOType::File,
         data_format:   operator::formats::DataFormat::NTriples,
     }
+}
+
+pub fn partition_by_logical_target(
+    tm: &Document,
+) -> HashMap<String, Vec<TermMapEnum>> {
+    // TODO:  <20-09-23, yourname> //
+    todo!()
+}
+
+pub fn generate_logtarget_map(
+    doc: &Document,
+) -> HashMap<String, &LogicalTarget> {
+    let logical_targets =
+        doc.triples_maps.iter().fold(HashSet::new(), |mut set, tm| {
+            set.extend(&tm.subject_map.tm_info.logical_targets);
+
+            tm.po_maps.iter().for_each(|pom| {
+                let pms_lts = pom
+                    .predicate_maps
+                    .iter()
+                    .flat_map(|pm| &pm.tm_info.logical_targets);
+
+                set.extend(pms_lts);
+
+                let oms_lts = pom
+                    .object_maps
+                    .iter()
+                    .flat_map(|om| &om.tm_info.logical_targets);
+
+                set.extend(oms_lts);
+            });
+
+            set
+        });
+
+    logical_targets
+        .into_iter()
+        .map(|lt| (lt.identifier.clone(), lt))
+        .collect()
 }
 
 pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
