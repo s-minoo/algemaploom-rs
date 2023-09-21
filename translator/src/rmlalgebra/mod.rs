@@ -3,7 +3,6 @@ mod util;
 
 use std::collections::{HashMap, HashSet};
 
-use interpreter::rml_model::source_target::LogicalTarget;
 use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
 use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use operator::{
@@ -21,16 +20,11 @@ use crate::rmlalgebra::util::{
 
 fn partition_pom_join_nonjoin(
     poms: Vec<PredicateObjectMap>,
-) -> (
-    Vec<(usize, PredicateObjectMap)>,
-    Vec<(usize, PredicateObjectMap)>,
-) {
-    let (mut ptm_poms, mut no_ptm_poms): (Vec<_>, Vec<_>) = poms
-        .into_iter()
-        .enumerate()
-        .partition(|(_, pom)| pom.contains_ptm());
+) -> (Vec<PredicateObjectMap>, Vec<PredicateObjectMap>) {
+    let (mut ptm_poms, mut no_ptm_poms): (Vec<_>, Vec<_>) =
+        poms.into_iter().partition(|pom| pom.contains_ptm());
 
-    for (pom_idx, pom) in ptm_poms.iter_mut() {
+    for pom in ptm_poms.iter_mut() {
         let (ptm_oms, no_ptm_oms): (Vec<_>, Vec<_>) = pom
             .object_maps
             .clone()
@@ -39,13 +33,10 @@ fn partition_pom_join_nonjoin(
 
         pom.object_maps = ptm_oms;
         if !no_ptm_oms.is_empty() {
-            no_ptm_poms.push((
-                *pom_idx,
-                PredicateObjectMap {
-                    predicate_maps: pom.predicate_maps.clone(),
-                    object_maps:    no_ptm_oms,
-                },
-            ));
+            no_ptm_poms.push(PredicateObjectMap {
+                predicate_maps: pom.predicate_maps.clone(),
+                object_maps:    no_ptm_oms,
+            });
         }
     }
 
@@ -94,31 +85,15 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
         let sm_ref = &tm.subject_map;
         let poms = tm.po_maps.clone();
 
-        let (joined_idx_poms, no_join_idx_poms): (Vec<_>, Vec<_>) =
+        let (joined_poms, no_join_poms): (Vec<_>, Vec<_>) =
             partition_pom_join_nonjoin(poms);
 
-        if !no_join_idx_poms.is_empty() {
-            add_non_join_related_ops(
-                no_join_idx_poms
-                    .iter()
-                    .map(|(idx, pom)| (*idx, pom))
-                    .collect(),
-                sm_ref,
-                &search_map,
-                plan,
-            )?;
+        if !no_join_poms.is_empty() {
+            add_non_join_related_ops(&no_join_poms, sm_ref, &search_map, plan)?;
         }
 
-        if !joined_idx_poms.is_empty() {
-            add_join_related_ops(
-                no_join_idx_poms
-                    .iter()
-                    .map(|(idx, pom)| (*idx, pom))
-                    .collect(),
-                sm_ref,
-                &search_map,
-                plan,
-            )?;
+        if !joined_poms.is_empty() {
+            add_join_related_ops(&joined_poms, sm_ref, &search_map, plan)?;
         }
 
         Ok::<(), PlanError>(())
@@ -128,7 +103,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
 }
 
 fn add_join_related_ops(
-    join_idx_poms: Vec<(usize, &PredicateObjectMap)>,
+    join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     search_map: &SearchMap,
     plan: &mut Plan<Processed>,
@@ -139,7 +114,7 @@ fn add_join_related_ops(
     let search_tm_plan_map = &search_map.tm_plan_map;
     let variable_map = &search_map.variable_map;
 
-    for (pom_idx, pom) in join_idx_poms {
+    for pom in join_poms {
         let pms = &pom.predicate_maps;
         let oms = &pom.object_maps;
 
@@ -189,9 +164,11 @@ fn add_join_related_ops(
                 object_maps:    [om.clone()].to_vec(),
             };
 
-            let idx_poms = [(pom_idx, &pom_with_joined_ptm)].into_iter();
-            let mut extend_pairs =
-                translate_extend_pairs(variable_map, sm, idx_poms.clone());
+            let mut extend_pairs = translate_extend_pairs(
+                variable_map,
+                sm,
+                &[pom_with_joined_ptm],
+            );
 
             extend_pairs.insert(om_extend_attr, ptm_sub_function);
 
@@ -209,17 +186,14 @@ fn add_join_related_ops(
 }
 
 fn add_non_join_related_ops(
-    no_join_idx_poms: Vec<(usize, &PredicateObjectMap)>,
+    no_join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     search_map: &SearchMap,
     plan: &mut Plan<Processed>,
 ) -> Result<(), PlanError> {
-    let no_join_idx_poms_iter = no_join_idx_poms.into_iter();
     let variable_map = &search_map.variable_map;
-    let extend_op =
-        translate_extend_op(sm, no_join_idx_poms_iter.clone(), variable_map);
-    let serializer_op =
-        translate_serializer_op(no_join_idx_poms_iter, sm, variable_map);
+    let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
+    let serializer_op = translate_serializer_op(no_join_poms, sm, variable_map);
     let _ = plan
         .apply(&extend_op, "ExtendOp")?
         .serialize(serializer_op)?;
@@ -304,27 +278,27 @@ fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
     }
 }
 
-fn translate_extend_op<'a>(
-    sm: &'a SubjectMap,
-    idx_poms: impl Iterator<Item = (usize, &'a PredicateObjectMap)>,
+fn translate_extend_op(
+    sm: &SubjectMap,
+    poms: &[PredicateObjectMap],
     variable_map: &HashMap<String, String>,
 ) -> Operator {
-    let extend_pairs = translate_extend_pairs(variable_map, sm, idx_poms);
+    let extend_pairs = translate_extend_pairs(variable_map, sm, poms);
 
     operator::Operator::ExtendOp {
         config: Extend { extend_pairs },
     }
 }
 
-fn translate_extend_pairs<'a>(
+fn translate_extend_pairs(
     variable_map: &HashMap<String, String>,
-    sm: &'a SubjectMap,
-    idx_poms: impl Iterator<Item = (usize, &'a PredicateObjectMap)>,
+    sm: &SubjectMap,
+    poms: &[PredicateObjectMap],
 ) -> HashMap<String, Function> {
     let sub_extend = sm_extract_extend_pair(variable_map, sm);
 
     let poms_extend =
-        idx_poms.flat_map(|(_pom_count, pom)| {
+        poms.iter().flat_map(|pom| {
             let predicate_extends = pom.predicate_maps.iter().enumerate().map(
                 move |(_p_count, pm)| {
                     (
@@ -368,12 +342,12 @@ fn sm_extract_extend_pair(
 }
 
 fn extract_serializer_template<'a>(
-    pom: impl Iterator<Item = (usize, &'a PredicateObjectMap)>,
+    poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     variable_map: &HashMap<String, String>,
 ) -> String {
     let subject = variable_map.get(&sm.tm_info.identifier).unwrap().clone();
-    let predicate_objects = pom.flat_map(|(_idx, pom)| {
+    let predicate_objects = poms.iter().flat_map(|pom| {
         let _p_length = pom.predicate_maps.len();
         let _o_length = pom.object_maps.len();
 
@@ -401,11 +375,11 @@ fn extract_serializer_template<'a>(
 }
 
 fn translate_serializer_op<'a>(
-    idx_poms: impl Iterator<Item = (usize, &'a PredicateObjectMap)>,
+    poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     variable_map: &HashMap<String, String>,
 ) -> Serializer {
-    let template = extract_serializer_template(idx_poms, sm, variable_map);
+    let template = extract_serializer_template(poms, sm, variable_map);
     Serializer {
         template,
         options: None,
@@ -501,7 +475,7 @@ mod tests {
 
         let extend_op = translate_extend_op(
             &triples_map.subject_map,
-            triples_map.po_maps.iter().enumerate(),
+            &triples_map.po_maps,
             &variable_map,
         );
 
