@@ -102,6 +102,22 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     todo!()
 }
 
+fn add_non_join_related_ops(
+    no_join_poms: &[PredicateObjectMap],
+    sm: &SubjectMap,
+    search_map: &SearchMap,
+    plan: &mut Plan<Processed>,
+) -> Result<(), PlanError> {
+    let variable_map = &search_map.variable_map;
+    let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
+    let serializer_op = translate_serializer_op(no_join_poms, sm, variable_map);
+    let _ = plan
+        .apply(&extend_op, "ExtendOp")?
+        .serialize(serializer_op)?;
+    // .sink(file_target(count));
+    Ok(())
+}
+
 fn add_join_related_ops(
     join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
@@ -184,23 +200,6 @@ fn add_join_related_ops(
 
     Ok(())
 }
-
-fn add_non_join_related_ops(
-    no_join_poms: &[PredicateObjectMap],
-    sm: &SubjectMap,
-    search_map: &SearchMap,
-    plan: &mut Plan<Processed>,
-) -> Result<(), PlanError> {
-    let variable_map = &search_map.variable_map;
-    let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
-    let serializer_op = translate_serializer_op(no_join_poms, sm, variable_map);
-    let _ = plan
-        .apply(&extend_op, "ExtendOp")?
-        .serialize(serializer_op)?;
-    // .sink(file_target(count));
-    Ok(())
-}
-
 fn translate_source_op(tm: &TriplesMap) -> Source {
     tm.logical_source.clone().into()
 }
