@@ -13,9 +13,9 @@ use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan, Processed};
 use sophia_api::term::TTerm;
 
+use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_tm_search_map, generate_variable_map,
-    SearchMap,
 };
 
 fn partition_pom_join_nonjoin(
@@ -69,7 +69,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let tm_plan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
         .into_iter()
-        .map(|(tm, plan)| (tm.identifier.clone(), (tm.clone(), plan)))
+        .map(|(tm, plan)| (tm.identifier.clone(), (tm, plan)))
         .collect();
 
     let search_map = SearchMap {
@@ -99,6 +99,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
         Ok::<(), PlanError>(())
     });
 
+    // TODO:  <21-09-23, Min Oo> //
     todo!()
 }
 
