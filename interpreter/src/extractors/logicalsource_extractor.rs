@@ -34,6 +34,15 @@ impl Extractor<LogicalSource> for LogicalSource {
     }
 }
 
+fn extract_inferred_source(
+    subject: &RcTerm,
+    graph: &FastGraph,
+) -> ExtractorResult<Source> {
+    
+    
+    unimplemented!()
+}
+
 // TODO: expand to also support other input types <05-04-23,> //
 fn extract_input_type(
     subject: &RcTerm,
