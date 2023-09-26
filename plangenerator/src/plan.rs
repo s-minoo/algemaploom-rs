@@ -48,7 +48,7 @@ impl Plan<()> {
             _t:        PhantomData,
             graph:     Rc::new(RefCell::new(DiGraph::new())),
             sources:   Rc::new(RefCell::new(Vec::new())),
-            fragment:  None,
+            fragment:  Some("default".to_string()),
             last_node: None,
         }
     }
@@ -141,13 +141,9 @@ impl Plan<Processed> {
         &mut self,
         other_op: &Plan<Processed>,
     ) -> Result<NotAliasedJoinedPlan<Processed>, PlanError> {
-        let left_node = self.last_node.unwrap();
-        let right_node = other_op.last_node.unwrap();
-
         Ok(NotAliasedJoinedPlan {
-            plan: self.clone(),
-            left_node,
-            right_node,
+            left_plan:  self.clone(),
+            right_plan: other_op.clone(),
         })
     }
 
@@ -183,7 +179,7 @@ impl Plan<Processed> {
         let new_node_idx = graph.add_node(plan_node);
 
         let plan_edge = PlanEdge {
-            fragment: "default".to_string(),
+            fragment: self.fragment.as_ref().unwrap().to_string(),
         };
 
         graph.add_edge(prev_node_idx, new_node_idx, plan_edge);
@@ -206,7 +202,7 @@ impl Plan<Processed> {
         }
 
         if let Some(previous_fragment) = previous_fragment_opt {
-            if &fragment.from == previous_fragment {
+            if &fragment.from != previous_fragment {
                 return Err(PlanError::AuxError(format!("Previous operator's output fragment, {}, doesn't match with the 
                                                input fragment, {}, of the Fragmenter", previous_fragment, fragment.from)));
             }
@@ -222,22 +218,21 @@ impl Plan<Processed> {
         let mut graph = self.graph.borrow_mut();
         let id_num = graph.node_count();
 
-        let new_fragment_string = fragment.to.clone();
-
         let fragment_node = PlanNode {
             id:       format!("Fragmenter_{}", id_num),
-            operator: Operator::FragmentOp { config: fragment },
+            operator: Operator::FragmentOp {
+                config: fragment.clone(),
+            },
         };
 
         let node_idx = graph.add_node(fragment_node);
         let prev_node_idx = self.last_node.unwrap();
-
         let edge = PlanEdge {
-            fragment: new_fragment_string.clone(),
+            fragment: fragment.from.clone(),
         };
-
         graph.add_edge(prev_node_idx, node_idx, edge);
 
+        let new_fragment_string = fragment.to.clone();
         Ok(self.next_idx_fragment(Some(node_idx), new_fragment_string))
     }
 
@@ -260,7 +255,9 @@ impl Plan<Processed> {
 
         let node_idx = graph.add_node(plan_node);
 
-        let plan_edge = PlanEdge::default();
+        let plan_edge = PlanEdge {
+            fragment: self.fragment.as_ref().unwrap().to_string(),
+        };
 
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
         Ok(self.next_idx(Some(node_idx)))
@@ -269,9 +266,8 @@ impl Plan<Processed> {
 
 #[derive(Debug, Clone)]
 pub struct NotAliasedJoinedPlan<T> {
-    plan:       Plan<T>,
-    left_node:  NodeIndex,
-    right_node: NodeIndex,
+    left_plan:  Plan<T>,
+    right_plan: Plan<T>,
 }
 
 impl NotAliasedJoinedPlan<Processed> {
@@ -280,20 +276,18 @@ impl NotAliasedJoinedPlan<Processed> {
         alias: &str,
     ) -> Result<AliasedJoinedPlan<Processed>, PlanError> {
         Ok(AliasedJoinedPlan {
-            plan:       self.plan.clone(),
+            left_plan:  self.left_plan.clone(),
+            right_plan: self.right_plan.clone(),
             alias:      alias.to_string(),
-            left_node:  self.left_node,
-            right_node: self.right_node,
         })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct AliasedJoinedPlan<T> {
-    plan:       Plan<T>,
+    left_plan:  Plan<T>,
+    right_plan: Plan<T>,
     alias:      String,
-    left_node:  NodeIndex,
-    right_node: NodeIndex,
 }
 
 impl AliasedJoinedPlan<Processed> {
@@ -313,7 +307,7 @@ impl AliasedJoinedPlan<Processed> {
     }
 
     pub fn cross(&mut self) -> Result<Plan<Processed>, PlanError> {
-        let graph = &mut *self.plan.graph.borrow_mut();
+        let graph = &mut *self.left_plan.graph.borrow_mut();
 
         let join_config = Join {
             join_type: operator::JoinType::CrossJoin,
@@ -324,7 +318,7 @@ impl AliasedJoinedPlan<Processed> {
         let join_node = PlanNode {
             id:       format!(
                 "Join_{:?}_{:?}",
-                self.left_node, self.right_node
+                self.left_plan.last_node, self.right_plan.last_node
             ),
             operator: Operator::JoinOp {
                 config: join_config,
@@ -354,7 +348,7 @@ impl WhereByPlan<Processed> {
         A: Into<String>,
     {
         let joined_plan = &self.joined_plan;
-        let plan = &joined_plan.plan;
+        let plan = &joined_plan.left_plan;
         let graph = &mut *plan.graph.borrow_mut();
 
         let left_attributes = self.left_attributes.to_owned();
@@ -383,13 +377,27 @@ impl WhereByPlan<Processed> {
 
         let node_idx = graph.add_node(join_node);
 
-        let left_node = joined_plan.left_node;
-        let left_edge = PlanEdge::default();
+        let left_node = joined_plan.left_plan.last_node.unwrap();
+        let left_edge = PlanEdge {
+            fragment: joined_plan
+                .left_plan
+                .fragment
+                .as_ref()
+                .unwrap()
+                .to_string(),
+        };
 
         graph.add_edge(left_node, node_idx, left_edge);
 
-        let right_node = joined_plan.right_node;
-        let right_edge = PlanEdge::default();
+        let right_node = joined_plan.right_plan.last_node.unwrap();
+        let right_edge = PlanEdge {
+            fragment: joined_plan
+                .right_plan
+                .fragment
+                .as_ref()
+                .unwrap()
+                .to_string(),
+        };
 
         graph.add_edge(right_node, node_idx, right_edge);
 

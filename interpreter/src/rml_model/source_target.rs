@@ -1,15 +1,13 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::hash::Hash;
-
 
 use operator::formats::DataFormat;
 use operator::{IOType, Target};
-
 use sophia_api::term::TTerm;
 use vocab::ToString;
 
 use crate::extractors::FromVocab;
-use crate::{IriString};
+use crate::IriString;
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {
@@ -25,8 +23,7 @@ impl From<LogicalSource> for operator::Source {
             Source::FileInput { path: _ } => IOType::File,
         };
 
-        let data_format = match &val.reference_formulation.value().to_string()
-        {
+        let data_format = match &val.reference_formulation.value().to_string() {
             p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
             p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
                 DataFormat::JSON
@@ -111,8 +108,8 @@ fn serialization_to_dataformat(serialization: &IriString) -> DataFormat {
     }
 }
 
-impl From<LogicalTarget> for operator::Target {
-    fn from(val: LogicalTarget) -> Self {
+impl From<&LogicalTarget> for operator::Target {
+    fn from(val: &LogicalTarget) -> Self {
         let mut configuration = HashMap::new();
 
         if let Some(comp_iri) = val.compression.as_ref() {
@@ -121,14 +118,20 @@ impl From<LogicalTarget> for operator::Target {
                 comp_iri.value().to_string(),
             );
         }
+        configuration.extend(val.config.clone());
 
-        configuration.extend(val.config);
         let data_format = serialization_to_dataformat(&val.serialization);
         Target {
             configuration,
             data_format,
-            target_type: val.output_type,
+            target_type: val.output_type.clone(),
         }
+    }
+}
+
+impl From<LogicalTarget> for operator::Target {
+    fn from(val: LogicalTarget) -> Self {
+        (&val).into()
     }
 }
 

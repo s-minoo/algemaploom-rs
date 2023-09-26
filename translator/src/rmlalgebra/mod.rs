@@ -1,21 +1,27 @@
+mod operators;
 mod types;
 mod util;
 
 use std::collections::{HashMap, HashSet};
 
+use interpreter::rml_model::source_target::LogicalTarget;
 use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
 use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
+use operator::formats::DataFormat;
 use operator::{
-    Extend, Function, Operator, Projection, RcExtendFunction, Serializer,
-    Source,
+    Extend, Fragmenter, Function, Operator, Projection, RcExtendFunction,
+    Serializer, Source, Target,
 };
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan, Processed};
 use sophia_api::term::TTerm;
 
+use self::operators::serializer;
+use self::types::Triples;
+use self::util::generate_lt_tm_map_from_spo;
 use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
-    generate_logtarget_map, generate_lt_tm_search_map, generate_variable_map,
+    generate_logtarget_map, generate_lt_tm_map_from_doc, generate_variable_map,
 };
 
 fn partition_pom_join_nonjoin(
@@ -63,8 +69,8 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
 
     // Search dictionaries instantiations
     let variable_map = generate_variable_map(&doc);
-    let logtarget_map = generate_logtarget_map(&doc);
-    let lt_id_tm_group_map = generate_lt_tm_search_map(&doc);
+    let target_map = generate_logtarget_map(&doc);
+    let lt_id_tm_group_map = generate_lt_tm_map_from_doc(&doc);
     let mut tm_projected_pairs = tm_projected_pairs_res?;
     let tm_plan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
@@ -75,7 +81,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let search_map = SearchMap {
         tm_plan_map,
         variable_map,
-        logtarget_map,
+        target_map,
         lt_id_tm_group_map,
     };
 
@@ -99,8 +105,24 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
         Ok::<(), PlanError>(())
     });
 
-    // TODO:  <21-09-23, Min Oo> //
-    todo!()
+    Ok(plan)
+}
+
+fn translate_fragment_ops(
+    lt_triples_map: &HashMap<String, Vec<Triples>>,
+) -> Vec<Fragmenter> {
+    let mut result = vec![];
+    let target_lt_ids = lt_triples_map.keys();
+
+    let default_from = String::from("default");
+    for lt_id in target_lt_ids {
+        result.push(Fragmenter {
+            from: default_from.clone(),
+            to:   lt_id.clone(),
+        });
+    }
+
+    result
 }
 
 fn add_non_join_related_ops(
@@ -110,12 +132,30 @@ fn add_non_join_related_ops(
     plan: &mut Plan<Processed>,
 ) -> Result<(), PlanError> {
     let variable_map = &search_map.variable_map;
+    let target_map = &search_map.target_map;
     let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
-    let serializer_op = translate_serializer_op(no_join_poms, sm, variable_map);
-    let _ = plan
-        .apply(&extend_op, "ExtendOp")?
-        .serialize(serializer_op)?;
-    // .sink(file_target(count));
+    let mut extended_plan = plan.apply(&extend_op, "ExtendOp")?;
+
+    let lt_triples_map = generate_lt_tm_map_from_spo(sm, no_join_poms);
+    let fragment_ops = translate_fragment_ops(&lt_triples_map);
+
+    for fragmenter in fragment_ops {
+        let lt_id = &fragmenter.to;
+        let target = target_map.get(lt_id).unwrap();
+        let serialize_format = &target.data_format;
+        let triples = lt_triples_map.get(lt_id).unwrap();
+
+        let serializer_op = serializer::translate_serializer_op(
+            triples,
+            serialize_format,
+            variable_map,
+        );
+
+
+        println!("Adding fragment {:?}", fragmenter);
+        let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
+    }
+
     Ok(())
 }
 
@@ -374,7 +414,7 @@ fn extract_serializer_template<'a>(
         .fold(String::new(), |a, b| a + &b + "\n")
 }
 
-fn translate_serializer_op<'a>(
+fn translate_serializer_op_old<'a>(
     poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     variable_map: &HashMap<String, String>,

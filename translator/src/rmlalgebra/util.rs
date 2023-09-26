@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::vec;
 
 use interpreter::rml_model::source_target::LogicalTarget;
-use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
+use interpreter::rml_model::term_map::SubjectMap;
+use interpreter::rml_model::{Document, PredicateObjectMap};
 use operator::Target;
-use plangenerator::plan::{Plan, Processed};
 
 use super::types::{RefPOM, Triples};
 
@@ -18,56 +18,66 @@ pub fn file_target(count: usize) -> Target {
     }
 }
 
-pub fn generate_lt_tm_search_map(
+pub fn generate_lt_tm_map_from_doc(
     doc: &Document,
 ) -> HashMap<String, Vec<Triples>> {
     let mut result = HashMap::new();
     for tm in &doc.triples_maps {
-        let sm = &tm.subject_map;
-        let sm_lts = &sm.tm_info.logical_targets;
+        result
+            .extend(generate_lt_tm_map_from_spo(&tm.subject_map, &tm.po_maps));
+    }
 
-        sm_lts.iter().for_each(|lt| {
-            let triples = Triples {
-                sm,
-                poms: tm.po_maps.iter().map(|pom| pom.into()).collect(),
-            };
-            update_lt_map(&mut result, lt, triples);
-        });
+    result
+}
 
-        for pom in &tm.po_maps {
-            let oms = &pom.object_maps;
-            let pms = &pom.predicate_maps;
+pub fn generate_lt_tm_map_from_spo<'a>(
+    sm: &'a SubjectMap,
+    poms: &'a [PredicateObjectMap],
+) -> HashMap<String, Vec<Triples<'a>>> {
+    let mut result = HashMap::new();
+    let sm_lts = &sm.tm_info.logical_targets;
 
-            for pm in pms {
-                pm.tm_info.logical_targets.iter().for_each(|lt| {
-                    let ref_pom = RefPOM {
-                        pm: vec![pm],
-                        om: oms.iter().map(|om| om.into()).collect(),
-                    };
-                    let triples = Triples {
-                        sm,
-                        poms: vec![ref_pom],
-                    };
+    sm_lts.iter().for_each(|lt| {
+        let triples = Triples {
+            sm,
+            poms: poms.iter().map(|pom| pom.into()).collect(),
+        };
+        update_lt_map(&mut result, lt, triples);
+    });
 
-                    update_lt_map(&mut result, lt, triples);
-                });
-            }
+    for pom in poms {
+        let oms = &pom.object_maps;
+        let pms = &pom.predicate_maps;
 
-            for om in oms {
-                om.tm_info.logical_targets.iter().for_each(|lt| {
-                    let ref_pom = RefPOM {
-                        pm: pms.iter().map(|pm| pm.into()).collect(),
-                        om: vec![om],
-                    };
+        for pm in pms {
+            pm.tm_info.logical_targets.iter().for_each(|lt| {
+                let ref_pom = RefPOM {
+                    pm: vec![pm],
+                    om: oms.iter().map(|om| om.into()).collect(),
+                };
+                let triples = Triples {
+                    sm,
+                    poms: vec![ref_pom],
+                };
 
-                    let triples = Triples {
-                        sm,
-                        poms: vec![ref_pom],
-                    };
+                update_lt_map(&mut result, lt, triples);
+            });
+        }
 
-                    update_lt_map(&mut result, lt, triples);
-                })
-            }
+        for om in oms {
+            om.tm_info.logical_targets.iter().for_each(|lt| {
+                let ref_pom = RefPOM {
+                    pm: pms.iter().map(|pm| pm.into()).collect(),
+                    om: vec![om],
+                };
+
+                let triples = Triples {
+                    sm,
+                    poms: vec![ref_pom],
+                };
+
+                update_lt_map(&mut result, lt, triples);
+            })
         }
     }
 
@@ -86,9 +96,7 @@ fn update_lt_map<'a>(
     }
 }
 
-pub fn generate_logtarget_map(
-    doc: &Document,
-) -> HashMap<String, LogicalTarget> {
+pub fn generate_logtarget_map(doc: &Document) -> HashMap<String, Target> {
     let logical_targets =
         doc.triples_maps.iter().fold(HashSet::new(), |mut set, tm| {
             set.extend(tm.subject_map.tm_info.logical_targets.clone());
@@ -114,7 +122,7 @@ pub fn generate_logtarget_map(
 
     logical_targets
         .into_iter()
-        .map(|lt| (lt.identifier.clone(), lt))
+        .map(|lt| (lt.identifier.clone(), lt.into()))
         .collect()
 }
 
@@ -123,6 +131,7 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
 
     for (tm_idx, triples_map) in doc.triples_maps.iter().enumerate() {
         let tm_prefix = format!("tm{}", tm_idx);
+        result_map.insert(triples_map.identifier.clone(), tm_prefix.clone());
 
         let subject_map = &triples_map.subject_map;
 

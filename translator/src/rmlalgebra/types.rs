@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use interpreter::rml_model::source_target::LogicalTarget;
 use interpreter::rml_model::term_map::{ObjectMap, PredicateMap, SubjectMap};
 use interpreter::rml_model::{PredicateObjectMap, TriplesMap};
+use operator::Target;
 use plangenerator::plan::{Plan, Processed};
 
 #[derive(Debug, Clone)]
@@ -36,6 +37,6 @@ impl<'a> Triples<'a> {
 pub struct SearchMap<'a> {
     pub tm_plan_map:        HashMap<String, (&'a TriplesMap, Plan<Processed>)>,
     pub variable_map:       HashMap<String, String>,
-    pub logtarget_map:      HashMap<String, LogicalTarget>,
+    pub target_map:         HashMap<String, Target>,
     pub lt_id_tm_group_map: HashMap<String, Vec<Triples<'a>>>,
 }
