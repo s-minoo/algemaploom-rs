@@ -9,9 +9,9 @@ use std::rc::Rc;
 use anyhow::Result;
 use operator::display::PrettyDisplay;
 use operator::{Fragmenter, Join, Operator, Serializer, Source, Target};
-use petgraph::dot::{Config, Dot};
+use petgraph::dot::{Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
-use serde::de::Error;
+
 use serde_json::json;
 
 use crate::error::PlanError;
@@ -326,7 +326,7 @@ impl AliasedJoinedPlan<Processed> {
         };
 
         // TODO: Cross join node to the plan <01-09-23, yourname> //
-        let node_idx = graph.add_node(join_node);
+        let _node_idx = graph.add_node(join_node);
 
         todo!()
     }

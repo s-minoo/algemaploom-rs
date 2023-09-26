@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use interpreter::rml_model::source_target::LogicalTarget;
+
 use interpreter::rml_model::term_map::{ObjectMap, PredicateMap, SubjectMap};
 use interpreter::rml_model::{PredicateObjectMap, TriplesMap};
 use operator::Target;

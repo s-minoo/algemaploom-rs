@@ -4,13 +4,13 @@ mod util;
 
 use std::collections::{HashMap, HashSet};
 
-use interpreter::rml_model::source_target::LogicalTarget;
+
 use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
 use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
-use operator::formats::DataFormat;
+
 use operator::{
     Extend, Fragmenter, Function, Operator, Projection, RcExtendFunction,
-    Serializer, Source, Target,
+    Serializer, Source,
 };
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan, Processed};
