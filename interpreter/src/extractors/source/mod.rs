@@ -9,9 +9,9 @@ use self::csvw_source::extract_csvw_source;
 use super::error::ParseError;
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
-use crate::extractors::util::term_to_value;
+
 use crate::extractors::FromVocab;
-use crate::rml_model::source_target::{LogicalSource, Source};
+use crate::rml_model::source_target::{Source};
 
 impl Extractor<Source> for Source {
     fn extract_self(

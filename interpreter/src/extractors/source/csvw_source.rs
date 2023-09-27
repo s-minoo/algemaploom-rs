@@ -4,11 +4,11 @@ use lazy_static::lazy_static;
 use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
 
-use crate::extractors::error::ParseError;
+
 use crate::extractors::store::get_object;
-use crate::extractors::util::term_to_value;
-use crate::extractors::{Extractor, ExtractorResult, FromVocab, RcTerm};
-use crate::rml_model::source_target::{LogicalSource, Source};
+
+use crate::extractors::{ExtractorResult, FromVocab, RcTerm};
+use crate::rml_model::source_target::{Source};
 use crate::TermString;
 
 lazy_static! {

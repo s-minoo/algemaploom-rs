@@ -23,7 +23,7 @@ impl From<LogicalSource> for operator::Source {
             Source::FileInput { path: _ } => IOType::File,
 
             // TODO: Determine the IOType for CSVW from the specified URL! <27-09-23, Min Oo> //
-            Source::CSVW { url, parse_config } => IOType::File,
+            Source::CSVW { url: _, parse_config: _ } => IOType::File,
         };
 
         let data_format = match &val.reference_formulation.value().to_string() {

@@ -1,10 +1,10 @@
 use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
 
-use super::error::ParseError;
+
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
-use crate::extractors::util::term_to_value;
+
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::{LogicalSource, Source};
 
