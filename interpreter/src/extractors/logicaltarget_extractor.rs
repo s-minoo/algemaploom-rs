@@ -19,7 +19,7 @@ fn extract_output_target(
     if let Ok(output_path_iri) = get_object(
         graph,
         target_subject,
-        &vocab::void::PROPERTY::DATA_DUMP.to_term(),
+        &vocab::void::PROPERTY::DATA_DUMP.to_rcterm(),
     ) {
         let path = output_path_iri.value().to_string();
 
@@ -29,7 +29,7 @@ fn extract_output_target(
     if let Ok(sparql_endpoint_iri) = get_object(
         graph,
         target_subject,
-        &vocab::void::PROPERTY::SPARQL_ENDPOINT.to_term(),
+        &vocab::void::PROPERTY::SPARQL_ENDPOINT.to_rcterm(),
     ) {
         let sparql_path = sparql_endpoint_iri.value().to_string();
 
@@ -46,21 +46,20 @@ fn extract_output_target(
 }
 
 impl Extractor<LogicalTarget> for LogicalTarget {
-    // TODO: Implement extraction of logical targets <15-09-23, Min Oo> //
     fn extract_self(
         subject: &sophia_term::RcTerm,
         graph: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<LogicalTarget> {
-        let target_pred = vocab::rmlt::PROPERTY::TARGET.to_term();
-        let serialization_pred = vocab::rmlt::PROPERTY::SERIALIZATION.to_term();
-        let compression_pred = vocab::rmlt::PROPERTY::COMPRESSION.to_term();
+        let target_pred = vocab::rmlt::PROPERTY::TARGET.to_rcterm();
+        let serialization_pred = vocab::rmlt::PROPERTY::SERIALIZATION.to_rcterm();
+        let compression_pred = vocab::rmlt::PROPERTY::COMPRESSION.to_rcterm();
 
         let compression = get_object(graph, subject, &compression_pred)
             .ok()
             .map(|iri| Iri::new(iri.value()).unwrap());
         let serialization_term =
             get_object(graph, subject, &serialization_pred)
-                .unwrap_or(vocab::formats::CLASS::NTRIPLES.to_term());
+                .unwrap_or(vocab::formats::CLASS::NTRIPLES.to_rcterm());
         let serialization = Iri::new(serialization_term.value()).unwrap();
 
         let target = get_object(graph, subject, &target_pred).unwrap();

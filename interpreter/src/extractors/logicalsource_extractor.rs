@@ -4,6 +4,7 @@ use sophia_inmem::graph::FastGraph;
 use super::error::ParseError;
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
+use crate::extractors::util::term_to_value;
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::{LogicalSource, Source};
 
@@ -12,8 +13,8 @@ impl Extractor<LogicalSource> for LogicalSource {
         subject: &RcTerm,
         graph: &FastGraph,
     ) -> super::ExtractorResult<LogicalSource> {
-        let iter_pred = vocab::rml::PROPERTY::ITERATOR.to_term();
-        let refform_pred = vocab::rml::PROPERTY::REFERENCEFORMULATION.to_term();
+        let iter_pred = vocab::rml::PROPERTY::ITERATOR.to_rcterm();
+        let refform_pred = vocab::rml::PROPERTY::REFERENCEFORMULATION.to_rcterm();
 
         let iterator = get_object(graph, subject, &iter_pred)
             .ok()
@@ -23,48 +24,25 @@ impl Extractor<LogicalSource> for LogicalSource {
             .map(|inner| (*inner).to_string())
             .try_into()?;
 
-        let input = extract_input_type(subject, graph)?;
+        let source = extract_concrete_source(subject, graph)?;
 
         Ok(LogicalSource {
             identifier: subject.to_string(),
             iterator,
-            source: input,
+            source,
             reference_formulation,
         })
     }
 }
 
-fn extract_inferred_source(
+fn extract_concrete_source(
     subject: &RcTerm,
     graph: &FastGraph,
 ) -> ExtractorResult<Source> {
-    
-    
-    unimplemented!()
-}
+    let source_pred = vocab::rml::PROPERTY::SOURCE.to_rcterm();
+    let source_subj = get_object(graph, subject, &source_pred)?;
 
-// TODO: expand to also support other input types <05-04-23,> //
-fn extract_input_type(
-    subject: &RcTerm,
-    graph: &FastGraph,
-) -> ExtractorResult<Source> {
-    let source_pred = vocab::rml::PROPERTY::SOURCE.to_term();
-    let source = get_object(graph, subject, &source_pred)?;
-
-    match source.kind() {
-        sophia_api::term::TermKind::Literal => {
-            Ok(Source::FileInput {
-                path: source.value().to_string(),
-            })
-        }
-        sophia_api::term::TermKind::Iri => todo!(),
-        sophia_api::term::TermKind::BlankNode => todo!(),
-        sophia_api::term::TermKind::Variable => {
-            Err(ParseError::GenericError(
-                "Source can't be a variable".to_string(),
-            ))
-        }
-    }
+    Source::extract_self(&source_subj, graph)
 }
 
 #[cfg(test)]
@@ -84,7 +62,7 @@ mod tests {
     #[test]
     fn logical_source_extract_test() -> ExtractorResult<()> {
         let graph: FastGraph = load_graph!("sample_mapping.ttl")?;
-        let sub_pred = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
+        let sub_pred = vocab::rml::PROPERTY::LOGICALSOURCE.to_rcterm();
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
 
         let sub_ref = triple.o();
@@ -92,7 +70,7 @@ mod tests {
 
         assert_eq!(
             logical_source.reference_formulation,
-            vocab::query::CLASS::CSV.to_term()
+            vocab::query::CLASS::CSV.to_rcterm()
         );
         assert!(logical_source.iterator.is_none());
         Ok(())
@@ -101,11 +79,11 @@ mod tests {
     #[test]
     fn input_type_test() -> ExtractorResult<()> {
         let graph: FastGraph = load_graph!("sample_mapping.ttl")?;
-        let sub_pred = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
+        let sub_pred = vocab::rml::PROPERTY::LOGICALSOURCE.to_rcterm();
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
 
         let sub_ref = triple.o();
-        let input_type = extract_input_type(sub_ref, &graph)?;
+        let input_type = extract_concrete_source(sub_ref, &graph)?;
 
         assert!(
             input_type

@@ -12,14 +12,16 @@ use crate::TermString;
 pub mod error;
 pub mod io;
 mod logicalsource_extractor;
+mod logicaltarget_extractor;
 mod objectmap_extractor;
 mod pom_extractor;
 mod predicatemap_extractor;
+mod source;
 mod store;
 mod subjectmap_extractor;
 mod term_map_info_extractor;
 pub mod triplesmap_extractor;
-mod logicaltarget_extractor;
+mod util;
 
 pub type ExtractorResult<T> = Result<T, ParseError>;
 
@@ -59,9 +61,7 @@ pub trait TermMapExtractor<T> {
         if !map_subj_vec.is_empty() {
             return Ok(map_subj_vec
                 .iter()
-                .flat_map(|map_subj| {
-                    Self::create_term_map(map_subj, graph_ref)
-                })
+                .flat_map(|map_subj| Self::create_term_map(map_subj, graph_ref))
                 .collect());
         } else if !map_const_obj_vec.is_empty() {
             return Ok(map_const_obj_vec
@@ -83,7 +83,6 @@ pub trait TermMapExtractor<T> {
 }
 
 pub trait Extractor<T> {
-
     fn extract_identifier(subj_ref: &RcTerm) -> Result<TermString, ParseError> {
         let identifier =
             subj_ref.to_owned().map(|i| i.to_string()).try_into()?;
@@ -97,11 +96,16 @@ pub trait Extractor<T> {
 }
 
 pub trait FromVocab {
-    fn to_term(&self) -> RcTerm;
+    fn to_rcterm(&self) -> RcTerm;
+
+    fn to_term(&self) -> Term<String>;
 }
 
 impl<'a> FromVocab for PAIR<'a> {
-    fn to_term(&self) -> RcTerm {
+    fn to_term(&self) -> Term<String> {
+        Term::new_iri(self.to_string()).unwrap()
+    }
+    fn to_rcterm(&self) -> RcTerm {
         Term::new_iri(self.to_string().as_ref()).unwrap()
     }
 }

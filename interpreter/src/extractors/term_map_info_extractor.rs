@@ -19,14 +19,14 @@ fn extract_term_map_type_value(
     graph_ref: &FastGraph,
 ) -> ExtractorResult<(TermMapType, TermString)> {
     //template-map
-    let temp_pred: RcTerm = vocab::r2rml::PROPERTY::TEMPLATE.to_term();
+    let temp_pred: RcTerm = vocab::r2rml::PROPERTY::TEMPLATE.to_rcterm();
 
     //constant-map
-    let const_pred: RcTerm = vocab::r2rml::PROPERTY::CONSTANT.to_term();
+    let const_pred: RcTerm = vocab::r2rml::PROPERTY::CONSTANT.to_rcterm();
 
     //reference-map
-    let ref_pred: RcTerm = vocab::rml::PROPERTY::REFERENCE.to_term();
-    let col_pred: RcTerm = vocab::r2rml::PROPERTY::COLUMN.to_term();
+    let ref_pred: RcTerm = vocab::rml::PROPERTY::REFERENCE.to_rcterm();
+    let col_pred: RcTerm = vocab::r2rml::PROPERTY::COLUMN.to_rcterm();
 
     let pred_query = &[&ref_pred, &col_pred, &const_pred, &temp_pred];
 
@@ -59,7 +59,6 @@ fn extract_term_map_type_value(
 }
 
 impl Extractor<TermMapInfo> for TermMapInfo {
-    // TODO: Logical targets parsing <29-08-23, Sitt Min Oo> //
     fn extract_self(
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,
@@ -67,16 +66,16 @@ impl Extractor<TermMapInfo> for TermMapInfo {
         let (term_map_type, term_value) =
             extract_term_map_type_value(subj_ref, graph_ref)?;
 
-        let term_type_pred = vocab::r2rml::PROPERTY::TERMTYPE.to_term();
+        let term_type_pred = vocab::r2rml::PROPERTY::TERMTYPE.to_rcterm();
 
         let mut term_type = None;
 
         if let Ok(term_type_soph) =
             get_object(graph_ref, subj_ref, &term_type_pred)
         {
-            let lit_class = vocab::r2rml::CLASS::LITERAL.to_term();
-            let iri_class = vocab::r2rml::CLASS::IRI.to_term();
-            let bnode_class = vocab::r2rml::CLASS::BLANKNODE.to_term();
+            let lit_class = vocab::r2rml::CLASS::LITERAL.to_rcterm();
+            let iri_class = vocab::r2rml::CLASS::IRI.to_rcterm();
+            let bnode_class = vocab::r2rml::CLASS::BLANKNODE.to_rcterm();
 
             term_type = match term_type_soph {
                 sophia_term::Term::Iri(iri) if iri == iri_class => {
@@ -95,7 +94,7 @@ impl Extractor<TermMapInfo> for TermMapInfo {
         let logical_target_iris = get_objects(
             graph_ref,
             subj_ref,
-            &vocab::rml::PROPERTY::LOGICALTARGET.to_term(),
+            &vocab::rml::PROPERTY::LOGICALTARGET.to_rcterm(),
         );
         let logical_targets =
             logical_target_iris.into_iter().flat_map(|log_targ_iri| {
@@ -121,6 +120,7 @@ mod tests {
     use std::path::PathBuf;
 
     use sophia_api::graph::Graph;
+    use sophia_api::term::TTerm;
     use sophia_api::triple::Triple;
 
     use super::*;
@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn term_map_info_extraction_test() -> ExtractorResult<()> {
         let graph: FastGraph = load_graph!("sample_mapping.ttl")?;
-        let sub_pred = vocab::r2rml::PROPERTY::SUBJECTMAP.to_term();
+        let sub_pred = vocab::r2rml::PROPERTY::SUBJECTMAP.to_rcterm();
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
         let sub_ref = triple.o();
 

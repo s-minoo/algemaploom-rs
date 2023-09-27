@@ -7,10 +7,17 @@ use sophia_term::TermError;
 pub enum ParseError {
     IOErrorStr(String),
     IOError(io::Error),
-    TermError(TermError),
+    SophiaTermError(TermError),
+    SerdeError(serde_json::Error),
     GenericError(String),
     ExtensionError(String),
     Infallible,
+}
+
+impl From<serde_json::Error> for ParseError {
+    fn from(value: serde_json::Error) -> Self {
+        ParseError::SerdeError(value)
+    }
 }
 
 impl From<Infallible> for ParseError {
@@ -21,7 +28,7 @@ impl From<Infallible> for ParseError {
 
 impl From<TermError> for ParseError {
     fn from(value: TermError) -> Self {
-        ParseError::TermError(value)
+        ParseError::SophiaTermError(value)
     }
 }
 

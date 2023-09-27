@@ -19,12 +19,12 @@ impl Extractor<TriplesMap> for TriplesMap {
     ) -> ExtractorResult<TriplesMap> {
         let subject_map = SubjectMap::extract_from_container(graph, subject)?;
 
-        let ls_term = vocab::rml::PROPERTY::LOGICALSOURCE.to_term();
+        let ls_term = vocab::rml::PROPERTY::LOGICALSOURCE.to_rcterm();
         let logical_source_subj = get_object(graph, subject, &ls_term)?;
         let logical_source =
             LogicalSource::extract_self(&logical_source_subj, graph)?;
 
-        let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_term();
+        let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_rcterm();
         let po_maps: Vec<_> = get_objects(graph, subject, &pom)
             .into_iter()
             .filter_map(|pom_subj| {

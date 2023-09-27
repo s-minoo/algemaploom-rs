@@ -32,7 +32,7 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
         };
 
 
-        let class_pred = vocab::r2rml::PROPERTY::CLASS.to_term();
+        let class_pred = vocab::r2rml::PROPERTY::CLASS.to_rcterm();
 
         let classes: Vec<IriString> =
             get_objects(graph_ref, subj_ref, &class_pred)
@@ -54,11 +54,11 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
     }
 
     fn get_map_pred() -> RcTerm {
-        vocab::r2rml::PROPERTY::SUBJECTMAP.to_term()
+        vocab::r2rml::PROPERTY::SUBJECTMAP.to_rcterm()
     }
 
     fn get_const_pred() -> RcTerm {
-        vocab::r2rml::PROPERTY::SUBJECT.to_term()
+        vocab::r2rml::PROPERTY::SUBJECT.to_rcterm()
     }
 }
 
@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn create_subjectmap_test() -> ExtractorResult<()> {
         let graph = load_graph!("sample_mapping.ttl")?;
-        let sub_pred = vocab::r2rml::PROPERTY::SUBJECTMAP.to_term();
+        let sub_pred = vocab::r2rml::PROPERTY::SUBJECTMAP.to_rcterm();
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
         let sub_ref = triple.o();
         let subj_map = SubjectMap::create_term_map(sub_ref, &graph)?;

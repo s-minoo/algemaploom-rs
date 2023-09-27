@@ -25,22 +25,28 @@ where
             pred, obj
         )))
 }
-pub fn get_objects<T>(graph: &FastGraph, subject: &T, pred: &T) -> Vec<RcTerm>
+pub fn get_objects<TS, TP>(
+    graph: &FastGraph,
+    subject: &TS,
+    pred: &TP,
+) -> Vec<RcTerm>
 where
-    T: TTerm + ?Sized + Display,
+    TS: TTerm + ?Sized + Display,
+    TP: TTerm + ?Sized + Display,
 {
     graph
         .triples_with_sp(subject, pred)
         .filter_map(|trip_res| trip_res.ok().map(|trip| trip.o().to_owned()))
         .collect()
 }
-pub fn get_object<T>(
+pub fn get_object<TS, TP>(
     graph: &FastGraph,
-    subject: &T,
-    pred: &T,
+    subject: &TS,
+    pred: &TP,
 ) -> Result<RcTerm, ParseError>
 where
-    T: TTerm + ?Sized + Display,
+    TS: TTerm + ?Sized + Display,
+    TP: TTerm + ?Sized + Display,
 {
     let mut objects = get_objects(graph, subject, pred);
 

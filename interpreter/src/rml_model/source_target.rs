@@ -11,9 +11,9 @@ use crate::IriString;
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {
-    pub identifier:            String,
-    pub iterator:              Option<String>,
-    pub source:                Source,
+    pub identifier: String,
+    pub iterator: Option<String>,
+    pub source: Source,
     pub reference_formulation: IriString,
 }
 
@@ -21,6 +21,9 @@ impl From<LogicalSource> for operator::Source {
     fn from(val: LogicalSource) -> Self {
         let source_type = match &val.source {
             Source::FileInput { path: _ } => IOType::File,
+
+            // TODO: Determine the IOType for CSVW from the specified URL! <27-09-23, Min Oo> //
+            Source::CSVW { url, parse_config } => IOType::File,
         };
 
         let data_format = match &val.reference_formulation.value().to_string() {
@@ -68,11 +71,11 @@ pub fn default_file_output(path: String) -> Output {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogicalTarget {
-    pub identifier:    String,
-    pub compression:   Option<IriString>,
+    pub identifier: String,
+    pub compression: Option<IriString>,
     pub serialization: IriString,
-    pub output_type:   IOType,
-    pub config:        HashMap<String, String>,
+    pub output_type: IOType,
+    pub config: HashMap<String, String>,
 }
 
 impl Hash for LogicalTarget {
@@ -84,22 +87,23 @@ impl Hash for LogicalTarget {
 fn serialization_to_dataformat(serialization: &IriString) -> DataFormat {
     match serialization.to_owned() {
         ser_iri_string
-            if ser_iri_string == vocab::formats::CLASS::TURTLE.to_term() =>
+            if ser_iri_string == vocab::formats::CLASS::TURTLE.to_rcterm() =>
         {
             DataFormat::TTL
         }
         ser_iri_string
-            if ser_iri_string == vocab::formats::CLASS::NTRIPLES.to_term() =>
+            if ser_iri_string
+                == vocab::formats::CLASS::NTRIPLES.to_rcterm() =>
         {
             DataFormat::NTriples
         }
         ser_iri_string
-            if ser_iri_string == vocab::formats::CLASS::JSONLD.to_term() =>
+            if ser_iri_string == vocab::formats::CLASS::JSONLD.to_rcterm() =>
         {
             DataFormat::JSONLD
         }
         ser_iri_string
-            if ser_iri_string == vocab::formats::CLASS::NQUADS.to_term() =>
+            if ser_iri_string == vocab::formats::CLASS::NQUADS.to_rcterm() =>
         {
             DataFormat::NQuads
         }
@@ -137,14 +141,26 @@ impl From<LogicalTarget> for operator::Target {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Source {
-    FileInput { path: String },
+    CSVW {
+        url: String,
+        parse_config: HashMap<String, String>,
+    },
+    FileInput {
+        path: String,
+    },
 }
 
 impl From<Source> for HashMap<String, String> {
     fn from(val: Source) -> Self {
         let mut map = HashMap::new();
         match val {
-            Source::FileInput { path } => map.insert("path".to_string(), path),
+            Source::FileInput { path } => {
+                map.insert("path".to_string(), path);
+            }
+            Source::CSVW { url, parse_config } => {
+                map.insert("url".to_string(), url);
+                map.extend(parse_config);
+            }
         };
 
         map

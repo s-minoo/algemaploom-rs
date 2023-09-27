@@ -38,11 +38,11 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
     }
 
     fn get_map_pred() -> RcTerm {
-        vocab::r2rml::PROPERTY::PREDICATEMAP.to_term()
+        vocab::r2rml::PROPERTY::PREDICATEMAP.to_rcterm()
     }
 
     fn get_const_pred() -> RcTerm {
-        vocab::r2rml::PROPERTY::PREDICATE.to_term()
+        vocab::r2rml::PROPERTY::PREDICATE.to_rcterm()
     }
 }
 
@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn create_const_predicatemap_test() -> ExtractorResult<()> {
         let graph = load_graph!("sample_mapping.ttl")?;
-        let pm_const_pred = vocab::r2rml::PROPERTY::PREDICATE.to_term();
+        let pm_const_pred = vocab::r2rml::PROPERTY::PREDICATE.to_rcterm();
         let triples = graph.triples_with_p(&pm_const_pred);
         let values = triples.flatten().map(|trip| trip.o().to_owned());
         let pms: Vec<PredicateMap> = values
