@@ -8,10 +8,10 @@ pub mod PROPERTY {
     pub const TYPE: PAIR = (IRI, "type");
 }
 
-pub mod TYPE {
+pub mod CLASS {
     use super::IRI;
     use crate::PAIR;
 
-    pub const RDF_OBJECT: PAIR = (IRI, "object");
+    pub const RDF_OBJECT: PAIR = (IRI, "Object");
     pub const RDF_LIST: PAIR = (IRI, "List");
 }
