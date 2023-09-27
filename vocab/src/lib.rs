@@ -8,6 +8,8 @@ pub mod rmlt;
 pub mod comp;
 pub mod void;
 pub mod csvw;
+pub mod fnml;
+pub mod fno;
 
 pub type PAIR<'a> = (&'a str, &'a str);
 
