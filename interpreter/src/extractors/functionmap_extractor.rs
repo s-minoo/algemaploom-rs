@@ -1,10 +1,10 @@
 use sophia_api::term::TTerm;
 
-use super::error::ParseError;
+
 use super::store::get_objects;
 use super::{Extractor, FromVocab};
-use crate::extractors::TermMapExtractor;
-use crate::rml_model::term_map::{FunctionMap, ObjectMap, PredicateMap};
+
+use crate::rml_model::term_map::{FunctionMap};
 use crate::rml_model::PredicateObjectMap;
 
 impl Extractor<FunctionMap> for FunctionMap {
