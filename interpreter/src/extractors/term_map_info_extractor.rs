@@ -1,7 +1,5 @@
-
-
 use sophia_api::graph::Graph;
-use sophia_api::term::{TermKind};
+use sophia_api::term::TermKind;
 use sophia_api::triple::Triple;
 use sophia_inmem::graph::FastGraph;
 use sophia_term::matcher::ANY;
@@ -18,6 +16,9 @@ fn extract_term_map_type_value(
     subject_ref: &RcTerm,
     graph_ref: &FastGraph,
 ) -> ExtractorResult<(TermMapType, TermString)> {
+    //function-map
+    let fno_pred: RcTerm = vocab::fnml::PROPERTY::FUNCTION_VALUE.to_rcterm();
+
     //template-map
     let temp_pred: RcTerm = vocab::r2rml::PROPERTY::TEMPLATE.to_rcterm();
 
@@ -28,7 +29,8 @@ fn extract_term_map_type_value(
     let ref_pred: RcTerm = vocab::rml::PROPERTY::REFERENCE.to_rcterm();
     let col_pred: RcTerm = vocab::r2rml::PROPERTY::COLUMN.to_rcterm();
 
-    let pred_query = &[&ref_pred, &col_pred, &const_pred, &temp_pred];
+    let pred_query =
+        &[&ref_pred, &col_pred, &const_pred, &temp_pred, &fno_pred];
 
     let mut results_query: Vec<_> = graph_ref
         .triples_matching(subject_ref, pred_query, &ANY)
@@ -37,11 +39,11 @@ fn extract_term_map_type_value(
 
     if results_query.len() > 1 {
         return Err(ParseError::GenericError(
-                    "More than one occurences of rr:template, rml:reference, rr:constant, or rr:column".to_string()
+                    "More than one occurences of rr:template, rml:reference, rr:constant, fnml:functionValue or rr:column".to_string()
                     ));
     }
 
-    let trip = results_query.pop().ok_or(ParseError::GenericError("Term map doesn't have rr:constant, rr:template, rr:reference nor rr:column.".to_string()))?;
+    let trip = results_query.pop().ok_or(ParseError::GenericError("Term map doesn't have rr:constant, rr:template, rr:reference, fnml:functionValue nor rr:column.".to_string()))?;
     let fetched_pred = trip.p();
 
     let term_map_type_res = match fetched_pred {
@@ -50,7 +52,13 @@ fn extract_term_map_type_value(
         }
         const_map if *const_map == const_pred => Ok(TermMapType::Constant),
         temp_map if *temp_map == temp_pred => Ok(TermMapType::Template),
-        _ => Err(ParseError::Infallible),
+        func_map if *func_map == fno_pred => Ok(TermMapType::Function),
+        leftover => {
+            Err(ParseError::GenericError(format!(
+                "Term map type not handled {}",
+                leftover
+            )))
+        }
     };
 
     let term_value = trip.o().to_owned().map(|i| i.to_string());
@@ -96,10 +104,12 @@ impl Extractor<TermMapInfo> for TermMapInfo {
             subj_ref,
             &vocab::rml::PROPERTY::LOGICALTARGET.to_rcterm(),
         );
-        let logical_targets =
-            logical_target_iris.into_iter().flat_map(|log_targ_iri| {
+        let logical_targets = logical_target_iris
+            .into_iter()
+            .flat_map(|log_targ_iri| {
                 LogicalTarget::extract_self(&log_targ_iri, graph_ref)
-            }).collect();
+            })
+            .collect();
 
         let identifier = subj_ref.to_string();
 

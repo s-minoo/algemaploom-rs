@@ -61,6 +61,7 @@ impl TermMapInfo {
                 self.term_value
                     .map(|val| prefix_attributes_from_template(&val, prefix))
             }
+            TermMapType::Function => todo!(),
         };
 
         TermMapInfo { term_value, ..self }
@@ -74,6 +75,7 @@ impl TermMapInfo {
             TermMapType::Template => {
                 get_attributes_from_template(&value).into_iter().collect()
             }
+            TermMapType::Function => todo!(),
         }
     }
     pub fn from_constant_value(const_value: RcTerm) -> TermMapInfo {
@@ -110,6 +112,7 @@ pub enum TermMapType {
     Constant,
     Reference,
     Template,
+    Function
 }
 
 #[derive(Debug, Clone)]
