@@ -22,6 +22,7 @@ mod subjectmap_extractor;
 mod term_map_info_extractor;
 pub mod triplesmap_extractor;
 mod util;
+mod functionmap_extractor;
 
 pub type ExtractorResult<T> = Result<T, ParseError>;
 

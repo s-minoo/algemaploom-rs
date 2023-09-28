@@ -130,6 +130,14 @@ pub struct ObjectMap {
     pub join_condition: Option<JoinCondition>,
     pub data_type:      Option<IriString>,
     pub language:       Option<String>,
+    pub fno_opt:        Option<FunctionMap>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionMap {
+    pub identifier:     String,
+    pub function_iri:   String,
+    pub param_om_pairs: Vec<(String, ObjectMap)>,
 }
 
 #[derive(Debug, Clone)]
