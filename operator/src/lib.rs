@@ -344,16 +344,16 @@ impl Hash for Target {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Fragmenter {
     pub from: String, 
-    pub to: String, 
+    pub to: Vec<String>, 
 }
 
 
 impl PrettyDisplay for Fragmenter {
     fn pretty_string(&self) -> Result<String> {
        let result = format!(
-           "from_fragment: {} \n to_fragment: {}", 
+           "from_fragment: {} \n to_fragments: {}", 
            self.from, 
-           self.to, 
+           serde_json::to_string(&self.to)?, 
            ) ;
 
        Ok(result)
