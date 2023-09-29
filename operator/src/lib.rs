@@ -348,6 +348,16 @@ pub struct Fragmenter {
 }
 
 
+impl Fragmenter{
+
+    pub fn target_fragment_exist(&self, target_fragment:&str) -> bool{
+        self.to.iter().filter(|frag| *frag == target_fragment).count() == 1
+        
+    }
+
+}
+
+
 impl PrettyDisplay for Fragmenter {
     fn pretty_string(&self) -> Result<String> {
        let result = format!(

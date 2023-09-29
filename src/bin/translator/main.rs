@@ -25,20 +25,20 @@ pub fn main() -> Result<(), PlanError> {
     let args = Cli::parse();
 
     let document = parse_file(args.rml_document.clone())
-        .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
+        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
     let mut mapping_plan = translate_to_algebra(document)?;
 
     let output_path: String = args.output.unwrap_or("output.dot".into());
 
     mapping_plan
         .write(output_path.clone().into())
-        .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
+        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     let pretty_path = output_path.clone() + ".pretty";
 
     mapping_plan
         .write_pretty(pretty_path.clone().into())
-        .or_else(|err| Err(PlanError::AuxError(format!("{:?}", err))))?;
+        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     println!(
         "The following mapping tree have been translated from {:?} at {:?}",

@@ -17,5 +17,5 @@ pub enum PlanError {
     DanglingApplyOperator(Operator),
 
     #[error("Something else happened: {0:?}")]
-    AuxError(String),
+    GenericError(String),
 }
