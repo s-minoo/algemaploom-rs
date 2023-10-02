@@ -20,6 +20,14 @@
   rr:predicateObjectMap [
     rr:predicate ex:located;
     rr:objectMap [
+        rr:template "Henoloa";
+    ];
+  ];
+
+
+  rr:predicateObjectMap [
+    rr:predicate ex:located;
+    rr:objectMap [
         rr:parentTriplesMap <#PositionMapping>;
           rr:joinCondition [
             rr:child "city";

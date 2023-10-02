@@ -1,5 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-
+use std::rc::Rc;
 
 use interpreter::rml_model::term_map::{ObjectMap, PredicateMap, SubjectMap};
 use interpreter::rml_model::{PredicateObjectMap, TriplesMap};
@@ -35,7 +36,8 @@ impl<'a> Triples<'a> {
 
 #[derive(Debug, Clone)]
 pub struct SearchMap<'a> {
-    pub tm_plan_map:        HashMap<String, (&'a TriplesMap, Plan<Processed>)>,
+    pub tm_rccellplan_map:
+        HashMap<String, (&'a TriplesMap, Rc<RefCell<Plan<Processed>>>)>,
     pub variable_map:       HashMap<String, String>,
     pub target_map:         HashMap<String, Target>,
     pub lt_id_tm_group_map: HashMap<String, Vec<Triples<'a>>>,

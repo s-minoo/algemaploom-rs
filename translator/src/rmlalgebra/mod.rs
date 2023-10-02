@@ -2,18 +2,18 @@ mod operators;
 mod types;
 mod util;
 
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-
+use std::rc::Rc;
 
 use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
 use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
-
 use operator::{
     Extend, Fragmenter, Function, Operator, Projection, RcExtendFunction,
     Serializer, Source,
 };
 use plangenerator::error::PlanError;
-use plangenerator::plan::{Init, Plan, Processed};
+use plangenerator::plan::{join, Init, Plan, Processed, RcRefCellPlan};
 use sophia_api::term::TTerm;
 
 use self::operators::serializer;
@@ -60,7 +60,10 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
             let projection_op = translate_projection_op(&tm);
             let result = (
                 tm,
-                plan.source(source_op).apply(&projection_op, "Projection")?,
+                Rc::new(RefCell::new(
+                    plan.source(source_op)
+                        .apply(&projection_op, "Projection")?,
+                )),
             );
 
             Ok(result)
@@ -72,14 +75,14 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let target_map = generate_logtarget_map(&doc);
     let lt_id_tm_group_map = generate_lt_tm_map_from_doc(&doc);
     let mut tm_projected_pairs = tm_projected_pairs_res?;
-    let tm_plan_map: HashMap<_, _> = tm_projected_pairs
+    let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
         .into_iter()
-        .map(|(tm, plan)| (tm.identifier.clone(), (tm, plan)))
+        .map(|(tm, rccellplan)| (tm.identifier.clone(), (tm, rccellplan)))
         .collect();
 
     let search_map = SearchMap {
-        tm_plan_map,
+        tm_rccellplan_map,
         variable_map,
         target_map,
         lt_id_tm_group_map,
@@ -87,7 +90,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
 
     // Finish search dictionaries instantiations
 
-    let _ = tm_projected_pairs.iter_mut().try_for_each(|(tm, plan)| {
+    let _ = tm_projected_pairs.iter().try_for_each(|(tm, plan)| {
         let sm_ref = &tm.subject_map;
         let poms = tm.po_maps.clone();
 
@@ -108,42 +111,52 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     Ok(plan)
 }
 
-fn translate_fragment_ops(
+fn translate_fragment_op_from_lts(
     lt_triples_map: &HashMap<String, Vec<Triples>>,
-) -> Vec<Fragmenter> {
-    let mut result = vec![];
+) -> Option<Fragmenter> {
     let target_lt_ids = lt_triples_map.keys();
 
+    let to: Vec<String> = target_lt_ids.map(|id| id.clone()).collect();
+
     let default_from = String::from("default");
-    for lt_id in target_lt_ids {
-        result.push(Fragmenter {
-            from: default_from.clone(),
-            to:   lt_id.clone(),
-        });
+
+    if to.len() == 1 && to.iter().next() == Some(&default_from) {
+        return None;
     }
 
-    result
+    Some(Fragmenter {
+        from: default_from.clone(),
+        to,
+    })
 }
 
 fn add_non_join_related_ops(
     no_join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     search_map: &SearchMap,
-    plan: &mut Plan<Processed>,
+    plan: &RcRefCellPlan<Processed>,
 ) -> Result<(), PlanError> {
     let variable_map = &search_map.variable_map;
     let target_map = &search_map.target_map;
     let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
-    let mut extended_plan = plan.apply(&extend_op, "ExtendOp")?;
+    let mut plan = plan.borrow_mut();
+    let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
+    let mut next_plan = extended_plan;
 
     let lt_triples_map = generate_lt_tm_map_from_spo(sm, no_join_poms);
-    let fragment_ops = translate_fragment_ops(&lt_triples_map);
+    let fragmenter = translate_fragment_op_from_lts(&lt_triples_map);
+    let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
 
-    for fragmenter in fragment_ops {
-        let lt_id = &fragmenter.to;
-        let target = target_map.get(lt_id).unwrap();
+    if let Some(fragmenter) = fragmenter {
+        next_plan = next_plan.fragment(fragmenter.clone())?;
+        lt_id_vec = fragmenter.to;
+    }
+
+    for lt_id in lt_id_vec {
+        // TODO: Fix target_map retrieval logic <29-09-23, yourname> //
+        let target = target_map.get(&lt_id).unwrap();
         let serialize_format = &target.data_format;
-        let triples = lt_triples_map.get(lt_id).unwrap();
+        let triples = lt_triples_map.get(&lt_id).unwrap();
 
         let serializer_op = serializer::translate_serializer_op(
             triples,
@@ -151,9 +164,9 @@ fn add_non_join_related_ops(
             variable_map,
         );
 
+        let _ = next_plan.serialize(serializer_op)?;
 
-        println!("Adding fragment {:?}", fragmenter);
-        let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
+        //let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
     }
 
     Ok(())
@@ -163,14 +176,15 @@ fn add_join_related_ops(
     join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     search_map: &SearchMap,
-    plan: &mut Plan<Processed>,
+    plan: &RcRefCellPlan<Processed>,
 ) -> Result<(), PlanError> {
     // HashMap pairing the attribute with the function generated from
     // PTM's subject map
 
-    let search_tm_plan_map = &search_map.tm_plan_map;
+    let search_tm_plan_map = &search_map.tm_rccellplan_map;
     let variable_map = &search_map.variable_map;
 
+    let lt_triples_map = generate_lt_tm_map_from_spo(sm, join_poms);
     for pom in join_poms {
         let pms = &pom.predicate_maps;
         let oms = &pom.object_maps;
@@ -179,16 +193,18 @@ fn add_join_related_ops(
             let ptm_iri = om
                 .parent_tm
                 .as_ref()
-                .ok_or(PlanError::AuxError(format!(
+                .ok_or(PlanError::GenericError(format!(
                     "Parent triples map needs to be present in OM: {:#?}",
                     om
                 )))?
                 .to_string();
 
-            let (ptm, other_plan) =
-                search_tm_plan_map.get(&ptm_iri).ok_or(PlanError::AuxError(
-                    format!("Parent triples map IRI is wrong: {}", &ptm_iri),
-                ))?;
+            let (ptm, other_plan) = search_tm_plan_map.get(&ptm_iri).ok_or(
+                PlanError::GenericError(format!(
+                    "Parent triples map IRI is wrong: {}",
+                    &ptm_iri
+                )),
+            )?;
 
             let join_cond = om.join_condition.as_ref().unwrap();
             let child_attributes = &join_cond.child_attributes;
@@ -197,8 +213,7 @@ fn add_join_related_ops(
             let ptm_alias =
                 format!("join_{}", &ptm_variable[ptm_variable.len() - 1..]);
 
-            let mut joined_plan = plan
-                .join(other_plan)?
+            let mut joined_plan = join(Rc::clone(plan), Rc::clone(other_plan))?
                 .alias(&ptm_alias)?
                 .where_by(child_attributes.clone())?
                 .compared_to(parent_attributes.clone())?;
@@ -292,6 +307,7 @@ fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
         TermMapType::Constant => Function::Constant { value: term_value },
         TermMapType::Reference => Function::Reference { value: term_value },
         TermMapType::Template => Function::Template { value: term_value },
+        TermMapType::Function => todo!(),
     }
     .into();
 

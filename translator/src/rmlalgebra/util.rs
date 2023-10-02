@@ -35,7 +35,11 @@ pub fn generate_lt_tm_map_from_spo<'a>(
     poms: &'a [PredicateObjectMap],
 ) -> HashMap<String, Vec<Triples<'a>>> {
     let mut result = HashMap::new();
-    let sm_lts = &sm.tm_info.logical_targets;
+    let mut sm_lts = &sm.tm_info.logical_targets;
+    let hash_set = vec![LogicalTarget::default()].into_iter().collect();
+    if sm_lts.is_empty() {
+        sm_lts = &hash_set;
+    }
 
     sm_lts.iter().for_each(|lt| {
         let triples = Triples {

@@ -27,5 +27,6 @@ pub fn to_physical_source(
         operator::IOType::MySQL => todo!(),
         operator::IOType::PostgreSQL => todo!(),
         operator::IOType::SPARQLEndpoint => todo!(),
+        operator::IOType::StdOut => todo!(),
     }
 }
