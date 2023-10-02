@@ -23,6 +23,7 @@ pub type RcRefCellVSourceIdxs = Rc<RefCell<VSourceIdxs>>;
 
 pub type RcRefCellPlan<T> = Rc<RefCell<Plan<T>>>;
 
+const DEFAULT_FRAGMENT: &'static str = "default";
 // Plan states in unit structs
 
 #[derive(Debug, Clone)]
@@ -50,7 +51,7 @@ impl Plan<()> {
             _t:                PhantomData,
             graph:             Rc::new(RefCell::new(DiGraph::new())),
             sources:           Rc::new(RefCell::new(Vec::new())),
-            fragment_string:   Rc::new("default".to_string()),
+            fragment_string:   Rc::new(DEFAULT_FRAGMENT.to_string()),
             fragment_node_idx: None,
             last_node_idx:     None,
         }
@@ -77,12 +78,13 @@ impl<T> Plan<T> {
         target_fragment: &str,
     ) -> Result<(), PlanError> {
         let fragment_op = self.get_fragment_op();
+        let current_fragment = &*self.fragment_string;
 
-        if fragment_op.is_none() && target_fragment != "default" {
+        if fragment_op.is_none() && target_fragment != current_fragment {
             return Err(PlanError::GenericError(format!(
-                "Target fragment {} is not default fragment and 
+                "Target fragment {} is equal to current fragment {} and 
                 there aren't any previous fragmenter",
-                target_fragment
+                target_fragment, current_fragment
             )));
         } else if let Some(fragmenter) = fragment_op {
             if !fragmenter.target_fragment_exist(target_fragment) {
@@ -97,11 +99,32 @@ impl<T> Plan<T> {
         Ok(())
     }
 
+    fn get_default_fragment_str(&self) -> String {
+        (*self.fragment_string).clone()
+    }
+
+    fn node_count(&self) -> usize {
+        self.graph.borrow().node_count()
+    }
+
     fn non_empty_plan_check(&self) -> Result<(), PlanError> {
-        if self.graph.borrow().node_count() == 0 {
+        if self.node_count() == 0 {
             return Err(PlanError::EmptyPlan);
         }
         Ok(())
+    }
+
+    fn add_node_with_edge(
+        &mut self,
+        plan_node: PlanNode,
+        plan_edge: PlanEdge,
+    ) -> NodeIndex {
+        let mut graph = self.graph.borrow_mut();
+
+        let node_idx = graph.add_node(plan_node);
+        let prev_node_idx = self.last_node_idx.unwrap();
+        graph.add_edge(prev_node_idx, node_idx, plan_edge);
+        node_idx
     }
 
     pub fn next_idx<O>(&self, idx: Option<NodeIndex>) -> Plan<O> {
@@ -180,17 +203,17 @@ impl Plan<Init> {
     }
 }
 
-impl Plan<Processed> {
-    pub fn join(
-        &mut self,
-        other_plan: RcRefCellPlan<Processed>,
-    ) -> Result<NotAliasedJoinedPlan<Processed>, PlanError> {
-        Ok(NotAliasedJoinedPlan {
-            left_plan:  self.clone(),
-            right_plan: Rc::clone(&other_plan),
-        })
-    }
+pub fn join(
+    left_plan: RcRefCellPlan<Processed>,
+    right_plan: RcRefCellPlan<Processed>,
+) -> Result<NotAliasedJoinedPlan<Processed>, PlanError> {
+    Ok(NotAliasedJoinedPlan {
+        left_plan:  Rc::clone(&left_plan),
+        right_plan: Rc::clone(&right_plan),
+    })
+}
 
+impl Plan<Processed> {
     pub fn apply_to_fragment(
         &mut self,
         operator: &Operator,
@@ -200,8 +223,7 @@ impl Plan<Processed> {
         self.non_empty_plan_check()?;
         self.target_fragment_valid(fragment_str)?;
 
-        let prev_node_idx = self
-            .last_node_idx
+        self.last_node_idx
             .ok_or(PlanError::DanglingApplyOperator(operator.clone()))?;
 
         //blacklist check for illegal operator argument
@@ -215,21 +237,18 @@ impl Plan<Processed> {
             _ => (),
         };
 
-        let graph = &mut *self.graph.borrow_mut();
-        let id_num = graph.node_count();
+        let id_num = self.node_count();
 
         let plan_node = PlanNode {
             id:       format!("{}_{}", node_id_prefix, id_num),
             operator: operator.clone(),
         };
 
-        let new_node_idx = graph.add_node(plan_node);
-
         let plan_edge = PlanEdge {
-            fragment: (*self.fragment_string).clone(),
+            fragment: fragment_str.to_string(),
         };
 
-        graph.add_edge(prev_node_idx, new_node_idx, plan_edge);
+        let new_node_idx = self.add_node_with_edge(plan_node, plan_edge);
 
         Ok(
             self.next_idx_fragment(
@@ -244,37 +263,23 @@ impl Plan<Processed> {
         operator: &Operator,
         node_id_prefix: &str,
     ) -> Result<Plan<Processed>, PlanError> {
-        self.apply_to_fragment(operator, node_id_prefix, "default")
+        let fragment_str = &self.get_default_fragment_str();
+        self.apply_to_fragment(operator, node_id_prefix, fragment_str)
     }
 
     pub fn fragment(
         &mut self,
         fragmenter: Fragmenter,
     ) -> Result<Plan<Processed>, PlanError> {
-        let previous_fragment_string = self.fragment_string.as_ref();
-        if self.last_node_idx.is_none() {
-            return Err(PlanError::GenericError(format!(
-                "Fragment operator can't be the first operator in the plan \n
-                Number of nodes in plan: {}
-                ",
-                self.graph.borrow().node_count()
-            )));
-        }
+        self.non_empty_plan_check()?;
+        self.target_fragment_valid(&fragmenter.from)?;
+        self.last_node_idx.ok_or(PlanError::DanglingApplyOperator(
+            Operator::FragmentOp {
+                config: fragmenter.clone(),
+            },
+        ))?;
 
-        if &fragmenter.from != previous_fragment_string {
-            return Err(PlanError::GenericError(format!("Previous operator's output fragment, {}, doesn't match with the 
-                                               input fragment, {}, of the Fragmenter", previous_fragment_string, fragmenter.from)));
-        } else {
-            if &fragmenter.from != "default" {
-                return Err(PlanError::GenericError(format!(
-                    "Fragmenter's input fragment is not default: {}",
-                    fragmenter.from
-                )));
-            }
-        }
-
-        let mut graph = self.graph.borrow_mut();
-        let id_num = graph.node_count();
+        let id_num = self.node_count();
 
         let fragment_node = PlanNode {
             id:       format!("Fragmenter_{}", id_num),
@@ -283,68 +288,79 @@ impl Plan<Processed> {
             },
         };
 
-        let node_idx = graph.add_node(fragment_node);
-        let prev_node_idx = self.last_node_idx.unwrap();
         let edge = PlanEdge {
             fragment: fragmenter.from.clone(),
         };
-        graph.add_edge(prev_node_idx, node_idx, edge);
+        let node_idx = self.add_node_with_edge(fragment_node, edge);
 
         Ok(self.next_idx(Some(node_idx)))
+    }
+
+    pub fn serialize_with_fragment(
+        &mut self,
+        serializer: Serializer,
+        fragment_str: &str,
+    ) -> Result<Plan<Serialized>, PlanError> {
+        self.non_empty_plan_check()?;
+        self.target_fragment_valid(fragment_str)?;
+        self.last_node_idx.ok_or(PlanError::DanglingApplyOperator(
+            Operator::SerializerOp {
+                config: serializer.clone(),
+            },
+        ))?;
+
+        let node_count = self.node_count();
+        let plan_node = PlanNode {
+            id:       format!("Serialize_{}", node_count),
+            operator: Operator::SerializerOp { config: serializer },
+        };
+
+        let plan_edge = PlanEdge {
+            fragment: fragment_str.to_string(),
+        };
+
+        let node_idx = self.add_node_with_edge(plan_node, plan_edge);
+        Ok(self.next_idx_fragment(Some(node_idx), fragment_str.to_string()))
     }
 
     pub fn serialize(
         &mut self,
         serializer: Serializer,
     ) -> Result<Plan<Serialized>, PlanError> {
-        self.non_empty_plan_check()?;
-        let prev_node_idx = self.last_node_idx.ok_or(
-            PlanError::DanglingApplyOperator(Operator::SerializerOp {
-                config: serializer.clone(),
-            }),
-        )?;
-
-        let graph = &mut *self.graph.borrow_mut();
-        let plan_node = PlanNode {
-            id:       format!("Serialize_{}", graph.node_count()),
-            operator: Operator::SerializerOp { config: serializer },
-        };
-
-        let node_idx = graph.add_node(plan_node);
-
-        let plan_edge = PlanEdge {
-            fragment: (*self.fragment_string).to_string(),
-        };
-
-        graph.add_edge(prev_node_idx, node_idx, plan_edge);
-        Ok(self.next_idx(Some(node_idx)))
+        self.serialize_with_fragment(serializer, DEFAULT_FRAGMENT)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct NotAliasedJoinedPlan<T> {
-    left_plan:  Plan<T>,
+    left_plan:  RcRefCellPlan<T>,
     right_plan: RcRefCellPlan<T>,
 }
 
+fn add_join_fragmenter(
+    plan: &mut Plan<Processed>,
+    alias: &str,
+) -> Result<Plan<Processed>, PlanError> {
+    let default_fragment = plan.get_default_fragment_str();
+    let fragmenter = Fragmenter {
+        from: default_fragment.clone(),
+        to:   vec![default_fragment, alias.to_string()],
+    };
+    plan.fragment(fragmenter)
+}
 impl NotAliasedJoinedPlan<Processed> {
     pub fn alias(
         &mut self,
         alias: &str,
     ) -> Result<AliasedJoinedPlan<Processed>, PlanError> {
-        let other_plan = &mut *self.right_plan.borrow_mut();
-        let from = (*other_plan.fragment_string).clone();
-        let join_fragmenter = Fragmenter {
-            from: from.clone(),
-            to:   vec![from, alias.to_string()],
-        };
-        let mut fragmented_plan = other_plan.fragment(join_fragmenter)?;
+        let right_plan = &mut *self.right_plan.borrow_mut();
+        *right_plan = add_join_fragmenter(right_plan, alias)?;
 
-        fragmented_plan.fragment_string = Rc::new(alias.to_string());
-        *other_plan = fragmented_plan;
+        let left_plan = &mut *self.left_plan.borrow_mut();
+        *left_plan = add_join_fragmenter(left_plan, alias)?;
 
         Ok(AliasedJoinedPlan {
-            left_plan:  self.left_plan.clone(),
+            left_plan:  Rc::clone(&self.left_plan),
             right_plan: Rc::clone(&self.right_plan),
             alias:      alias.to_string(),
         })
@@ -353,7 +369,7 @@ impl NotAliasedJoinedPlan<Processed> {
 
 #[derive(Debug, Clone)]
 pub struct AliasedJoinedPlan<T> {
-    left_plan:  Plan<T>,
+    left_plan:  RcRefCellPlan<T>,
     right_plan: RcRefCellPlan<T>,
     alias:      String,
 }
@@ -395,8 +411,8 @@ impl WhereByPlan<Processed> {
         A: Into<String>,
     {
         let joined_plan = &self.joined_plan;
-        let plan = &joined_plan.left_plan;
-        let graph = &mut *plan.graph.borrow_mut();
+        let left_plan = joined_plan.left_plan.borrow_mut();
+        let graph = &mut *left_plan.graph.borrow_mut();
 
         let left_attributes = self.left_attributes.to_owned();
         let right_attributes: Vec<String> =
@@ -424,22 +440,21 @@ impl WhereByPlan<Processed> {
 
         let node_idx = graph.add_node(join_node);
 
-        let left_node = joined_plan.left_plan.last_node_idx.unwrap();
+        let left_node = joined_plan.left_plan.borrow().last_node_idx.unwrap();
         let left_edge = PlanEdge {
-            fragment: (*joined_plan.left_plan.fragment_string).to_string(),
+            fragment: self.joined_plan.alias.clone(),
         };
 
         graph.add_edge(left_node, node_idx, left_edge);
 
         let right_node = joined_plan.right_plan.borrow().last_node_idx.unwrap();
         let right_edge = PlanEdge {
-            fragment: (*joined_plan.right_plan.borrow().fragment_string)
-                .to_string(),
+            fragment: self.joined_plan.alias.clone(),
         };
 
         graph.add_edge(right_node, node_idx, right_edge);
 
-        Ok(plan.next_idx(Some(node_idx)))
+        Ok(left_plan.next_idx(Some(node_idx)))
     }
 }
 
@@ -473,7 +488,7 @@ pub struct PlanEdge {
 impl Default for PlanEdge {
     fn default() -> Self {
         Self {
-            fragment: "default".to_string(),
+            fragment: DEFAULT_FRAGMENT.to_string(),
         }
     }
 }
