@@ -141,13 +141,13 @@ impl<T> Plan<T> {
     pub fn next_idx_fragment<O>(
         &self,
         idx: Option<NodeIndex>,
-        fragment_string: String,
+        fragment_string: &str,
     ) -> Plan<O> {
         Plan {
             _t:                PhantomData,
             graph:             Rc::clone(&self.graph),
             sources:           Rc::clone(&self.sources),
-            fragment_string:   Rc::new(fragment_string),
+            fragment_string:   Rc::new(fragment_string.to_string()),
             fragment_node_idx: self.fragment_node_idx.clone(),
             last_node_idx:     idx,
         }
@@ -253,7 +253,7 @@ impl Plan<Processed> {
         Ok(
             self.next_idx_fragment(
                 Some(new_node_idx),
-                fragment_str.to_string(),
+                fragment_str,
             ),
         )
     }
@@ -320,7 +320,7 @@ impl Plan<Processed> {
         };
 
         let node_idx = self.add_node_with_edge(plan_node, plan_edge);
-        Ok(self.next_idx_fragment(Some(node_idx), fragment_str.to_string()))
+        Ok(self.next_idx_fragment(Some(node_idx), fragment_str))
     }
 
     pub fn serialize(
@@ -412,6 +412,7 @@ impl WhereByPlan<Processed> {
     {
         let joined_plan = &self.joined_plan;
         let left_plan = joined_plan.left_plan.borrow_mut();
+        let right_plan = joined_plan.right_plan.borrow_mut();
         let graph = &mut *left_plan.graph.borrow_mut();
 
         let left_attributes = self.left_attributes.to_owned();
@@ -433,6 +434,8 @@ impl WhereByPlan<Processed> {
             },
         };
 
+        let fragment_str = &self.joined_plan.alias;
+
         let join_node = PlanNode {
             id:       format!("Join_{}", graph.node_count()),
             operator: join_op,
@@ -440,21 +443,21 @@ impl WhereByPlan<Processed> {
 
         let node_idx = graph.add_node(join_node);
 
-        let left_node = joined_plan.left_plan.borrow().last_node_idx.unwrap();
+        let left_node = left_plan.last_node_idx.unwrap();
         let left_edge = PlanEdge {
-            fragment: self.joined_plan.alias.clone(),
+            fragment: fragment_str.to_string(),
         };
 
         graph.add_edge(left_node, node_idx, left_edge);
 
-        let right_node = joined_plan.right_plan.borrow().last_node_idx.unwrap();
+        let right_node = right_plan.last_node_idx.unwrap();
         let right_edge = PlanEdge {
-            fragment: self.joined_plan.alias.clone(),
+            fragment: fragment_str.to_string(),
         };
 
         graph.add_edge(right_node, node_idx, right_edge);
 
-        Ok(left_plan.next_idx(Some(node_idx)))
+        Ok(left_plan.next_idx_fragment(Some(node_idx), fragment_str))
     }
 }
 
