@@ -4,6 +4,7 @@ use std::hash::Hash;
 use operator::formats::DataFormat;
 use operator::{IOType, Target};
 use sophia_api::term::TTerm;
+use sophia_term::iri::Iri;
 use vocab::ToString;
 
 use crate::extractors::FromVocab;
@@ -11,9 +12,9 @@ use crate::IriString;
 
 #[derive(Debug, Clone)]
 pub struct LogicalSource {
-    pub identifier: String,
-    pub iterator: Option<String>,
-    pub source: Source,
+    pub identifier:            String,
+    pub iterator:              Option<String>,
+    pub source:                Source,
     pub reference_formulation: IriString,
 }
 
@@ -23,7 +24,10 @@ impl From<LogicalSource> for operator::Source {
             Source::FileInput { path: _ } => IOType::File,
 
             // TODO: Determine the IOType for CSVW from the specified URL! <27-09-23, Min Oo> //
-            Source::CSVW { url: _, parse_config: _ } => IOType::File,
+            Source::CSVW {
+                url: _,
+                parse_config: _,
+            } => IOType::File,
         };
 
         let data_format = match &val.reference_formulation.value().to_string() {
@@ -71,11 +75,26 @@ pub fn default_file_output(path: String) -> Output {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogicalTarget {
-    pub identifier: String,
-    pub compression: Option<IriString>,
+    pub identifier:    String,
+    pub compression:   Option<IriString>,
     pub serialization: IriString,
-    pub output_type: IOType,
-    pub config: HashMap<String, String>,
+    pub output_type:   IOType,
+    pub config:        HashMap<String, String>,
+}
+
+impl Default for LogicalTarget {
+    fn default() -> Self {
+        Self {
+            identifier:    String::from("default"),
+            compression:   Default::default(),
+            serialization: Iri::new(
+                vocab::formats::CLASS::NTRIPLES.to_string(),
+            )
+            .unwrap(),
+            output_type:   Default::default(),
+            config:        Default::default(),
+        }
+    }
 }
 
 impl Hash for LogicalTarget {
@@ -142,7 +161,7 @@ impl From<LogicalTarget> for operator::Target {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Source {
     CSVW {
-        url: String,
+        url:          String,
         parse_config: HashMap<String, String>,
     },
     FileInput {

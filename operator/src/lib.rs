@@ -303,6 +303,7 @@ impl Hash for Serializer {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum IOType {
+    StdOut, 
     File,
     Kafka,
     Websocket,
@@ -310,6 +311,13 @@ pub enum IOType {
     PostgreSQL,
     SPARQLEndpoint,
 }
+
+impl Default for IOType{
+    fn default() -> Self {
+        Self::StdOut
+    }
+}
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
