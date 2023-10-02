@@ -5,6 +5,7 @@ use super::error::ParseError;
 use super::store::get_objects;
 use super::{Extractor, TermMapExtractor};
 use crate::extractors::FromVocab;
+use crate::rml_model::source_target::LogicalTarget;
 use crate::rml_model::term_map::{SubjectMap, TermMapInfo};
 use crate::IriString;
 
@@ -15,12 +16,19 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
     ) -> super::ExtractorResult<SubjectMap> {
         let mut tm_info = TermMapInfo::extract_self(subj_ref, graph_ref)?;
 
-        
+        if tm_info.logical_targets.is_empty() {
+            tm_info.logical_targets =
+                vec![LogicalTarget::default()].into_iter().collect();
+        }
+
         tm_info = match tm_info.term_type {
             Some(ttype)
                 if ttype != TermKind::Iri && ttype != TermKind::BlankNode =>
             {
-                return Err(ParseError::GenericError("PredicateMap can only have rr:Iri as rr:termType!".to_string()))
+                return Err(ParseError::GenericError(
+                    "PredicateMap can only have rr:Iri as rr:termType!"
+                        .to_string(),
+                ))
             }
             Some(_) => tm_info,
             None => {
@@ -30,7 +38,6 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
                 }
             }
         };
-
 
         let class_pred = vocab::r2rml::PROPERTY::CLASS.to_rcterm();
 
