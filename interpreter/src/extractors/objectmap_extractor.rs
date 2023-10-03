@@ -119,6 +119,10 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
     fn get_map_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::OBJECTMAP.to_rcterm()
     }
+
+    fn get_term_map_info(&self) -> TermMapInfo {
+        self.tm_info.clone()
+    }
 }
 
 #[cfg(test)]

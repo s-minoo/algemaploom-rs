@@ -8,6 +8,13 @@ use crate::extractors::Extractor;
 use crate::rml_model::term_map::{PredicateMap, TermMapInfo};
 
 impl TermMapExtractor<PredicateMap> for PredicateMap {
+    fn create_constant_map(tm_info: TermMapInfo) -> PredicateMap {
+        if tm_info.term_type != Some(TermKind::Iri) {
+            panic!("Constant-valued PredicateMap has to have an IRI as value");
+        }
+        PredicateMap { tm_info }
+    }
+
     fn create_term_map(
         subj_ref: &RcTerm,
         graph_ref: &FastGraph,
@@ -30,19 +37,16 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
         Ok(PredicateMap { tm_info })
     }
 
-    fn create_constant_map(tm_info: TermMapInfo) -> PredicateMap {
-        if tm_info.term_type != Some(TermKind::Iri) {
-            panic!("Constant-valued PredicateMap has to have an IRI as value");
-        }
-        PredicateMap { tm_info }
+    fn get_const_pred() -> RcTerm {
+        vocab::r2rml::PROPERTY::PREDICATE.to_rcterm()
     }
 
     fn get_map_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::PREDICATEMAP.to_rcterm()
     }
 
-    fn get_const_pred() -> RcTerm {
-        vocab::r2rml::PROPERTY::PREDICATE.to_rcterm()
+    fn get_term_map_info(&self) -> TermMapInfo {
+        self.tm_info.clone()
     }
 }
 

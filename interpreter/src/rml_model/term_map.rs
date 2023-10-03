@@ -30,54 +30,7 @@ impl Default for TermMapInfo {
     }
 }
 
-lazy_static! {
-    static ref TEMPLATE_REGEX: Regex = Regex::new(r"\{([^\{\}]+)\}").unwrap();
-}
-
-fn get_attributes_from_template(template: &str) -> Vec<String> {
-    let sanitized = template.replace("\\{", "").replace("\\}", "");
-    let captured = TEMPLATE_REGEX.captures_iter(&sanitized);
-    captured
-        .filter_map(|cap| cap.get(1).map(|c| c.as_str().to_owned()))
-        .collect()
-}
-
-fn prefix_attributes_from_template(template: &str, prefix: &str) -> String {
-    let sanitized = template.replace("\\{", "\\(").replace("\\}", "\\)");
-    TEMPLATE_REGEX
-        .replace_all(&sanitized, format!("{{{}_$1}}", prefix))
-        .replace("\\(", "\\{")
-        .replace("\\)", "\\}")
-}
-
 impl TermMapInfo {
-    pub fn prefix_attributes(self, prefix: &str) -> Self {
-        let term_value = match self.term_map_type {
-            TermMapType::Constant => self.term_value,
-            TermMapType::Reference => {
-                self.term_value.map(|val| format!("{}_{}", prefix, val))
-            }
-            TermMapType::Template => {
-                self.term_value
-                    .map(|val| prefix_attributes_from_template(&val, prefix))
-            }
-            TermMapType::Function => todo!(),
-        };
-
-        TermMapInfo { term_value, ..self }
-    }
-
-    pub fn get_attributes(&self) -> HashSet<String> {
-        let value = self.term_value.value().to_string();
-        match self.term_map_type {
-            TermMapType::Constant => HashSet::new(),
-            TermMapType::Reference => vec![value].into_iter().collect(),
-            TermMapType::Template => {
-                get_attributes_from_template(&value).into_iter().collect()
-            }
-            TermMapType::Function => todo!(),
-        }
-    }
     pub fn from_constant_value(const_value: RcTerm) -> TermMapInfo {
         let identifier = match const_value.clone() {
             Term::Iri(iri) => Term::Iri(iri.map(|i| i.to_string())),
@@ -112,7 +65,7 @@ pub enum TermMapType {
     Constant,
     Reference,
     Template,
-    Function
+    Function,
 }
 
 #[derive(Debug, Clone)]
@@ -146,35 +99,4 @@ pub struct FunctionMap {
 #[derive(Debug, Clone)]
 pub struct GraphMap {
     pub tm_info: TermMapInfo,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_template_replace_attribute() {
-        let template = "http://example.com/{foo}/{bar}";
-        let prefix = "alpha";
-        let prefixed_template =
-            prefix_attributes_from_template(template, prefix);
-
-        assert_eq!(
-            "http://example.com/alpha_foo/alpha_bar",
-            &prefixed_template
-        );
-    }
-
-    #[test]
-    fn test_template_excape_replace() {
-        let template = "http://example.com/\\{hello\\}/{foo}/{bar}";
-        let prefix = "alpha";
-        let prefixed_template =
-            prefix_attributes_from_template(template, prefix);
-
-        assert_eq!(
-            "http://example.com/\\{hello\\}/alpha_foo/alpha_bar",
-            &prefixed_template
-        );
-    }
 }

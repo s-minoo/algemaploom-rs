@@ -10,6 +10,16 @@ use crate::rml_model::term_map::{SubjectMap, TermMapInfo};
 use crate::IriString;
 
 impl TermMapExtractor<SubjectMap> for SubjectMap {
+    fn create_constant_map(tm_info: TermMapInfo) -> SubjectMap {
+        if tm_info.term_type != Some(TermKind::Iri) {
+            panic!("Constant-valued SubjectMap has to have an IRI as value");
+        }
+        SubjectMap {
+            tm_info,
+            classes: Vec::new(),
+        }
+    }
+
     fn create_term_map(
         subj_ref: &RcTerm,
         graph_ref: &sophia_inmem::graph::FastGraph,
@@ -50,22 +60,16 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
         Ok(SubjectMap { tm_info, classes })
     }
 
-    fn create_constant_map(tm_info: TermMapInfo) -> SubjectMap {
-        if tm_info.term_type != Some(TermKind::Iri) {
-            panic!("Constant-valued SubjectMap has to have an IRI as value");
-        }
-        SubjectMap {
-            tm_info,
-            classes: Vec::new(),
-        }
+    fn get_const_pred() -> RcTerm {
+        vocab::r2rml::PROPERTY::SUBJECT.to_rcterm()
     }
 
     fn get_map_pred() -> RcTerm {
         vocab::r2rml::PROPERTY::SUBJECTMAP.to_rcterm()
     }
 
-    fn get_const_pred() -> RcTerm {
-        vocab::r2rml::PROPERTY::SUBJECT.to_rcterm()
+    fn get_term_map_info(&self) -> TermMapInfo {
+        self.tm_info.clone()
     }
 }
 
