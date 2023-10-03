@@ -16,7 +16,7 @@ use plangenerator::error::PlanError;
 use plangenerator::plan::{join, Init, Plan, Processed, RcRefCellPlan};
 use sophia_api::term::TTerm;
 
-use self::operators::serializer;
+use self::operators::serializer::{self, translate_serializer_op};
 use self::types::Triples;
 use self::util::generate_lt_tm_map_from_spo;
 use crate::rmlalgebra::types::SearchMap;
@@ -90,44 +90,48 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
 
     // Finish search dictionaries instantiations
 
-    let _ = tm_projected_pairs.iter().try_for_each(|(tm, plan)| {
+    tm_projected_pairs.iter().try_for_each(|(tm, plan)| {
         let sm_ref = &tm.subject_map;
         let poms = tm.po_maps.clone();
 
         let (joined_poms, no_join_poms): (Vec<_>, Vec<_>) =
             partition_pom_join_nonjoin(poms);
 
-        if !no_join_poms.is_empty() {
-            add_non_join_related_ops(&no_join_poms, sm_ref, &search_map, plan)?;
-        }
-
         if !joined_poms.is_empty() {
             add_join_related_ops(&joined_poms, sm_ref, &search_map, plan)?;
         }
 
+        if !no_join_poms.is_empty() {
+            add_non_join_related_ops(&no_join_poms, sm_ref, &search_map, plan)?;
+        }
+
         Ok::<(), PlanError>(())
-    });
+    })?;
 
     Ok(plan)
 }
 
-fn translate_fragment_op_from_lts(
+fn translate_fragment_op_from_lts_str(
     lt_triples_map: &HashMap<String, Vec<Triples>>,
+    from_fragment: &str,
 ) -> Option<Fragmenter> {
     let target_lt_ids = lt_triples_map.keys();
 
     let to: Vec<String> = target_lt_ids.map(|id| id.clone()).collect();
 
-    let default_from = String::from("default");
-
-    if to.len() == 1 && to.iter().next() == Some(&default_from) {
+    if to.len() == 1 && to.iter().next() == Some(&from_fragment.to_string()) {
         return None;
     }
 
     Some(Fragmenter {
-        from: default_from.clone(),
+        from: from_fragment.to_string(),
         to,
     })
+}
+fn translate_fragment_op_from_lts(
+    lt_triples_map: &HashMap<String, Vec<Triples>>,
+) -> Option<Fragmenter> {
+    translate_fragment_op_from_lts_str(lt_triples_map, "default")
 }
 
 fn add_non_join_related_ops(
@@ -147,6 +151,7 @@ fn add_non_join_related_ops(
     let fragmenter = translate_fragment_op_from_lts(&lt_triples_map);
     let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
 
+    println!("{:#?}", plan);
     if let Some(fragmenter) = fragmenter {
         next_plan = next_plan.fragment(fragmenter.clone())?;
         lt_id_vec = fragmenter.to;
@@ -164,7 +169,7 @@ fn add_non_join_related_ops(
             variable_map,
         );
 
-        let _ = next_plan.serialize(serializer_op)?;
+        next_plan.serialize(serializer_op)?.sink(&target);
 
         //let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
     }
@@ -183,8 +188,8 @@ fn add_join_related_ops(
 
     let search_tm_plan_map = &search_map.tm_rccellplan_map;
     let variable_map = &search_map.variable_map;
+    let lt_target_map = &search_map.target_map;
 
-    let lt_triples_map = generate_lt_tm_map_from_spo(sm, join_poms);
     for pom in join_poms {
         let pms = &pom.predicate_maps;
         let oms = &pom.object_maps;
@@ -231,24 +236,35 @@ fn add_join_related_ops(
             let om_extend_attr =
                 variable_map.get(&om.tm_info.identifier).unwrap().clone();
 
-            let pom_with_joined_ptm = PredicateObjectMap {
+            let pom_with_joined_ptm = vec![PredicateObjectMap {
                 predicate_maps: pms.clone(),
                 object_maps:    [om.clone()].to_vec(),
-            };
+            }];
 
-            let mut extend_pairs = translate_extend_pairs(
-                variable_map,
-                sm,
-                &[pom_with_joined_ptm],
-            );
+            let mut extend_pairs =
+                translate_extend_pairs(variable_map, sm, &pom_with_joined_ptm);
 
             extend_pairs.insert(om_extend_attr, ptm_sub_function);
 
             let extend_op = Operator::ExtendOp {
                 config: Extend { extend_pairs },
             };
+            let mut extended_plan = joined_plan.apply(&extend_op, "Extend")?;
 
-            let _ = joined_plan.apply(&extend_op, "Extend")?;
+            let lt_triples_map =
+                generate_lt_tm_map_from_spo(sm, &pom_with_joined_ptm);
+
+            for lt_id in lt_triples_map.keys() {
+                let triples = lt_triples_map.get(lt_id).unwrap();
+                let target = lt_target_map.get(lt_id).unwrap();
+                let serializer_op = translate_serializer_op(
+                    triples,
+                    &target.data_format,
+                    variable_map,
+                );
+
+                extended_plan.serialize(serializer_op)?.sink(target)?;
+            }
             //.serialize(serializer_op)?;
             //.sink(file_target(count));
         }

@@ -35,10 +35,9 @@ pub fn generate_lt_tm_map_from_spo<'a>(
     poms: &'a [PredicateObjectMap],
 ) -> HashMap<String, Vec<Triples<'a>>> {
     let mut result = HashMap::new();
-    let mut sm_lts = &sm.tm_info.logical_targets;
-    let hash_set = vec![LogicalTarget::default()].into_iter().collect();
+    let sm_lts = &sm.tm_info.logical_targets;
     if sm_lts.is_empty() {
-        sm_lts = &hash_set;
+        panic!("Subject map's logical target is empty! ");
     }
 
     sm_lts.iter().for_each(|lt| {

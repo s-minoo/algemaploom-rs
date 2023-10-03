@@ -82,15 +82,13 @@ impl<T> Plan<T> {
 
         if fragment_op.is_none() && target_fragment != current_fragment {
             return Err(PlanError::GenericError(format!(
-                "Target fragment {} is equal to current fragment {} and 
-                there aren't any previous fragmenter",
+                "Target fragment {} is NOT equal to current fragment {} and there aren't any previous fragmenter",
                 target_fragment, current_fragment
             )));
         } else if let Some(fragmenter) = fragment_op {
             if !fragmenter.target_fragment_exist(target_fragment) {
                 return Err(PlanError::GenericError(format!(
-                    "Target fragment {} doesn't exists as part of the 
-                            output fragments of the previous fragmenter",
+                    "Target fragment {} doesn't exists as part of the output fragments of the previous fragmenter",
                     target_fragment
                 )));
             }
@@ -250,12 +248,7 @@ impl Plan<Processed> {
 
         let new_node_idx = self.add_node_with_edge(plan_node, plan_edge);
 
-        Ok(
-            self.next_idx_fragment(
-                Some(new_node_idx),
-                fragment_str,
-            ),
-        )
+        Ok(self.next_idx_fragment(Some(new_node_idx), fragment_str))
     }
 
     pub fn apply(
@@ -457,12 +450,12 @@ impl WhereByPlan<Processed> {
 
         graph.add_edge(right_node, node_idx, right_edge);
 
-        Ok(left_plan.next_idx_fragment(Some(node_idx), fragment_str))
+        Ok(left_plan.next_idx(Some(node_idx)))
     }
 }
 
 impl Plan<Serialized> {
-    pub fn sink(&mut self, sink: Target) -> Result<Plan<Sunk>, PlanError> {
+    pub fn sink(&mut self, sink: &Target) -> Result<Plan<Sunk>, PlanError> {
         if self.last_node_idx.is_none() {
             return Err(PlanError::EmptyPlan);
         }
@@ -470,7 +463,7 @@ impl Plan<Serialized> {
         let graph = &mut *self.graph.borrow_mut();
         let plan_node = PlanNode {
             id:       format!("Sink_{}", graph.node_count()),
-            operator: Operator::TargetOp { config: sink },
+            operator: Operator::TargetOp { config: sink.clone() },
         };
 
         let node_idx = graph.add_node(plan_node);
