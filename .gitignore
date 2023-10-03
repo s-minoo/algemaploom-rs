@@ -2,5 +2,6 @@
 .sess
 output/
 .vscode/
+.cmt
 
 test_resources/
