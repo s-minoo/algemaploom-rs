@@ -501,7 +501,7 @@ impl Debug for PlanEdge {
     }
 }
 
-#[derive(Clone, Hash)]
+#[derive(Clone)]
 pub struct PlanNode {
     pub id:       String,
     pub operator: Operator,

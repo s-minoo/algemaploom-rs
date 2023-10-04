@@ -5,7 +5,7 @@ pub mod tuples;
 pub mod value;
 
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash, Hasher, self};
 use std::rc::Rc;
 
 use anyhow::Result;
@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 pub type RcOperator = Rc<Operator>;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Operator {
     SourceOp { config: Source },
@@ -252,14 +252,9 @@ impl PrettyDisplay for Extend {
     }
 }
 
-impl Hash for Extend {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        hash_hashmap(&self.extend_pairs, state);
-    }
-}
 
 pub type RcExtendFunction = Rc<Function>;
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Function {
     Reference { value: String },
@@ -271,7 +266,13 @@ pub enum Function {
     BlankNode { inner_function: RcExtendFunction },
     Upper { inner_function: RcExtendFunction },
     Lower { inner_function: RcExtendFunction },
+    FnO{ 
+        fno_identifier:String, 
+        #[serde(flatten)]
+        params:HashMap<String, RcExtendFunction>  
+    }
 }
+
 
 // Post-mapping operators
 
