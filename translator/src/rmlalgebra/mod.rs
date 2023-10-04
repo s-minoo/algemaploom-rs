@@ -224,11 +224,9 @@ fn add_join_related_ops(
                 .compared_to(parent_attributes.clone())?;
 
             // Prefix the attributes in the subject map with the alias of the PTM
-            let ptm_sm_info = ptm
-                .subject_map
-                .tm_info
-                .clone()
-                .prefix_attributes(&ptm_alias);
+            let mut ptm_sm_info = ptm.subject_map.tm_info.clone();
+
+            ptm_sm_info.prefix_attributes(&ptm_alias);
 
             // Pair the ptm subject iri function with an extended attribute
             let ptm_sub_function =
@@ -323,7 +321,27 @@ fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
         TermMapType::Constant => Function::Constant { value: term_value },
         TermMapType::Reference => Function::Reference { value: term_value },
         TermMapType::Template => Function::Template { value: term_value },
-        TermMapType::Function => todo!(),
+        TermMapType::Function => {
+            let fn_map = tm_info.fun_map_opt.as_ref().unwrap();
+            let fno_identifier = fn_map.function_iri.clone();
+            let param_func_pairs = fn_map
+                .param_om_pairs
+                .iter()
+                .map(|(param, om)| {
+                    (
+                        param.clone(),
+                        Rc::new(extract_extend_function_from_term_map(
+                            &om.tm_info,
+                        )),
+                    )
+                })
+                .collect();
+
+            Function::FnO {
+                fno_identifier,
+                param_func_pairs,
+            }
+        }
     }
     .into();
 
@@ -483,6 +501,7 @@ mod tests {
             term_map_type: term_map::TermMapType::Template,
             term_value: new_term_value("{id}{firstname}{lastname}".to_string()),
             term_type: None,
+            fun_map_opt: None,
         };
 
         let attributes = template_term_map_info.get_attributes();
