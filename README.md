@@ -69,5 +69,10 @@ python version >= 3.10 and the following packages:
    ```sh
    dot -Tplain {generated dot file} > output.txt
    ```
+   <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Acknowledgement
+
+This software makes use of [sophia_rs](https://github.com/pchampin/sophia_rs) crate!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
