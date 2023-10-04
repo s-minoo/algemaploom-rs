@@ -10,7 +10,7 @@ use vocab::{ToString, PAIR};
 
 use self::error::ParseError;
 use crate::extractors::store::get_objects;
-use crate::rml_model::term_map::{TermMapInfo, TermMapType};
+use crate::rml_model::term_map::{FunctionMap, TermMapInfo, TermMapType};
 use crate::TermString;
 
 pub mod error;
@@ -50,7 +50,7 @@ fn get_attributes_from_template(template: &str) -> Vec<String> {
 }
 
 pub trait TermMapExtractor<T> {
-    fn prefix_attributes(&self, prefix: &str) -> TermMapInfo {
+    fn prefix_attributes(&mut self, prefix: &str) -> TermMapInfo {
         let tm_info = self.get_term_map_info();
         let term_value = match tm_info.term_map_type {
             TermMapType::Constant => tm_info.term_value,
@@ -142,7 +142,7 @@ pub trait TermMapExtractor<T> {
 }
 
 pub trait Extractor<T> {
-    fn extract_identifier(subj_ref: &RcTerm) -> Result<TermString, ParseError> {
+    fn extract_identifier(subj_ref: RcTerm) -> Result<TermString, ParseError> {
         let identifier =
             subj_ref.to_owned().map(|i| i.to_string()).try_into()?;
         Ok(identifier)

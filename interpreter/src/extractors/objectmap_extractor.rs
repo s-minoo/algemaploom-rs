@@ -56,7 +56,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
             join_condition: None,
             data_type: None,
             language: None,
-            fno_opt: None,
         }
     }
     fn create_term_map(
@@ -96,11 +95,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
             tm_info.term_type = Some(tm_info.term_value.kind());
         }
 
-        let fn_pred = vocab::fnml::PROPERTY::FUNCTION_VALUE.to_term();
-        let mut fno_opt = None;
-        if let Ok(fn_iri) = get_object(graph_ref, subj_ref, &fn_pred) {
-            fno_opt = FunctionMap::extract_self(&fn_iri, graph_ref).ok();
-        }
 
         Ok(ObjectMap {
             tm_info,
@@ -108,7 +102,6 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
             join_condition,
             data_type,
             language,
-            fno_opt,
         })
     }
 

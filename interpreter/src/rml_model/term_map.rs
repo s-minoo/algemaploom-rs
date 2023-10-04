@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use lazy_static::lazy_static;
-use regex::Regex;
 use sophia_api::term::{TTerm, TermKind};
 use sophia_term::{RcTerm, Term};
 
@@ -16,6 +14,7 @@ pub struct TermMapInfo {
     pub term_map_type:   TermMapType,
     pub term_value:      TermString,
     pub term_type:       Option<TermKind>,
+    pub fun_map_opt:     Option<FunctionMap>,
 }
 
 impl Default for TermMapInfo {
@@ -26,6 +25,7 @@ impl Default for TermMapInfo {
             term_map_type:   TermMapType::Constant,
             term_value:      Term::new_bnode("qsdkfldsfj").unwrap(),
             term_type:       Default::default(),
+            fun_map_opt:     Default::default(),
         }
     }
 }
@@ -57,6 +57,7 @@ impl TermMapInfo {
             term_map_type: TermMapType::Constant,
             term_value: const_value.map(|i| i.to_string()),
             term_type,
+            fun_map_opt: None,
         }
     }
 }
@@ -86,7 +87,6 @@ pub struct ObjectMap {
     pub join_condition: Option<JoinCondition>,
     pub data_type:      Option<IriString>,
     pub language:       Option<String>,
-    pub fno_opt:        Option<FunctionMap>,
 }
 
 #[derive(Debug, Clone)]

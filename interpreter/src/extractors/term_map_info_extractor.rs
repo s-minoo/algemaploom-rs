@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use sophia_api::graph::Graph;
 use sophia_api::term::TermKind;
 use sophia_api::triple::Triple;
@@ -9,13 +11,13 @@ use super::error::ParseError;
 use super::store::{get_object, get_objects};
 use super::{Extractor, ExtractorResult, FromVocab};
 use crate::rml_model::source_target::LogicalTarget;
-use crate::rml_model::term_map::{TermMapInfo, TermMapType};
+use crate::rml_model::term_map::{FunctionMap, TermMapInfo, TermMapType};
 use crate::TermString;
 
 fn extract_term_map_type_value(
     subject_ref: &RcTerm,
     graph_ref: &FastGraph,
-) -> ExtractorResult<(TermMapType, TermString)> {
+) -> ExtractorResult<(TermMapType, RcTerm)> {
     //function-map
     let fno_pred: RcTerm = vocab::fnml::PROPERTY::FUNCTION_VALUE.to_rcterm();
 
@@ -61,7 +63,7 @@ fn extract_term_map_type_value(
         }
     };
 
-    let term_value = trip.o().to_owned().map(|i| i.to_string());
+    let term_value = trip.o().to_owned();
 
     term_map_type_res.map(|map_type| (map_type, term_value))
 }
@@ -104,6 +106,7 @@ impl Extractor<TermMapInfo> for TermMapInfo {
             subj_ref,
             &vocab::rml::PROPERTY::LOGICALTARGET.to_rcterm(),
         );
+
         let logical_targets = logical_target_iris
             .into_iter()
             .flat_map(|log_targ_iri| {
@@ -112,13 +115,19 @@ impl Extractor<TermMapInfo> for TermMapInfo {
             .collect();
 
         let identifier = subj_ref.to_string();
+        let mut fun_map_opt = None;
+        if term_map_type == TermMapType::Function {
+            fun_map_opt =
+                FunctionMap::extract_self(&term_value, graph_ref).ok();
+        }
 
         Ok(TermMapInfo {
             identifier,
             logical_targets,
             term_map_type,
-            term_value,
+            term_value: term_value.map(|rc_str| rc_str.to_string()),
             term_type,
+            fun_map_opt,
         })
     }
 }

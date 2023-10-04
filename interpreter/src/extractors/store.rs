@@ -8,13 +8,14 @@ use sophia_inmem::graph::FastGraph;
 use super::error::ParseError;
 use super::RcTerm;
 
-pub fn get_subject<T>(
+pub fn get_subject<TP, TO>(
     graph: &FastGraph,
-    pred: &T,
-    obj: &T,
+    pred: &TP,
+    obj: &TO,
 ) -> Result<RcTerm, ParseError>
 where
-    T: TTerm + ?Sized + Display,
+    TP: TTerm + ?Sized + Display,
+    TO: TTerm + ?Sized + Display,
 {
     graph
         .triples_with_po(pred, obj)
