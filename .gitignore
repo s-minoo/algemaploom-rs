@@ -3,5 +3,7 @@
 output/
 .vscode/
 .cmt
+.cmt.bkp
+
 
 test_resources/
