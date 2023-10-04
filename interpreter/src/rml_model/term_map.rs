@@ -51,25 +51,29 @@ impl Default for TermMapInfo {
 }
 
 impl TermMapInfo {
-    pub fn prefix_attributes(self, prefix: &str) -> TermMapInfo {
-        let tm_info = self;
-        let term_value = match tm_info.term_map_type {
-            TermMapType::Constant => tm_info.term_value,
+    pub fn prefix_attributes(&mut self, prefix: &str) {
+        let mut term_value = self.term_value.clone();
+        term_value = match self.term_map_type {
+            TermMapType::Constant => term_value,
             TermMapType::Reference => {
-                tm_info.term_value.map(|val| format!("{}_{}", prefix, val))
+                term_value.map(|val| format!("{}_{}", prefix, val))
             }
             TermMapType::Template => {
-                tm_info
-                    .term_value
+                term_value
                     .map(|val| prefix_attributes_from_template(&val, prefix))
             }
-            TermMapType::Function => todo!(),
+            TermMapType::Function => {
+                self.fun_map_opt
+                    .as_mut()
+                    .unwrap()
+                    .param_om_pairs
+                    .iter_mut()
+                    .for_each(|(_, om)| om.tm_info.prefix_attributes(prefix));
+                term_value
+            }
         };
 
-        TermMapInfo {
-            term_value,
-            ..tm_info
-        }
+        self.term_value = term_value;
     }
 
     pub fn get_attributes(&self) -> HashSet<String> {
@@ -81,7 +85,16 @@ impl TermMapInfo {
             TermMapType::Template => {
                 get_attributes_from_template(&value).into_iter().collect()
             }
-            TermMapType::Function => todo!(),
+            TermMapType::Function => {
+                tm_info
+                    .fun_map_opt
+                    .as_ref()
+                    .unwrap()
+                    .param_om_pairs
+                    .iter()
+                    .flat_map(|(_, om)| om.tm_info.get_attributes())
+                    .collect()
+            }
         }
     }
     pub fn from_constant_value(const_value: RcTerm) -> TermMapInfo {
