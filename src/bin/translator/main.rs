@@ -1,9 +1,11 @@
+mod cli;
+
 use std::path::PathBuf;
 
 use clap::Parser;
 use interpreter::extractors::io::parse_file;
-use translator::rmlalgebra::translate_to_algebra;
 use plangenerator::error::PlanError;
+use translator::rmlalgebra::translate_to_algebra;
 
 #[derive(Debug, Clone, Parser)]
 #[command(
@@ -14,7 +16,13 @@ use plangenerator::error::PlanError;
 
 struct Cli {
     /// The RML document to be translated into algebra
-    rml_document: PathBuf,
+    #[arg(short, long)]
+    rml_document: Option<PathBuf>,
+
+    /// RML Workspace folder from which all RML documents
+    /// will be translated into algebra
+    #[arg(short, long)]
+    rml_workspace: Option<PathBuf>,
 
     /// The generated output dot file containing the algebra tree
     #[arg(short, long)]
@@ -24,7 +32,7 @@ struct Cli {
 pub fn main() -> Result<(), PlanError> {
     let args = Cli::parse();
 
-    let document = parse_file(args.rml_document.clone())
+    let document = parse_file(args.rml_document.as_ref().unwrap().clone())
         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
     let mut mapping_plan = translate_to_algebra(document)?;
 
