@@ -151,14 +151,14 @@ fn add_non_join_related_ops(
     let fragmenter = translate_fragment_op_from_lts(&lt_triples_map);
     let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
 
-    println!("{:#?}", plan);
     if let Some(fragmenter) = fragmenter {
+        println!("{:?}", fragmenter);
         next_plan = next_plan.fragment(fragmenter.clone())?;
+        println!("{:?}", next_plan.fragment_node_idx);
         lt_id_vec = fragmenter.to;
     }
 
     for lt_id in lt_id_vec {
-        // TODO: Fix target_map retrieval logic <29-09-23, yourname> //
         let target = target_map.get(&lt_id).unwrap();
         let serialize_format = &target.data_format;
         let triples = lt_triples_map.get(&lt_id).unwrap();
@@ -168,8 +168,11 @@ fn add_non_join_related_ops(
             serialize_format,
             variable_map,
         );
+        println!("{:?}", next_plan.fragment_node_idx);
 
-        next_plan.serialize(serializer_op)?.sink(&target);
+        next_plan
+            .serialize_with_fragment(serializer_op, &lt_id)?
+            .sink(&target);
 
         //let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
     }
