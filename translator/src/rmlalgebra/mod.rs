@@ -152,9 +152,7 @@ fn add_non_join_related_ops(
     let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
 
     if let Some(fragmenter) = fragmenter {
-        println!("{:?}", fragmenter);
         next_plan = next_plan.fragment(fragmenter.clone())?;
-        println!("{:?}", next_plan.fragment_node_idx);
         lt_id_vec = fragmenter.to;
     }
 
@@ -168,7 +166,6 @@ fn add_non_join_related_ops(
             serialize_format,
             variable_map,
         );
-        println!("{:?}", next_plan.fragment_node_idx);
 
         next_plan
             .serialize_with_fragment(serializer_op, &lt_id)?
