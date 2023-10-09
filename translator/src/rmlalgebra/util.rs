@@ -2,11 +2,25 @@ use std::collections::{HashMap, HashSet};
 use std::vec;
 
 use interpreter::rml_model::source_target::LogicalTarget;
-use interpreter::rml_model::term_map::SubjectMap;
+use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo};
 use interpreter::rml_model::{Document, PredicateObjectMap};
 use operator::Target;
 
 use super::types::{RefPOM, Triples};
+
+pub fn extract_tm_infos_from_poms(
+    poms: Vec<&PredicateObjectMap>,
+) -> Vec<&TermMapInfo> {
+    poms.iter()
+        .flat_map(|pom| {
+            let mut tm_infos: Vec<_> =
+                pom.predicate_maps.iter().map(|pm| &pm.tm_info).collect();
+            let om_infos = pom.object_maps.iter().map(|om| &om.tm_info);
+            tm_infos.extend(om_infos);
+            tm_infos
+        })
+        .collect()
+}
 
 pub fn file_target(count: usize) -> Target {
     let mut config = HashMap::new();

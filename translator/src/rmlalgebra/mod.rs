@@ -18,8 +18,9 @@ use sophia_api::term::TTerm;
 
 use self::operators::extend::*;
 use self::operators::serializer::{self, translate_serializer_op};
+use self::operators::RMLTranslator;
 use self::types::Triples;
-use self::util::generate_lt_tm_map_from_spo;
+use self::util::{extract_tm_infos_from_poms, generate_lt_tm_map_from_spo};
 use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_tm_map_from_doc, generate_variable_map,
@@ -75,7 +76,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let variable_map = generate_variable_map(&doc);
     let target_map = generate_logtarget_map(&doc);
     let lt_id_tm_group_map = generate_lt_tm_map_from_doc(&doc);
-    let mut tm_projected_pairs = tm_projected_pairs_res?;
+    let tm_projected_pairs = tm_projected_pairs_res?;
     let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
         .into_iter()
@@ -143,8 +144,11 @@ fn add_non_join_related_ops(
 ) -> Result<(), PlanError> {
     let variable_map = &search_map.variable_map;
     let target_map = &search_map.target_map;
-    let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
     let mut plan = plan.borrow_mut();
+
+    let tms = extract_tm_infos_from_poms(no_join_poms.iter().collect());
+    let extend_translator = ExtendTranslator { tms, variable_map };
+    let extend_op = extend_translator.translate();
     let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
     let mut next_plan = extended_plan;
 
@@ -168,9 +172,9 @@ fn add_non_join_related_ops(
             variable_map,
         );
 
-        next_plan
+        let _ = next_plan
             .serialize_with_fragment(serializer_op, &lt_id)?
-            .sink(&target);
+            .sink(&target)?;
 
         //let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
     }
@@ -230,8 +234,10 @@ fn add_join_related_ops(
             ptm_sm_info.prefix_attributes(&ptm_alias);
 
             // Pair the ptm subject iri function with an extended attribute
-            let ptm_sub_function =
-                extract_extend_function_from_term_map(&ptm_sm_info);
+            let (_, ptm_sub_function) = extract_extend_function_from_term_map(
+                variable_map,
+                &ptm_sm_info,
+            );
             let om_extend_attr =
                 variable_map.get(&om.tm_info.identifier).unwrap().clone();
 
@@ -445,16 +451,16 @@ mod tests {
         let _source_op = translate_source_op(&triples_map);
         let _projection_ops = translate_projection_op(&triples_map);
 
-        let variable_map = generate_variable_map(&Document {
+        let variable_map = &generate_variable_map(&Document {
             triples_maps: triples_map_vec,
         });
+        let mut tms = vec![&triples_map.subject_map.tm_info];
+        let tms_poms =
+            extract_tm_infos_from_poms(triples_map.po_maps.iter().collect());
+        tms.extend(tms_poms);
 
-        let extend_op = translate_extend_op(
-            &triples_map.subject_map,
-            &triples_map.po_maps,
-            &variable_map,
-        );
-
+        let extend_translator = ExtendTranslator { tms, variable_map };
+        let extend_op = extend_translator.translate();
         println!("{:#?}", extend_op);
         Ok(())
     }
