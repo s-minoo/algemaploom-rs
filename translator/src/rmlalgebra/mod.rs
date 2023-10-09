@@ -17,6 +17,7 @@ use plangenerator::plan::{join, Init, Plan, Processed, RcRefCellPlan};
 use sophia_api::term::TTerm;
 
 use self::operators::extend::*;
+use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
 use self::operators::RMLTranslator;
 use self::types::Triples;
@@ -113,29 +114,6 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     Ok(plan)
 }
 
-fn translate_fragment_op_from_lts_str(
-    lt_triples_map: &HashMap<String, Vec<Triples>>,
-    from_fragment: &str,
-) -> Option<Fragmenter> {
-    let target_lt_ids = lt_triples_map.keys();
-
-    let to: Vec<String> = target_lt_ids.map(|id| id.clone()).collect();
-
-    if to.len() == 1 && to.iter().next() == Some(&from_fragment.to_string()) {
-        return None;
-    }
-
-    Some(Fragmenter {
-        from: from_fragment.to_string(),
-        to,
-    })
-}
-fn translate_fragment_op_from_lts(
-    lt_triples_map: &HashMap<String, Vec<Triples>>,
-) -> Option<Fragmenter> {
-    translate_fragment_op_from_lts_str(lt_triples_map, "default")
-}
-
 fn add_non_join_related_ops(
     no_join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
@@ -152,10 +130,11 @@ fn add_non_join_related_ops(
     let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
     let mut next_plan = extended_plan;
 
-    let lt_triples_map = generate_lt_tm_map_from_spo(sm, no_join_poms);
-    let fragmenter = translate_fragment_op_from_lts(&lt_triples_map);
-    let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
+    let lt_triples_map = &generate_lt_tm_map_from_spo(sm, no_join_poms);
+    let fragment_translator = FragmentTranslator { lt_triples_map };
+    let fragmenter = fragment_translator.translate();
 
+    let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
     if let Some(fragmenter) = fragmenter {
         next_plan = next_plan.fragment(fragmenter.clone())?;
         lt_id_vec = fragmenter.to;

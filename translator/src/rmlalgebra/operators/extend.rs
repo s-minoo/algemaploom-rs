@@ -14,7 +14,7 @@ pub struct ExtendTranslator<'a> {
     pub variable_map: &'a HashMap<String, String>,
 }
 
-impl<'a> RMLTranslator for ExtendTranslator<'a> {
+impl<'a> RMLTranslator<Operator> for ExtendTranslator<'a> {
     fn translate(self) -> Operator {
         let mut extend_pairs = HashMap::new();
         for tm_info in self.tms {
