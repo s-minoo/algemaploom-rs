@@ -301,51 +301,7 @@ fn translate_projection_op(tm: &TriplesMap) -> Operator {
     }
 }
 
-fn extract_serializer_template<'a>(
-    poms: &[PredicateObjectMap],
-    sm: &SubjectMap,
-    variable_map: &HashMap<String, String>,
-) -> String {
-    let subject = variable_map.get(&sm.tm_info.identifier).unwrap().clone();
-    let predicate_objects = poms.iter().flat_map(|pom| {
-        let _p_length = pom.predicate_maps.len();
-        let _o_length = pom.object_maps.len();
 
-        let predicates = pom
-            .predicate_maps
-            .iter()
-            .flat_map(|pm| variable_map.get(&pm.tm_info.identifier));
-        let objects = pom
-            .object_maps
-            .iter()
-            .flat_map(|om| variable_map.get(&om.tm_info.identifier));
-
-        predicates.flat_map(move |p_string| {
-            objects
-                .clone()
-                .map(move |o_string| (p_string.clone(), o_string.clone()))
-        })
-    });
-
-    predicate_objects
-        .map(|(predicate, object)| {
-            format!(" ?{} ?{} ?{}.", subject, predicate, object)
-        })
-        .fold(String::new(), |a, b| a + &b + "\n")
-}
-
-fn translate_serializer_op_old<'a>(
-    poms: &[PredicateObjectMap],
-    sm: &SubjectMap,
-    variable_map: &HashMap<String, String>,
-) -> Serializer {
-    let template = extract_serializer_template(poms, sm, variable_map);
-    Serializer {
-        template,
-        options: None,
-        format: operator::formats::DataFormat::NTriples,
-    }
-}
 
 #[cfg(test)]
 mod tests {
