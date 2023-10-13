@@ -51,16 +51,15 @@ python version >= 3.10 and the following packages:
    cd {repo dir}
    cargo build --release
    ```
-3. Run the CLI translator app
-   1. From Cargo
-      ```sh
-      cargo run --bin translator -- {args}
-      ```
-   2. From the compiled translator binary
-      ```sh
-      cd ./target/release/
-      ./translator {args}
-      ```
+3. Run the CLI translator app from the compiled translator binary
+   ```sh
+   cd ./target/release/
+   ./translator  file  <RML_DOCUMENT>
+   ```
+   For more information/options of CLI app: 
+   ```sh
+   ./translator  -h
+   ```
 4. Visualize the created mapping plan
    ```sh
    dot -Tpng {generated dot file} > output.png
