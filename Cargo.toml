@@ -40,4 +40,5 @@ translator = {path = "./translator/"}
 csv = "1.2.2"
 tokio = {version= "1.29.1", features=["full"]}
 urlencoding = "2.1.2"
+walkdir = "2.4.0"
 

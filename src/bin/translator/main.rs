@@ -6,6 +6,7 @@ use clap::Parser;
 use interpreter::extractors::io::parse_file;
 use plangenerator::error::PlanError;
 use translator::rmlalgebra::translate_to_algebra;
+use walkdir::{DirEntry, WalkDir};
 
 use crate::cli::TRANSLATOR_VERSION;
 
@@ -30,6 +31,16 @@ struct Cli {
     #[arg(short, long)]
     output: Option<String>,
 }
+
+fn is_rml_file(entry: &DirEntry) -> bool {
+    entry.file_type().is_file()
+        && entry
+            .file_name()
+            .to_str()
+            .map(|str_path| str_path.ends_with(".ttl"))
+            .unwrap_or(false)
+}
+
 pub fn main() -> Result<(), PlanError> {
     let cli = cli::Cli::new();
 
@@ -53,7 +64,21 @@ pub fn main() -> Result<(), PlanError> {
         let folder_path_string: &String =
             folder_matches.get_one("FOLDER").unwrap();
         let folder_path: PathBuf = folder_path_string.into();
-        todo!()
+        let rml_files = WalkDir::new(folder_path)
+            .into_iter()
+            .filter_entry(|entry| is_rml_file(entry))
+            .flatten();
+
+        for rml_file in rml_files {
+            let file = rml_file.path();
+
+            let output_dir = file
+                .parent()
+                .map_or("".to_string(), |p| p.to_string_lossy().to_string());
+            let output_prefix =
+                output_dir + &file.file_stem().unwrap().to_string_lossy();
+            let _ = translate_rml_file(file.to_string_lossy(), output_prefix);
+        }
     }
     Ok(())
 }
@@ -89,33 +114,3 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
     Ok(())
 }
 
-pub fn old_main() -> Result<(), PlanError> {
-    let args = Cli::parse();
-
-    let document = parse_file(args.rml_document.as_ref().unwrap().clone())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
-    let mut mapping_plan = translate_to_algebra(document)?;
-
-    let output_path: String = args.output.unwrap_or("output.dot".into());
-
-    mapping_plan
-        .write(output_path.clone().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
-
-    let pretty_path = output_path.clone() + ".pretty";
-
-    mapping_plan
-        .write_pretty(pretty_path.clone().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
-
-    println!(
-        "The following mapping tree have been translated from {:?} at {:?}",
-        args.rml_document, output_path
-    );
-    println!(
-        "The pretty dot file version for visualization is generated at: {:?}",
-        pretty_path
-    );
-
-    Ok(())
-}
