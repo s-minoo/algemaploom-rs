@@ -2,35 +2,11 @@ mod cli;
 
 use std::path::PathBuf;
 
-use clap::Parser;
+use colored::Colorize;
 use interpreter::extractors::io::parse_file;
 use plangenerator::error::PlanError;
 use translator::rmlalgebra::translate_to_algebra;
 use walkdir::{DirEntry, WalkDir};
-
-use crate::cli::TRANSLATOR_VERSION;
-
-#[derive(Debug, Clone, Parser)]
-#[command(
-    name = "RML2Algebra",
-    version = "0.1",
-    about = "Translates the given RML document into a tree of algebraic mapping operators."
-)]
-
-struct Cli {
-    /// The RML document to be translated into algebra
-    #[arg(short, long)]
-    rml_document: Option<PathBuf>,
-
-    /// RML Workspace folder from which all RML documents
-    /// will be translated into algebra
-    #[arg(short, long)]
-    rml_workspace: Option<PathBuf>,
-
-    /// The generated output dot file containing the algebra tree
-    #[arg(short, long)]
-    output: Option<String>,
-}
 
 fn is_rml_file(entry: &DirEntry) -> bool {
     entry.file_type().is_file()
@@ -45,6 +21,7 @@ pub fn main() -> Result<(), PlanError> {
     let cli = cli::Cli::new();
 
     let matches = cli.cmd.get_matches();
+    let mut err_vec = Vec::new();
 
     if let Some(file_matches) = matches.subcommand_matches("file") {
         let file_path_string: &String =
@@ -56,10 +33,12 @@ pub fn main() -> Result<(), PlanError> {
             let derived_string = derived_prefix.to_string_lossy();
             output_prefix.insert(derived_string.to_string());
         }
-        translate_rml_file(
+        if let Err(err) = translate_rml_file(
             file_path.to_string_lossy(),
             output_prefix.unwrap(),
-        )?;
+        ) {
+            err_vec.push((file_path.to_string_lossy().to_string(), err));
+        }
     } else if let Some(folder_matches) = matches.subcommand_matches("folder") {
         let folder_path_string: &String =
             folder_matches.get_one("FOLDER").unwrap();
@@ -78,9 +57,25 @@ pub fn main() -> Result<(), PlanError> {
                 .map_or("".to_string(), |p| p.to_string_lossy().to_string());
             let output_prefix =
                 output_dir + "/" + &file.file_stem().unwrap().to_string_lossy();
-            let _ = translate_rml_file(file.to_string_lossy(), output_prefix)?;
+            if let Err(err) =
+                translate_rml_file(file.to_string_lossy(), output_prefix)
+            {
+                err_vec.push((file.to_string_lossy().to_string(), err));
+            }
         }
     }
+
+
+    err_vec.iter().for_each(|(file, err)| {
+
+        eprintln!("{}: Errored while translating {}", "Error".red(), file); 
+        eprintln!("{:?}\n", err); 
+
+    });
+
+
+
+
     Ok(())
 }
 
@@ -96,20 +91,21 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
     let full_path = output_prefix.clone() + ".dot";
     let _ = mapping_plan
         .write(full_path.clone().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))));
+        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
     let pretty_path = output_prefix + "_pretty.dot";
 
     let _ = mapping_plan
         .write_pretty(pretty_path.clone().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))));
+        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     println!(
-        "The following mapping tree have been translated from {:?}:\n{:?}",
-        file.as_ref(),
-        full_path
+        "{}: Translating {} RML document",
+        "Success".green(),
+        file.as_ref().yellow(),
     );
+    println!("Generated dot file: {}", full_path);
     println!(
-        "The pretty dot file version for visualization is:\n{:?}\n",
+        "The pretty dot file version for visualization is: {:?}\n",
         pretty_path
     );
     Ok(())
