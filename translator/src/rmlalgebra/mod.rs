@@ -16,9 +16,12 @@ use plangenerator::error::PlanError;
 use plangenerator::plan::{join, Init, Plan, Processed, RcRefCellPlan};
 use sophia_api::term::TTerm;
 
+use self::operators::extend::*;
+use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
+use self::operators::RMLTranslator;
 use self::types::Triples;
-use self::util::generate_lt_tm_map_from_spo;
+use self::util::{extract_tm_infos_from_poms, generate_lt_tm_map_from_spo};
 use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_tm_map_from_doc, generate_variable_map,
@@ -74,7 +77,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     let variable_map = generate_variable_map(&doc);
     let target_map = generate_logtarget_map(&doc);
     let lt_id_tm_group_map = generate_lt_tm_map_from_doc(&doc);
-    let mut tm_projected_pairs = tm_projected_pairs_res?;
+    let tm_projected_pairs = tm_projected_pairs_res?;
     let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
         .into_iter()
@@ -111,29 +114,6 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     Ok(plan)
 }
 
-fn translate_fragment_op_from_lts_str(
-    lt_triples_map: &HashMap<String, Vec<Triples>>,
-    from_fragment: &str,
-) -> Option<Fragmenter> {
-    let target_lt_ids = lt_triples_map.keys();
-
-    let to: Vec<String> = target_lt_ids.map(|id| id.clone()).collect();
-
-    if to.len() == 1 && to.iter().next() == Some(&from_fragment.to_string()) {
-        return None;
-    }
-
-    Some(Fragmenter {
-        from: from_fragment.to_string(),
-        to,
-    })
-}
-fn translate_fragment_op_from_lts(
-    lt_triples_map: &HashMap<String, Vec<Triples>>,
-) -> Option<Fragmenter> {
-    translate_fragment_op_from_lts_str(lt_triples_map, "default")
-}
-
 fn add_non_join_related_ops(
     no_join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
@@ -142,23 +122,25 @@ fn add_non_join_related_ops(
 ) -> Result<(), PlanError> {
     let variable_map = &search_map.variable_map;
     let target_map = &search_map.target_map;
-    let extend_op = translate_extend_op(sm, no_join_poms, variable_map);
     let mut plan = plan.borrow_mut();
+
+    let tms = extract_tm_infos_from_poms(no_join_poms.iter().collect());
+    let extend_translator = ExtendTranslator { tms, variable_map };
+    let extend_op = extend_translator.translate();
     let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
     let mut next_plan = extended_plan;
 
-    let lt_triples_map = generate_lt_tm_map_from_spo(sm, no_join_poms);
-    let fragmenter = translate_fragment_op_from_lts(&lt_triples_map);
-    let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
+    let lt_triples_map = &generate_lt_tm_map_from_spo(sm, no_join_poms);
+    let fragment_translator = FragmentTranslator { lt_triples_map };
+    let fragmenter = fragment_translator.translate();
 
-    println!("{:#?}", plan);
+    let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
     if let Some(fragmenter) = fragmenter {
         next_plan = next_plan.fragment(fragmenter.clone())?;
         lt_id_vec = fragmenter.to;
     }
 
     for lt_id in lt_id_vec {
-        // TODO: Fix target_map retrieval logic <29-09-23, yourname> //
         let target = target_map.get(&lt_id).unwrap();
         let serialize_format = &target.data_format;
         let triples = lt_triples_map.get(&lt_id).unwrap();
@@ -169,7 +151,9 @@ fn add_non_join_related_ops(
             variable_map,
         );
 
-        next_plan.serialize(serializer_op)?.sink(&target);
+        let _ = next_plan
+            .serialize_with_fragment(serializer_op, &lt_id)?
+            .sink(&target)?;
 
         //let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
     }
@@ -229,8 +213,10 @@ fn add_join_related_ops(
             ptm_sm_info.prefix_attributes(&ptm_alias);
 
             // Pair the ptm subject iri function with an extended attribute
-            let ptm_sub_function =
-                extract_extend_function_from_term_map(&ptm_sm_info);
+            let (_, ptm_sub_function) = extract_extend_function_from_term_map(
+                variable_map,
+                &ptm_sm_info,
+            );
             let om_extend_attr =
                 variable_map.get(&om.tm_info.identifier).unwrap().clone();
 
@@ -315,167 +301,7 @@ fn translate_projection_op(tm: &TriplesMap) -> Operator {
     }
 }
 
-fn extract_extend_function_from_term_map(tm_info: &TermMapInfo) -> Function {
-    let term_value = tm_info.term_value.value().to_string();
-    let value_function: RcExtendFunction = match tm_info.term_map_type {
-        TermMapType::Constant => Function::Constant { value: term_value },
-        TermMapType::Reference => Function::Reference { value: term_value },
-        TermMapType::Template => Function::Template { value: term_value },
-        TermMapType::Function => {
-            let fn_map = tm_info.fun_map_opt.as_ref().unwrap();
-            let fno_identifier = fn_map.function_iri.clone();
-            let param_func_pairs = fn_map
-                .param_om_pairs
-                .iter()
-                .map(|(param, om)| {
-                    (
-                        param.clone(),
-                        Rc::new(extract_extend_function_from_term_map(
-                            &om.tm_info,
-                        )),
-                    )
-                })
-                .collect();
 
-            Function::FnO {
-                fno_identifier,
-                param_func_pairs,
-            }
-        }
-    }
-    .into();
-
-    match tm_info.term_type.unwrap() {
-        sophia_api::term::TermKind::Iri => {
-            Function::Iri {
-                inner_function: Function::UriEncode {
-                    inner_function: value_function,
-                }
-                .into(),
-            }
-        }
-        sophia_api::term::TermKind::Literal => {
-            Function::Literal {
-                inner_function: value_function,
-            }
-        }
-        sophia_api::term::TermKind::BlankNode => {
-            Function::BlankNode {
-                inner_function: value_function,
-            }
-        }
-        typ => panic!("Unrecognized term kind {:?}", typ),
-    }
-}
-
-fn translate_extend_op(
-    sm: &SubjectMap,
-    poms: &[PredicateObjectMap],
-    variable_map: &HashMap<String, String>,
-) -> Operator {
-    let extend_pairs = translate_extend_pairs(variable_map, sm, poms);
-
-    operator::Operator::ExtendOp {
-        config: Extend { extend_pairs },
-    }
-}
-
-fn translate_extend_pairs(
-    variable_map: &HashMap<String, String>,
-    sm: &SubjectMap,
-    poms: &[PredicateObjectMap],
-) -> HashMap<String, Function> {
-    let sub_extend = sm_extract_extend_pair(variable_map, sm);
-
-    let poms_extend =
-        poms.iter().flat_map(|pom| {
-            let predicate_extends = pom.predicate_maps.iter().enumerate().map(
-                move |(_p_count, pm)| {
-                    (
-                        variable_map
-                            .get(&pm.tm_info.identifier)
-                            .unwrap()
-                            .clone(),
-                        extract_extend_function_from_term_map(&pm.tm_info),
-                    )
-                },
-            );
-
-            let object_extends = pom.object_maps.iter().enumerate().map(
-                move |(_o_count, om)| {
-                    (
-                        variable_map
-                            .get(&om.tm_info.identifier)
-                            .unwrap()
-                            .clone(),
-                        extract_extend_function_from_term_map(&om.tm_info),
-                    )
-                },
-            );
-            predicate_extends.chain(object_extends)
-        });
-
-    let extend_ops_map: HashMap<String, Function> =
-        poms_extend.chain(sub_extend).collect();
-    extend_ops_map
-}
-
-fn sm_extract_extend_pair(
-    variable_map: &HashMap<String, String>,
-    sm: &SubjectMap,
-) -> Vec<(String, Function)> {
-    let sub_extend = vec![(
-        variable_map.get(&sm.tm_info.identifier).unwrap().clone(),
-        extract_extend_function_from_term_map(&sm.tm_info),
-    )];
-    sub_extend
-}
-
-fn extract_serializer_template<'a>(
-    poms: &[PredicateObjectMap],
-    sm: &SubjectMap,
-    variable_map: &HashMap<String, String>,
-) -> String {
-    let subject = variable_map.get(&sm.tm_info.identifier).unwrap().clone();
-    let predicate_objects = poms.iter().flat_map(|pom| {
-        let _p_length = pom.predicate_maps.len();
-        let _o_length = pom.object_maps.len();
-
-        let predicates = pom
-            .predicate_maps
-            .iter()
-            .flat_map(|pm| variable_map.get(&pm.tm_info.identifier));
-        let objects = pom
-            .object_maps
-            .iter()
-            .flat_map(|om| variable_map.get(&om.tm_info.identifier));
-
-        predicates.flat_map(move |p_string| {
-            objects
-                .clone()
-                .map(move |o_string| (p_string.clone(), o_string.clone()))
-        })
-    });
-
-    predicate_objects
-        .map(|(predicate, object)| {
-            format!(" ?{} ?{} ?{}.", subject, predicate, object)
-        })
-        .fold(String::new(), |a, b| a + &b + "\n")
-}
-
-fn translate_serializer_op_old<'a>(
-    poms: &[PredicateObjectMap],
-    sm: &SubjectMap,
-    variable_map: &HashMap<String, String>,
-) -> Serializer {
-    let template = extract_serializer_template(poms, sm, variable_map);
-    Serializer {
-        template,
-        options: None,
-        format: operator::formats::DataFormat::NTriples,
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -560,16 +386,16 @@ mod tests {
         let _source_op = translate_source_op(&triples_map);
         let _projection_ops = translate_projection_op(&triples_map);
 
-        let variable_map = generate_variable_map(&Document {
+        let variable_map = &generate_variable_map(&Document {
             triples_maps: triples_map_vec,
         });
+        let mut tms = vec![&triples_map.subject_map.tm_info];
+        let tms_poms =
+            extract_tm_infos_from_poms(triples_map.po_maps.iter().collect());
+        tms.extend(tms_poms);
 
-        let extend_op = translate_extend_op(
-            &triples_map.subject_map,
-            &triples_map.po_maps,
-            &variable_map,
-        );
-
+        let extend_translator = ExtendTranslator { tms, variable_map };
+        let extend_op = extend_translator.translate();
         println!("{:#?}", extend_op);
         Ok(())
     }

@@ -19,9 +19,11 @@
 # predefined messages
 # this section is optional
 {
+    println = "chore: remove printlns"
     vb = "chore: version bump"
     readme = "docs: updated readme"
     ignore = "docs: updated .gitignore"
+    cmt = "chore: update .cmt"
 }
 
 # The output format

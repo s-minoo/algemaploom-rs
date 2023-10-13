@@ -97,7 +97,7 @@ impl<T> Plan<T> {
         Ok(())
     }
 
-    fn get_default_fragment_str(&self) -> String {
+    fn get_fragment_str(&self) -> String {
         (*self.fragment_string).clone()
     }
 
@@ -256,7 +256,7 @@ impl Plan<Processed> {
         operator: &Operator,
         node_id_prefix: &str,
     ) -> Result<Plan<Processed>, PlanError> {
-        let fragment_str = &self.get_default_fragment_str();
+        let fragment_str = &self.get_fragment_str();
         self.apply_to_fragment(operator, node_id_prefix, fragment_str)
     }
 
@@ -285,6 +285,8 @@ impl Plan<Processed> {
             fragment: fragmenter.from.clone(),
         };
         let node_idx = self.add_node_with_edge(fragment_node, edge);
+
+        self.fragment_node_idx = Some(node_idx);
 
         Ok(self.next_idx(Some(node_idx)))
     }
@@ -320,7 +322,7 @@ impl Plan<Processed> {
         &mut self,
         serializer: Serializer,
     ) -> Result<Plan<Serialized>, PlanError> {
-        self.serialize_with_fragment(serializer, DEFAULT_FRAGMENT)
+        self.serialize_with_fragment(serializer, &self.get_fragment_str())
     }
 }
 
@@ -334,7 +336,7 @@ fn add_join_fragmenter(
     plan: &mut Plan<Processed>,
     alias: &str,
 ) -> Result<Plan<Processed>, PlanError> {
-    let default_fragment = plan.get_default_fragment_str();
+    let default_fragment = plan.get_fragment_str();
     let fragmenter = Fragmenter {
         from: default_fragment.clone(),
         to:   vec![default_fragment, alias.to_string()],
@@ -463,13 +465,17 @@ impl Plan<Serialized> {
         let graph = &mut *self.graph.borrow_mut();
         let plan_node = PlanNode {
             id:       format!("Sink_{}", graph.node_count()),
-            operator: Operator::TargetOp { config: sink.clone() },
+            operator: Operator::TargetOp {
+                config: sink.clone(),
+            },
         };
 
         let node_idx = graph.add_node(plan_node);
         let prev_node_idx = self.last_node_idx.unwrap();
 
-        let plan_edge = PlanEdge::default();
+        let plan_edge = PlanEdge {
+            fragment: self.get_fragment_str().to_string(),
+        };
         graph.add_edge(prev_node_idx, node_idx, plan_edge);
 
         Ok(self.next_idx(Some(node_idx)))
