@@ -65,9 +65,10 @@ pub fn main() -> Result<(), PlanError> {
             folder_matches.get_one("FOLDER").unwrap();
         let folder_path: PathBuf = folder_path_string.into();
         let rml_files = WalkDir::new(folder_path)
+            .max_depth(4)
             .into_iter()
-            .filter_entry(|entry| is_rml_file(entry))
-            .flatten();
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| is_rml_file(entry));
 
         for rml_file in rml_files {
             let file = rml_file.path();
@@ -76,8 +77,8 @@ pub fn main() -> Result<(), PlanError> {
                 .parent()
                 .map_or("".to_string(), |p| p.to_string_lossy().to_string());
             let output_prefix =
-                output_dir + &file.file_stem().unwrap().to_string_lossy();
-            let _ = translate_rml_file(file.to_string_lossy(), output_prefix);
+                output_dir + "/" + &file.file_stem().unwrap().to_string_lossy();
+            let _ = translate_rml_file(file.to_string_lossy(), output_prefix)?;
         }
     }
     Ok(())
@@ -103,14 +104,13 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))));
 
     println!(
-        "The following mapping tree have been translated from {:?} at {:?}",
+        "The following mapping tree have been translated from {:?}:\n{:?}",
         file.as_ref(),
         full_path
     );
     println!(
-        "The pretty dot file version for visualization is generated at: {:?}",
+        "The pretty dot file version for visualization is:\n{:?}\n",
         pretty_path
     );
     Ok(())
 }
-
