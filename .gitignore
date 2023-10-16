@@ -4,5 +4,6 @@ output/
 .vscode/
 .cmt.bkp
 
+*.dot
 
 test_resources/
