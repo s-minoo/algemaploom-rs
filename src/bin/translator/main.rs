@@ -68,8 +68,9 @@ pub fn main() -> Result<(), PlanError> {
 
     err_vec.iter().for_each(|(file, err)| {
 
-        eprintln!("{}: Errored while translating {}", "Error".red(), file); 
-        eprintln!("{:?}\n", err); 
+        eprintln!("{}: Errored while translating {}", "Error".red(), file.yellow()); 
+        let err_string = format!("{}", err); 
+        eprintln!("{}\n", err_string.red()); 
 
     });
 
@@ -99,14 +100,14 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     println!(
-        "{}: Translating {} RML document",
+        "{}: Translating {}",
         "Success".green(),
         file.as_ref().yellow(),
     );
-    println!("Generated dot file: {}", full_path);
+    println!("Generated dot file: {}", full_path.yellow());
     println!(
-        "The pretty dot file version for visualization is: {:?}\n",
-        pretty_path
+        "The pretty dot file version for visualization is: {}\n",
+        pretty_path.yellow()
     );
     Ok(())
 }
