@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use interpreter::rml_model::join::JoinCondition;
 use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
 use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use operator::{
@@ -101,7 +102,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
             partition_pom_join_nonjoin(poms);
 
         if !joined_poms.is_empty() {
-            add_join_related_ops(&joined_poms, sm_ref, &search_map, plan)?;
+            add_join_related_ops(tm, &joined_poms, sm_ref, &search_map, plan)?;
         }
 
         if !no_join_poms.is_empty() {
@@ -162,6 +163,7 @@ fn add_non_join_related_ops(
 }
 
 fn add_join_related_ops(
+    tm: &TriplesMap,
     join_poms: &[PredicateObjectMap],
     sm: &SubjectMap,
     search_map: &SearchMap,
@@ -195,17 +197,32 @@ fn add_join_related_ops(
                 )),
             )?;
 
-            let join_cond = om.join_condition.as_ref().unwrap();
-            let child_attributes = &join_cond.child_attributes;
-            let parent_attributes = &join_cond.parent_attributes;
+            //Preparing plan for add join operator
             let ptm_variable = variable_map.get(&ptm.identifier).unwrap();
             let ptm_alias =
                 format!("join_{}", &ptm_variable[ptm_variable.len() - 1..]);
+            let mut aliased_plan =
+                join(Rc::clone(plan), Rc::clone(other_plan))?
+                    .alias(&ptm_alias)?;
 
-            let mut joined_plan = join(Rc::clone(plan), Rc::clone(other_plan))?
-                .alias(&ptm_alias)?
-                .where_by(child_attributes.clone())?
-                .compared_to(parent_attributes.clone())?;
+            //Check for appropriate join type and add them to the plan
+            let mut joined_plan: Plan<Processed>;
+
+            let join_cond_opt = om.join_condition.as_ref();
+            if let Some(join_cond) = join_cond_opt {
+                let child_attributes = &join_cond.child_attributes;
+                let parent_attributes = &join_cond.parent_attributes;
+
+                joined_plan = aliased_plan
+                    .where_by(child_attributes.clone())?
+                    .compared_to(parent_attributes.clone())?;
+            } else {
+                if tm.logical_source == ptm.logical_source {
+                    joined_plan = aliased_plan.natural_join()?;
+                } else {
+                    joined_plan = aliased_plan.cross_join()?;
+                }
+            }
 
             // Prefix the attributes in the subject map with the alias of the PTM
             let mut ptm_sm_info = ptm.subject_map.tm_info.clone();
@@ -300,8 +317,6 @@ fn translate_projection_op(tm: &TriplesMap) -> Operator {
         },
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

@@ -10,12 +10,19 @@ use vocab::ToString;
 use crate::extractors::FromVocab;
 use crate::IriString;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct LogicalSource {
-    pub identifier:            String,
-    pub iterator:              Option<String>,
-    pub source:                Source,
+    pub identifier: String,
+    pub iterator: Option<String>,
+    pub source: Source,
     pub reference_formulation: IriString,
+}
+impl PartialEq for LogicalSource {
+    fn eq(&self, other: &Self) -> bool {
+        self.iterator == other.iterator
+            && self.source == other.source
+            && self.reference_formulation == other.reference_formulation
+    }
 }
 
 impl From<LogicalSource> for operator::Source {
@@ -75,24 +82,24 @@ pub fn default_file_output(path: String) -> Output {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogicalTarget {
-    pub identifier:    String,
-    pub compression:   Option<IriString>,
+    pub identifier: String,
+    pub compression: Option<IriString>,
     pub serialization: IriString,
-    pub output_type:   IOType,
-    pub config:        HashMap<String, String>,
+    pub output_type: IOType,
+    pub config: HashMap<String, String>,
 }
 
 impl Default for LogicalTarget {
     fn default() -> Self {
         Self {
-            identifier:    String::from("default"),
-            compression:   Default::default(),
+            identifier: String::from("default"),
+            compression: Default::default(),
             serialization: Iri::new(
                 vocab::formats::CLASS::NTRIPLES.to_string(),
             )
             .unwrap(),
-            output_type:   Default::default(),
-            config:        Default::default(),
+            output_type: Default::default(),
+            config: Default::default(),
         }
     }
 }
@@ -158,10 +165,10 @@ impl From<LogicalTarget> for operator::Target {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
     CSVW {
-        url:          String,
+        url: String,
         parse_config: HashMap<String, String>,
     },
     FileInput {

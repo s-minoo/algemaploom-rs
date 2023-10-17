@@ -29,23 +29,23 @@ fn get_attributes_from_template(template: &str) -> Vec<String> {
 }
 #[derive(Debug, Clone)]
 pub struct TermMapInfo {
-    pub identifier:      String,
+    pub identifier: String,
     pub logical_targets: HashSet<LogicalTarget>,
-    pub term_map_type:   TermMapType,
-    pub term_value:      TermString,
-    pub term_type:       Option<TermKind>,
-    pub fun_map_opt:     Option<FunctionMap>,
+    pub term_map_type: TermMapType,
+    pub term_value: TermString,
+    pub term_type: Option<TermKind>,
+    pub fun_map_opt: Option<FunctionMap>,
 }
 
 impl Default for TermMapInfo {
     fn default() -> Self {
         Self {
-            identifier:      Default::default(),
+            identifier: Default::default(),
             logical_targets: Default::default(),
-            term_map_type:   TermMapType::Constant,
-            term_value:      Term::new_bnode("qsdkfldsfj").unwrap(),
-            term_type:       Default::default(),
-            fun_map_opt:     Default::default(),
+            term_map_type: TermMapType::Constant,
+            term_value: Term::new_bnode("qsdkfldsfj").unwrap(),
+            term_type: Default::default(),
+            fun_map_opt: Default::default(),
         }
     }
 }
@@ -58,10 +58,8 @@ impl TermMapInfo {
             TermMapType::Reference => {
                 term_value.map(|val| format!("{}_{}", prefix, val))
             }
-            TermMapType::Template => {
-                term_value
-                    .map(|val| prefix_attributes_from_template(&val, prefix))
-            }
+            TermMapType::Template => term_value
+                .map(|val| prefix_attributes_from_template(&val, prefix)),
             TermMapType::Function => {
                 self.fun_map_opt
                     .as_mut()
@@ -85,30 +83,26 @@ impl TermMapInfo {
             TermMapType::Template => {
                 get_attributes_from_template(&value).into_iter().collect()
             }
-            TermMapType::Function => {
-                tm_info
-                    .fun_map_opt
-                    .as_ref()
-                    .unwrap()
-                    .param_om_pairs
-                    .iter()
-                    .flat_map(|(_, om)| om.tm_info.get_attributes())
-                    .collect()
-            }
+            TermMapType::Function => tm_info
+                .fun_map_opt
+                .as_ref()
+                .unwrap()
+                .param_om_pairs
+                .iter()
+                .flat_map(|(_, om)| om.tm_info.get_attributes())
+                .collect(),
         }
     }
     pub fn from_constant_value(const_value: RcTerm) -> TermMapInfo {
         let identifier = match const_value.clone() {
             Term::Iri(iri) => Term::Iri(iri.map(|i| i.to_string())),
             Term::BNode(bnode) => Term::BNode(bnode.map(|i| i.to_string())),
-            Term::Literal(lit) => {
-                Term::new_bnode(format!(
-                    "{}-{}",
-                    lit.txt(),
-                    uuid::Uuid::new_v4()
-                ))
-                .unwrap()
-            }
+            Term::Literal(lit) => Term::new_bnode(format!(
+                "{}-{}",
+                lit.txt(),
+                uuid::Uuid::new_v4()
+            ))
+            .unwrap(),
             Term::Variable(_) => {
                 panic!("Variable not supported yet!")
             }
@@ -148,17 +142,17 @@ pub struct PredicateMap {
 
 #[derive(Debug, Clone)]
 pub struct ObjectMap {
-    pub tm_info:        TermMapInfo,
-    pub parent_tm:      Option<IriString>,
+    pub tm_info: TermMapInfo,
+    pub parent_tm: Option<IriString>,
     pub join_condition: Option<JoinCondition>,
-    pub data_type:      Option<IriString>,
-    pub language:       Option<String>,
+    pub data_type: Option<IriString>,
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct FunctionMap {
-    pub identifier:     String,
-    pub function_iri:   String,
+    pub identifier: String,
+    pub function_iri: String,
     pub param_om_pairs: Vec<(String, ObjectMap)>,
 }
 
