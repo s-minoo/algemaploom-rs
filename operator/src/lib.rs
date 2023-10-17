@@ -120,6 +120,7 @@ pub enum JoinType {
     RightJoin,
     InnerJoin,
     CrossJoin,
+    NaturalJoin,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
