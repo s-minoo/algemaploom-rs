@@ -148,7 +148,7 @@ fn add_non_join_related_ops(
     let mut next_plan = extended_plan;
 
     let lt_triples_map = &generate_lt_tm_map_from_spo(sm, no_join_poms);
-    let fragment_translator = FragmentTranslator { lt_triples_map };
+    let fragment_translator = FragmentTranslator { lt_quads_map: lt_triples_map };
     let fragmenter = fragment_translator.translate();
 
     let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];

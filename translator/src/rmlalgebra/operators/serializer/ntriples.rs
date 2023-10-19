@@ -3,18 +3,19 @@ use std::collections::HashMap;
 use operator::formats::DataFormat;
 
 use super::SerializeTranslator;
-use crate::rmlalgebra::types::Triples;
+use crate::rmlalgebra::types::{Triples, Quads};
 
 #[derive(Debug, Clone)]
 pub struct NTriplesSerializer {}
 
 impl SerializeTranslator for NTriplesSerializer {
     fn translate(
-        triples_vec: &[Triples],
+        quads: &[Quads],
         variable_map: &HashMap<String, String>,
     ) -> operator::Serializer {
         let mut triples_string: Vec<String> = Vec::new();
-        for triples in triples_vec {
+        for quad in quads {
+            let triples = &quad.triples; 
             let sm = triples.sm;
             let sm_var = variable_map.get(&sm.tm_info.identifier).unwrap();
 

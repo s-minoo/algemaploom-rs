@@ -6,23 +6,23 @@ use operator::formats::DataFormat;
 use operator::Serializer;
 
 use self::ntriples::NTriplesSerializer;
-use crate::rmlalgebra::types::Triples;
+use crate::rmlalgebra::types::{Quads, Triples};
 
 trait SerializeTranslator {
     fn translate(
-        triples: &[Triples],
+        quads: &[Quads],
         variable_map: &HashMap<String, String>,
     ) -> Serializer;
 }
 
 pub fn translate_serializer_op(
-    triples: &[Triples],
+    quads: &[Quads],
     serialize_format: &DataFormat,
     variable_map: &HashMap<String, String>,
 ) -> Serializer {
     match serialize_format {
         DataFormat::NTriples => {
-            NTriplesSerializer::translate(triples, variable_map)
+            NTriplesSerializer::translate(quads, variable_map)
         }
         DataFormat::NQuads => unimplemented!(),
         DataFormat::SQL => unimplemented!(),
