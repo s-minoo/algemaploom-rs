@@ -59,6 +59,30 @@ impl Plan<()> {
 }
 
 impl<T> Plan<T> {
+    fn update_prev_fragment_node(&mut self, new_fragment: &str) {
+        let mut graph = self.graph.borrow_mut();
+        let fragment_node = graph
+            .node_weight_mut(self.fragment_node_idx.unwrap())
+            .unwrap();
+
+        let mut update_fragment = match fragment_node.operator.clone() {
+            Operator::FragmentOp { config } => config,
+
+            _ => {
+                Fragmenter {
+                    from: self.get_fragment_str(),
+                    to:   vec![self.get_fragment_str()],
+                }
+            }
+        };
+
+        update_fragment.to.push(new_fragment.to_string());
+
+        fragment_node.operator = Operator::FragmentOp {
+            config: update_fragment,
+        };
+    }
+
     fn get_fragment_op(&self) -> Option<Fragmenter> {
         if let Some(idx) = self.fragment_node_idx {
             let graph = self.graph.borrow();
@@ -201,16 +225,6 @@ impl Plan<Init> {
     }
 }
 
-pub fn join(
-    left_plan: RcRefCellPlan<Processed>,
-    right_plan: RcRefCellPlan<Processed>,
-) -> Result<NotAliasedJoinedPlan<Processed>, PlanError> {
-    Ok(NotAliasedJoinedPlan {
-        left_plan:  Rc::clone(&left_plan),
-        right_plan: Rc::clone(&right_plan),
-    })
-}
-
 impl Plan<Processed> {
     pub fn apply_to_fragment(
         &mut self,
@@ -326,10 +340,14 @@ impl Plan<Processed> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct NotAliasedJoinedPlan<T> {
-    left_plan:  RcRefCellPlan<T>,
-    right_plan: RcRefCellPlan<T>,
+pub fn join(
+    left_plan: RcRefCellPlan<Processed>,
+    right_plan: RcRefCellPlan<Processed>,
+) -> Result<NotAliasedJoinedPlan<Processed>, PlanError> {
+    Ok(NotAliasedJoinedPlan {
+        left_plan:  Rc::clone(&left_plan),
+        right_plan: Rc::clone(&right_plan),
+    })
 }
 
 fn add_join_fragmenter(
@@ -342,6 +360,12 @@ fn add_join_fragmenter(
         to:   vec![default_fragment, alias.to_string()],
     };
     plan.fragment(fragmenter)
+}
+
+#[derive(Debug, Clone)]
+pub struct NotAliasedJoinedPlan<T> {
+    left_plan:  RcRefCellPlan<T>,
+    right_plan: RcRefCellPlan<T>,
 }
 impl NotAliasedJoinedPlan<Processed> {
     pub fn alias(
@@ -370,66 +394,11 @@ pub struct AliasedJoinedPlan<T> {
 }
 
 impl AliasedJoinedPlan<Processed> {
-    pub fn where_by<A>(
-        &mut self,
-        attributes: Vec<A>,
-    ) -> Result<WhereByPlan<Processed>, PlanError>
-    where
-        A: Into<String>,
-    {
-        let left_attributes: Vec<String> =
-            attributes.into_iter().map(|a| a.into()).collect();
-        Ok(WhereByPlan {
-            joined_plan: self.clone(),
-            left_attributes,
-        })
-    }
-
-    pub fn cross(&mut self) -> Result<Plan<Processed>, PlanError> {
-        unimplemented!()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct WhereByPlan<T> {
-    joined_plan:     AliasedJoinedPlan<T>,
-    left_attributes: Vec<String>,
-}
-
-impl WhereByPlan<Processed> {
-    // TODO: Allow choice in join type and predicate type <30-08-23, Min Oo> //
-    pub fn compared_to<A>(
-        &mut self,
-        attributes: Vec<A>,
-    ) -> Result<Plan<Processed>, PlanError>
-    where
-        A: Into<String>,
-    {
-        let joined_plan = &self.joined_plan;
-        let left_plan = joined_plan.left_plan.borrow_mut();
-        let right_plan = joined_plan.right_plan.borrow_mut();
-        let graph = &mut *left_plan.graph.borrow_mut();
-
-        let left_attributes = self.left_attributes.to_owned();
-        let right_attributes: Vec<String> =
-            attributes.into_iter().map(|a| a.into()).collect();
-
-        let left_right_attr_pairs: Vec<(String, String)> = left_attributes
-            .clone()
-            .into_iter()
-            .zip(right_attributes.clone().into_iter())
-            .collect();
-
-        let join_op = Operator::JoinOp {
-            config: Join {
-                join_alias: joined_plan.alias.clone(),
-                left_right_attr_pairs,
-                join_type: operator::JoinType::InnerJoin,
-                predicate_type: operator::PredicateType::Equal,
-            },
-        };
-
-        let fragment_str = &self.joined_plan.alias;
+    fn add_join_op_to_plan(&mut self, join_op: Operator) -> Plan<Processed> {
+        let left_plan = self.left_plan.borrow_mut();
+        let right_plan = self.right_plan.borrow_mut();
+        let graph = &mut left_plan.graph.borrow_mut();
+        let fragment_str = &self.alias;
 
         let join_node = PlanNode {
             id:       format!("Join_{}", graph.node_count()),
@@ -451,8 +420,87 @@ impl WhereByPlan<Processed> {
         };
 
         graph.add_edge(right_node, node_idx, right_edge);
+        left_plan.next_idx(Some(node_idx))
+    }
+    pub fn where_by<A>(
+        &mut self,
+        attributes: Vec<A>,
+    ) -> Result<WhereByPlan<Processed>, PlanError>
+    where
+        A: Into<String>,
+    {
+        let left_attributes: Vec<String> =
+            attributes.into_iter().map(|a| a.into()).collect();
+        Ok(WhereByPlan {
+            joined_plan: self.clone(),
+            left_attributes,
+        })
+    }
 
-        Ok(left_plan.next_idx(Some(node_idx)))
+    pub fn cross_join(&mut self) -> Result<Plan<Processed>, PlanError> {
+        let join_alias = &self.alias;
+
+        let join_op = Operator::JoinOp {
+            config: Join {
+                left_right_attr_pairs: vec![],
+                join_type:             operator::JoinType::CrossJoin,
+                predicate_type:        operator::PredicateType::Equal,
+                join_alias:            join_alias.to_string(),
+            },
+        };
+
+        Ok(self.add_join_op_to_plan(join_op))
+    }
+
+    pub fn natural_join(&mut self) -> Result<Plan<Processed>, PlanError> {
+        let join_op = Operator::JoinOp {
+            config: Join {
+                left_right_attr_pairs: vec![],
+                join_type:             operator::JoinType::NaturalJoin,
+                predicate_type:        operator::PredicateType::Equal,
+                join_alias:            self.alias.clone(),
+            },
+        };
+
+        Ok(self.add_join_op_to_plan(join_op))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WhereByPlan<T> {
+    joined_plan:     AliasedJoinedPlan<T>,
+    left_attributes: Vec<String>,
+}
+
+impl WhereByPlan<Processed> {
+    pub fn compared_to<A>(
+        &mut self,
+        attributes: Vec<A>,
+    ) -> Result<Plan<Processed>, PlanError>
+    where
+        A: Into<String>,
+    {
+        let joined_plan = &mut self.joined_plan;
+        let left_attributes = self.left_attributes.to_owned();
+        let right_attributes: Vec<String> =
+            attributes.into_iter().map(|a| a.into()).collect();
+
+        let left_right_attr_pairs: Vec<(String, String)> = left_attributes
+            .clone()
+            .into_iter()
+            .zip(right_attributes.clone().into_iter())
+            .collect();
+
+        let join_op = Operator::JoinOp {
+            config: Join {
+                join_alias: joined_plan.alias.clone(),
+                left_right_attr_pairs,
+                join_type: operator::JoinType::InnerJoin,
+                predicate_type: operator::PredicateType::Equal,
+            },
+        };
+
+        Ok(joined_plan.add_join_op_to_plan(join_op))
     }
 }
 
