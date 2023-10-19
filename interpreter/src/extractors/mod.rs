@@ -27,9 +27,9 @@ mod subjectmap_extractor;
 mod term_map_info_extractor;
 pub mod triplesmap_extractor;
 mod util;
+mod graphmap_extractor;
 
 pub type ExtractorResult<T> = Result<T, ParseError>;
-
 
 pub trait TermMapExtractor<T> {
     fn get_term_map_info(&self) -> TermMapInfo;
@@ -66,24 +66,25 @@ pub trait TermMapExtractor<T> {
         let map_const_obj_vec =
             get_objects(graph_ref, container_map_subj_ref, &const_pred);
 
-        if !map_subj_vec.is_empty() {
-            return Ok(map_subj_vec
-                .iter()
-                .flat_map(|map_subj| Self::create_term_map(map_subj, graph_ref))
-                .collect());
-        } else if !map_const_obj_vec.is_empty() {
-            return Ok(map_const_obj_vec
-                .iter()
-                .map(|map_const_obj_vec| {
-                    Self::extract_constant_term_map(map_const_obj_vec)
-                })
-                .collect::<Vec<_>>());
-        }
+        let mut result = map_subj_vec
+            .iter()
+            .flat_map(|map_subj| Self::create_term_map(map_subj, graph_ref))
+            .collect::<Vec<_>>();
 
-        Err(ParseError::GenericError(format!(
-            "TriplesMap {} has no subject map!",
-            container_map_subj_ref
-        )))
+        let constant_tms = map_const_obj_vec.iter().map(|map_const_obj_vec| {
+            Self::extract_constant_term_map(map_const_obj_vec)
+        });
+
+        result.extend(constant_tms);
+
+        if result.is_empty() {
+            Err(ParseError::GenericError(format!(
+                "0 TermMap of type {} found",
+                container_map_subj_ref
+            )))
+        } else {
+            Ok(result)
+        }
     }
 
     fn get_const_pred() -> RcTerm;

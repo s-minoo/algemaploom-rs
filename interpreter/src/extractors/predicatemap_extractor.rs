@@ -5,7 +5,7 @@ use sophia_term::RcTerm;
 use super::{FromVocab, TermMapExtractor};
 use crate::extractors::error::ParseError;
 use crate::extractors::Extractor;
-use crate::rml_model::term_map::{PredicateMap, TermMapInfo};
+use crate::rml_model::term_map::{GraphMap, PredicateMap, TermMapInfo};
 
 impl TermMapExtractor<PredicateMap> for PredicateMap {
     fn create_constant_map(tm_info: TermMapInfo) -> PredicateMap {
@@ -40,7 +40,13 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
             }
         };
 
-        Ok(PredicateMap { tm_info, graph_maps:todo!() })
+        let graph_maps =
+            GraphMap::extract_many_from_container(graph_ref, subj_ref)?;
+
+        Ok(PredicateMap {
+            tm_info,
+            graph_maps,
+        })
     }
 
     fn get_const_pred() -> RcTerm {

@@ -6,7 +6,7 @@ use super::store::get_objects;
 use super::{Extractor, TermMapExtractor};
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::LogicalTarget;
-use crate::rml_model::term_map::{SubjectMap, TermMapInfo};
+use crate::rml_model::term_map::{GraphMap, SubjectMap, TermMapInfo};
 use crate::IriString;
 
 impl TermMapExtractor<SubjectMap> for SubjectMap {
@@ -58,10 +58,13 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
                 .map(|item| item.try_into().unwrap())
                 .collect();
 
+        let graph_maps =
+            GraphMap::extract_many_from_container(graph_ref, subj_ref)?;
+
         Ok(SubjectMap {
             tm_info,
             classes,
-            graph_maps: todo!(),
+            graph_maps,
         })
     }
 

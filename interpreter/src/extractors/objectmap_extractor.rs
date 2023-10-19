@@ -7,7 +7,9 @@ use super::{ExtractorResult, FromVocab, TermMapExtractor};
 use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::Extractor;
 use crate::rml_model::join::JoinCondition;
-use crate::rml_model::term_map::{FunctionMap, ObjectMap, TermMapInfo};
+use crate::rml_model::term_map::{
+    FunctionMap, GraphMap, ObjectMap, TermMapInfo,
+};
 use crate::IriString;
 
 fn extract_join_condition(
@@ -95,6 +97,8 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         if tm_info.term_type.is_none() {
             tm_info.term_type = Some(tm_info.term_value.kind());
         }
+        let graph_maps =
+            GraphMap::extract_many_from_container(graph_ref, subj_ref)?;
 
         Ok(ObjectMap {
             tm_info,
@@ -102,7 +106,7 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
             join_condition,
             data_type,
             language,
-            graph_maps: todo!()
+            graph_maps,
         })
     }
 
