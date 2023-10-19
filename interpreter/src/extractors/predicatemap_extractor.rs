@@ -12,7 +12,10 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
         if tm_info.term_type != Some(TermKind::Iri) {
             panic!("Constant-valued PredicateMap has to have an IRI as value");
         }
-        PredicateMap { tm_info }
+        PredicateMap {
+            tm_info,
+            graph_maps: vec![],
+        }
     }
 
     fn create_term_map(
@@ -23,7 +26,10 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
 
         tm_info = match tm_info.term_type {
             Some(ttype) if ttype != TermKind::Iri => {
-                return Err(ParseError::GenericError("PredicateMap can only have rr:Iri as rr:termType!".to_string()))
+                return Err(ParseError::GenericError(
+                    "PredicateMap can only have rr:Iri as rr:termType!"
+                        .to_string(),
+                ))
             }
             Some(_) => tm_info,
             None => {
@@ -34,7 +40,7 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
             }
         };
 
-        Ok(PredicateMap { tm_info })
+        Ok(PredicateMap { tm_info, graph_maps:todo!() })
     }
 
     fn get_const_pred() -> RcTerm {
@@ -52,7 +58,6 @@ impl TermMapExtractor<PredicateMap> for PredicateMap {
 
 #[cfg(test)]
 mod tests {
-    
 
     use super::*;
     use crate::import_test_mods;

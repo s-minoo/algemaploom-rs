@@ -37,7 +37,6 @@ impl Extractor<TriplesMap> for TriplesMap {
             logical_source,
             subject_map,
             po_maps,
-            graph_map: None,
         })
     }
 }

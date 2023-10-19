@@ -16,7 +16,8 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
         }
         SubjectMap {
             tm_info,
-            classes: Vec::new(),
+            classes: vec![],
+            graph_maps: vec![],
         }
     }
 
@@ -57,7 +58,11 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
                 .map(|item| item.try_into().unwrap())
                 .collect();
 
-        Ok(SubjectMap { tm_info, classes })
+        Ok(SubjectMap {
+            tm_info,
+            classes,
+            graph_maps: todo!(),
+        })
     }
 
     fn get_const_pred() -> RcTerm {

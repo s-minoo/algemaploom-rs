@@ -137,13 +137,15 @@ pub enum TermMapType {
 
 #[derive(Debug, Clone)]
 pub struct SubjectMap {
-    pub tm_info: TermMapInfo,
-    pub classes: Vec<IriString>,
+    pub tm_info:    TermMapInfo,
+    pub classes:    Vec<IriString>,
+    pub graph_maps: Vec<GraphMap>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PredicateMap {
-    pub tm_info: TermMapInfo,
+    pub tm_info:    TermMapInfo,
+    pub graph_maps: Vec<GraphMap>,
 }
 
 #[derive(Debug, Clone)]
@@ -153,6 +155,7 @@ pub struct ObjectMap {
     pub join_condition: Option<JoinCondition>,
     pub data_type:      Option<IriString>,
     pub language:       Option<String>,
+    pub graph_maps:     Vec<GraphMap>,
 }
 
 #[derive(Debug, Clone)]

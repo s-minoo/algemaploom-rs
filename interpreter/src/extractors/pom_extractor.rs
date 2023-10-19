@@ -18,6 +18,7 @@ impl Extractor<PredicateObjectMap> for PredicateObjectMap {
         Ok(PredicateObjectMap {
             predicate_maps,
             object_maps,
+            graph_maps: todo!()
         })
     }
 }

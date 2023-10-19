@@ -16,7 +16,6 @@ pub struct TriplesMap {
     pub logical_source: LogicalSource,
     pub subject_map:    SubjectMap,
     pub po_maps:        Vec<PredicateObjectMap>,
-    pub graph_map:      Option<GraphMap>,
 }
 
 impl TriplesMap {
@@ -29,6 +28,7 @@ impl TriplesMap {
 pub struct PredicateObjectMap {
     pub predicate_maps: Vec<PredicateMap>,
     pub object_maps:    Vec<ObjectMap>,
+    pub graph_maps:      Vec<GraphMap>,
 }
 
 impl PredicateObjectMap {

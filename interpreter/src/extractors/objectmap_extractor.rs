@@ -56,6 +56,7 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
             join_condition: None,
             data_type: None,
             language: None,
+            graph_maps: vec![],
         }
     }
     fn create_term_map(
@@ -95,13 +96,13 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
             tm_info.term_type = Some(tm_info.term_value.kind());
         }
 
-
         Ok(ObjectMap {
             tm_info,
             parent_tm,
             join_condition,
             data_type,
             language,
+            graph_maps: todo!()
         })
     }
 
