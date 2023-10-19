@@ -139,7 +139,9 @@ fn add_non_join_related_ops(
     let target_map = &search_map.target_map;
     let mut plan = plan.borrow_mut();
 
-    let tms = extract_tm_infos_from_poms(no_join_poms.iter().collect());
+    let mut tms = extract_tm_infos_from_poms(no_join_poms.iter().collect());
+    tms.push(&sm.tm_info);
+
     let extend_translator = ExtendTranslator { tms, variable_map };
     let extend_op = extend_translator.translate();
     let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
