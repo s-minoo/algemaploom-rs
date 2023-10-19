@@ -91,10 +91,14 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
         target_map,
         lt_id_tm_group_map,
     };
-
     // Finish search dictionaries instantiations
 
-    tm_projected_pairs.iter().try_for_each(|(tm, plan)| {
+    let (ptm_tm_plan_pairs, noptm_tm_plan_pairs): (Vec<_>, Vec<_>) =
+        tm_projected_pairs
+            .into_iter()
+            .partition(|(tm, _)| tm.contains_ptm());
+
+    ptm_tm_plan_pairs.iter().try_for_each(|(tm, plan)| {
         let sm_ref = &tm.subject_map;
         let poms = tm.po_maps.clone();
 
@@ -108,6 +112,14 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
         if !no_join_poms.is_empty() {
             add_non_join_related_ops(&no_join_poms, sm_ref, &search_map, plan)?;
         }
+        Ok::<(), PlanError>(())
+    })?;
+
+    noptm_tm_plan_pairs.iter().try_for_each(|(tm, plan)| {
+        let sm_ref = &tm.subject_map;
+        let poms = tm.po_maps.clone();
+
+        add_non_join_related_ops(&poms, sm_ref, &search_map, plan)?;
 
         Ok::<(), PlanError>(())
     })?;
