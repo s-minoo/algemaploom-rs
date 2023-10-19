@@ -35,6 +35,7 @@ fn partition_pom_join_nonjoin(
         poms.into_iter().partition(|pom| pom.contains_ptm());
 
     for pom in ptm_poms.iter_mut() {
+        let graph_maps = pom.graph_maps.clone();
         let (ptm_oms, no_ptm_oms): (Vec<_>, Vec<_>) = pom
             .object_maps
             .clone()
@@ -45,7 +46,8 @@ fn partition_pom_join_nonjoin(
         if !no_ptm_oms.is_empty() {
             no_ptm_poms.push(PredicateObjectMap {
                 predicate_maps: pom.predicate_maps.clone(),
-                object_maps:    no_ptm_oms,
+                object_maps: no_ptm_oms,
+                graph_maps,
             });
         }
     }
@@ -252,6 +254,7 @@ fn add_join_related_ops(
             let pom_with_joined_ptm = vec![PredicateObjectMap {
                 predicate_maps: pms.clone(),
                 object_maps:    [om.clone()].to_vec(),
+                graph_maps:     pom.graph_maps.clone(),
             }];
 
             let mut extend_pairs =
@@ -291,37 +294,50 @@ fn translate_source_op(tm: &TriplesMap) -> Source {
 
 fn translate_projection_op(tm: &TriplesMap) -> Operator {
     let mut projection_attributes = tm.subject_map.tm_info.get_attributes();
-    let gm_attributes = tm
-        .graph_map
-        .clone()
-        .map_or(HashSet::new(), |gm| gm.tm_info.get_attributes());
 
-    let p_attributes: HashSet<_> = tm
+    let po_attributes: HashSet<_> = tm
         .po_maps
         .iter()
         .flat_map(|pom| {
             let om_attrs = pom.object_maps.iter().flat_map(|om| {
-                if let Some(join_cond) = &om.join_condition {
+                let om_gm_attrs = om
+                    .graph_maps
+                    .iter()
+                    .flat_map(|gm| gm.tm_info.get_attributes());
+
+                let attrs = if let Some(join_cond) = &om.join_condition {
                     let mut child_attr = join_cond.child_attributes.clone();
                     let mut parent_attr = join_cond.parent_attributes.clone();
                     child_attr.append(&mut parent_attr);
                     child_attr.into_iter().collect()
                 } else {
                     om.tm_info.get_attributes()
-                }
-            });
-            let pm_attrs = pom
-                .predicate_maps
-                .iter()
-                .flat_map(|pm| pm.tm_info.get_attributes());
+                };
 
-            om_attrs.chain(pm_attrs)
+                attrs.into_iter().chain(om_gm_attrs)
+            });
+
+            let pm_attrs = pom.predicate_maps.iter().flat_map(|pm| {
+                let attrs = pm.tm_info.get_attributes();
+                let pm_om_attrs = pm
+                    .graph_maps
+                    .iter()
+                    .flat_map(|gm| gm.tm_info.get_attributes());
+
+                attrs.into_iter().chain(pm_om_attrs)
+            });
+
+            let gm_attrs = pom
+                .graph_maps
+                .iter()
+                .flat_map(|gm| gm.tm_info.get_attributes());
+
+            om_attrs.chain(pm_attrs).chain(gm_attrs)
         })
         .collect();
 
     // Subject map's attributes alread added to projection_attributes hashset
-    projection_attributes.extend(p_attributes);
-    projection_attributes.extend(gm_attributes);
+    projection_attributes.extend(po_attributes);
 
     Operator::ProjectOp {
         config: Projection {
