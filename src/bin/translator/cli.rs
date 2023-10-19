@@ -23,7 +23,7 @@ impl Cli {
                          .about("translate all RML documents under the given folder")
                          .arg(arg!(<FOLDER> "the folder containing several RML documents"))
                          .arg_required_else_help(true))
-            .arg(arg!(-o --output-folder-suffix <OUTPUT_FOLDER_SUFFIX> "The output folder suffix"));
+            .arg(arg!(-o --outputFolderSuffix <OUTPUT_FOLDER_SUFFIX> "The output folder suffix"));
 
         Self { cmd }
     }
