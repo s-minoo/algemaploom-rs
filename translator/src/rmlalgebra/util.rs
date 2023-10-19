@@ -151,6 +151,14 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
         result_map.insert(triples_map.identifier.clone(), tm_prefix.clone());
 
         let subject_map = &triples_map.subject_map;
+        let sm_gm_variables =
+            subject_map.graph_maps.iter().enumerate().map(|(idx, gm)| {
+                (
+                    gm.tm_info.identifier.clone(),
+                    format!("{}_sm_gm{}", tm_prefix, idx),
+                )
+            });
+        result_map.extend(sm_gm_variables);
 
         result_map.insert(
             subject_map.tm_info.identifier.clone(),
@@ -158,7 +166,28 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
         );
 
         for (pom_idx, pom) in triples_map.po_maps.iter().enumerate() {
+            let pom_gm_variables =
+                pom.graph_maps.iter().enumerate().map(|(idx, gm)| {
+                    (
+                        gm.tm_info.identifier.clone(),
+                        format!("{}_pom{}_gm{}", tm_prefix, pom_idx, idx),
+                    )
+                });
+            result_map.extend(pom_gm_variables);
+
             for (pm_idx, pm) in pom.predicate_maps.iter().enumerate() {
+                let pm_gm_variables =
+                    pm.graph_maps.iter().enumerate().map(|(idx, gm)| {
+                        (
+                            gm.tm_info.identifier.clone(),
+                            format!(
+                                "{}_p{}_{}_gm{}",
+                                tm_prefix, pom_idx, pm_idx, idx
+                            ),
+                        )
+                    });
+                result_map.extend(pm_gm_variables);
+
                 result_map.insert(
                     pm.tm_info.identifier.clone(),
                     format!("{}_p{}_{}", tm_prefix, pom_idx, pm_idx),
@@ -166,6 +195,17 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
             }
 
             for (om_idx, om) in pom.object_maps.iter().enumerate() {
+                let om_gm_variables =
+                    om.graph_maps.iter().enumerate().map(|(idx, gm)| {
+                        (
+                            gm.tm_info.identifier.clone(),
+                            format!(
+                                "{}_p{}_{}_gm{}",
+                                tm_prefix, pom_idx, om_idx, idx
+                            ),
+                        )
+                    });
+                result_map.extend(om_gm_variables);
                 result_map.insert(
                     om.tm_info.identifier.clone(),
                     format!("{}_o{}_{}", tm_prefix, pom_idx, om_idx),
