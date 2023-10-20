@@ -25,12 +25,14 @@ impl Extractor<TriplesMap> for TriplesMap {
             LogicalSource::extract_self(&logical_source_subj, graph)?;
 
         let pom = vocab::r2rml::PROPERTY::PREDICATEOBJECTMAP.to_rcterm();
-        let po_maps: Vec<_> = get_objects(graph, subject, &pom)
-            .into_iter()
-            .filter_map(|pom_subj| {
-                PredicateObjectMap::extract_self(&pom_subj, graph).ok()
-            })
-            .collect();
+        let po_maps_res: ExtractorResult<Vec<_>> =
+            get_objects(graph, subject, &pom)
+                .into_iter()
+                .map(|pom_subj| {
+                    PredicateObjectMap::extract_self(&pom_subj, graph)
+                })
+                .collect();
+        let po_maps = po_maps_res?;
 
         Ok(TriplesMap {
             identifier: subject.to_string(),
@@ -43,14 +45,14 @@ impl Extractor<TriplesMap> for TriplesMap {
 
 pub fn extract_triples_maps(
     graph: &FastGraph,
-) -> Result<Vec<TriplesMap>, ParseError> {
+) -> ExtractorResult<Vec<TriplesMap>> {
     let ptype: RcTerm = Term::new_iri(vocab::rdf::PROPERTY::TYPE.to_string())?;
     let otm: RcTerm =
         Term::new_iri(vocab::r2rml::CLASS::TRIPLESMAP.to_string())?;
 
-    Ok(graph
+    graph
         .triples_with_po(&ptype, &otm)
         .filter_map(|triple| triple.ok())
-        .filter_map(|triple| TriplesMap::extract_self(triple.s(), graph).ok())
-        .collect())
+        .map(|triple| TriplesMap::extract_self(triple.s(), graph))
+        .collect()
 }

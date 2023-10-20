@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::rc::Rc;
 
 use lazy_static::lazy_static;
@@ -15,6 +16,7 @@ use crate::TermString;
 
 pub mod error;
 mod functionmap_extractor;
+mod graphmap_extractor;
 pub mod io;
 mod logicalsource_extractor;
 mod logicaltarget_extractor;
@@ -27,11 +29,10 @@ mod subjectmap_extractor;
 mod term_map_info_extractor;
 pub mod triplesmap_extractor;
 mod util;
-mod graphmap_extractor;
 
 pub type ExtractorResult<T> = Result<T, ParseError>;
 
-pub trait TermMapExtractor<T> {
+pub trait TermMapExtractor<T: Debug> {
     fn get_term_map_info(&self) -> TermMapInfo;
 
     fn create_constant_map(tm_info: TermMapInfo) -> T;
@@ -66,10 +67,10 @@ pub trait TermMapExtractor<T> {
         let map_const_obj_vec =
             get_objects(graph_ref, container_map_subj_ref, &const_pred);
 
-        let mut result = map_subj_vec
+        let mut result: Vec<_> = map_subj_vec
             .iter()
-            .flat_map(|map_subj| Self::create_term_map(map_subj, graph_ref))
-            .collect::<Vec<_>>();
+            .map(|map_subj| Self::create_term_map(map_subj, graph_ref))
+            .collect::<ExtractorResult<_>>()?;
 
         let constant_tms = map_const_obj_vec.iter().map(|map_const_obj_vec| {
             Self::extract_constant_term_map(map_const_obj_vec)
@@ -78,9 +79,9 @@ pub trait TermMapExtractor<T> {
         result.extend(constant_tms);
 
         if result.is_empty() {
-            Err(ParseError::GenericError(format!(
-                "0 TermMap of type {} found",
-                container_map_subj_ref
+            Err(ParseError::NoTermMapFoundError(format!(
+                "0 TermMap of type {} found for {}",
+                map_pred, container_map_subj_ref
             )))
         } else {
             Ok(result)

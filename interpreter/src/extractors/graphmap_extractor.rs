@@ -42,4 +42,35 @@ impl TermMapExtractor<GraphMap> for GraphMap {
     fn get_map_pred() -> sophia_term::RcTerm {
         vocab::r2rml::PROPERTY::GRAPHMAP.to_rcterm()
     }
+
+    fn extract_many_from_container(
+        graph_ref: &sophia_inmem::graph::FastGraph,
+        container_map_subj_ref: &sophia_term::RcTerm,
+    ) -> super::ExtractorResult<Vec<GraphMap>> {
+        let map_pred = Self::get_map_pred();
+        let const_pred = Self::get_const_pred();
+        let map_subj_vec = super::store::get_objects(
+            graph_ref,
+            container_map_subj_ref,
+            &map_pred,
+        );
+        let map_const_obj_vec = super::store::get_objects(
+            graph_ref,
+            container_map_subj_ref,
+            &const_pred,
+        );
+
+        let mut result: Vec<_> = map_subj_vec
+            .iter()
+            .map(|map_subj| Self::create_term_map(map_subj, graph_ref))
+            .collect::<super::ExtractorResult<_>>()?;
+
+        let constant_tms = map_const_obj_vec.iter().map(|map_const_obj_vec| {
+            Self::extract_constant_term_map(map_const_obj_vec)
+        });
+
+        result.extend(constant_tms);
+
+        Ok(result)
+    }
 }

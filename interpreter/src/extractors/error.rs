@@ -10,6 +10,7 @@ pub enum ParseError {
     SophiaTermError(TermError),
     SerdeError(serde_json::Error),
     GenericError(String),
+    NoTermMapFoundError(String),
     ExtensionError(String),
     Infallible,
 }
