@@ -32,19 +32,18 @@ pub fn file_target(count: usize) -> Target {
     }
 }
 
-pub fn generate_lt_tm_map_from_doc(
+pub fn generate_lt_quads_from_doc(
     doc: &Document,
 ) -> HashMap<String, Vec<Quads>> {
     let mut result = HashMap::new();
     for tm in &doc.triples_maps {
-        result
-            .extend(generate_lt_tm_map_from_spo(&tm.subject_map, &tm.po_maps));
+        result.extend(generate_lt_quads_from_spo(&tm.subject_map, &tm.po_maps));
     }
 
     result
 }
 
-pub fn generate_lt_tm_map_from_spo<'a>(
+pub fn generate_lt_quads_from_spo<'a>(
     sm: &'a SubjectMap,
     poms: &'a [PredicateObjectMap],
 ) -> HashMap<String, Vec<Quads<'a>>> {
@@ -79,7 +78,7 @@ pub fn generate_lt_tm_map_from_spo<'a>(
                     pm: vec![pm],
                     om: oms.iter().map(|om| om.into()).collect(),
                 };
-                let mut pm_gms = pm.graph_maps.iter();
+                let pm_gms = pm.graph_maps.iter();
                 let gms = pm_gms.chain(pom_gms.clone()).collect();
 
                 let triples = Triples {
@@ -104,7 +103,7 @@ pub fn generate_lt_tm_map_from_spo<'a>(
                     sm,
                     poms: vec![ref_pom],
                 };
-                let mut om_gms = om.graph_maps.iter();
+                let om_gms = om.graph_maps.iter();
                 let gms = om_gms.chain(pom_gms.clone()).collect();
 
                 let quads = Quads { triples, gms };

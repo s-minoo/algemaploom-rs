@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use operator::formats::DataFormat;
 
+use super::util::unterminated_triple_strings;
 use super::SerializeTranslator;
-use crate::rmlalgebra::types::{Triples, Quads};
+use crate::rmlalgebra::types::Quads;
 
 #[derive(Debug, Clone)]
 pub struct NTriplesSerializer {}
@@ -15,25 +16,12 @@ impl SerializeTranslator for NTriplesSerializer {
     ) -> operator::Serializer {
         let mut triples_string: Vec<String> = Vec::new();
         for quad in quads {
-            let triples = &quad.triples; 
-            let sm = triples.sm;
-            let sm_var = variable_map.get(&sm.tm_info.identifier).unwrap();
+            let terminated_triples =
+                unterminated_triple_strings(quad, variable_map)
+                    .into_iter()
+                    .map(|str| format!("{}.", str));
 
-            for pom in &triples.poms {
-                let p_os = pom.pm.iter().flat_map(|pm| {
-                    let pm_var =
-                        variable_map.get(&pm.tm_info.identifier).unwrap();
-
-                    pom.om.iter().map(move |om| {
-                        let om_var =
-                            variable_map.get(&om.tm_info.identifier).unwrap();
-                        format!("{} {}.", pm_var, om_var)
-                    })
-                });
-
-                let s_p_os = p_os.map(|p_o| format!("{} {}", sm_var, p_o));
-                triples_string.extend(s_p_os);
-            }
+            triples_string.extend(terminated_triples);
         }
 
         let template = triples_string.join("\n");
@@ -45,4 +33,3 @@ impl SerializeTranslator for NTriplesSerializer {
         }
     }
 }
-

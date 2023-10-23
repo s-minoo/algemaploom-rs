@@ -1,10 +1,13 @@
+mod nquads;
 mod ntriples;
+mod util;
 
 use std::collections::HashMap;
 
 use operator::formats::DataFormat;
 use operator::Serializer;
 
+use self::nquads::NQuadsSerializer;
 use self::ntriples::NTriplesSerializer;
 use crate::rmlalgebra::types::{Quads, Triples};
 
@@ -24,7 +27,7 @@ pub fn translate_serializer_op(
         DataFormat::NTriples => {
             NTriplesSerializer::translate(quads, variable_map)
         }
-        DataFormat::NQuads => unimplemented!(),
+        DataFormat::NQuads => NQuadsSerializer::translate(quads, variable_map),
         DataFormat::SQL => unimplemented!(),
         DataFormat::JSONLD => unimplemented!(),
         DataFormat::JSON => unimplemented!(),

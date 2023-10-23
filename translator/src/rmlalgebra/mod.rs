@@ -22,10 +22,10 @@ use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
 use self::operators::RMLTranslator;
 use self::types::Triples;
-use self::util::{extract_tm_infos_from_poms, generate_lt_tm_map_from_spo};
+use self::util::{extract_tm_infos_from_poms, generate_lt_quads_from_spo};
 use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
-    generate_logtarget_map, generate_lt_tm_map_from_doc, generate_variable_map,
+    generate_logtarget_map, generate_lt_quads_from_doc, generate_variable_map,
 };
 
 fn partition_pom_join_nonjoin(
@@ -79,7 +79,7 @@ pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
     // Search dictionaries instantiations
     let variable_map = generate_variable_map(&doc);
     let target_map = generate_logtarget_map(&doc);
-    let lt_id_tm_group_map = generate_lt_tm_map_from_doc(&doc);
+    let lt_id_tm_group_map = generate_lt_quads_from_doc(&doc);
     let tm_projected_pairs = tm_projected_pairs_res?;
     let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
         .clone()
@@ -147,8 +147,10 @@ fn add_non_join_related_ops(
     let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
     let mut next_plan = extended_plan;
 
-    let lt_triples_map = &generate_lt_tm_map_from_spo(sm, no_join_poms);
-    let fragment_translator = FragmentTranslator { lt_quads_map: lt_triples_map };
+    let lt_triples_map = &generate_lt_quads_from_spo(sm, no_join_poms);
+    let fragment_translator = FragmentTranslator {
+        lt_quads_map: lt_triples_map,
+    };
     let fragmenter = fragment_translator.translate();
 
     let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
@@ -270,7 +272,7 @@ fn add_join_related_ops(
             let mut extended_plan = joined_plan.apply(&extend_op, "Extend")?;
 
             let lt_triples_map =
-                generate_lt_tm_map_from_spo(sm, &pom_with_joined_ptm);
+                generate_lt_quads_from_spo(sm, &pom_with_joined_ptm);
 
             for lt_id in lt_triples_map.keys() {
                 let triples = lt_triples_map.get(lt_id).unwrap();
