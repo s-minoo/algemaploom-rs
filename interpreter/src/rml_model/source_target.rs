@@ -134,7 +134,7 @@ fn serialization_to_dataformat(serialization: &IriString) -> DataFormat {
             DataFormat::NQuads
         }
 
-        _ => DataFormat::NTriples,
+        _ => DataFormat::NQuads,
     }
 }
 
