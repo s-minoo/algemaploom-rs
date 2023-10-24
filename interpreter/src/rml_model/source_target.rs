@@ -95,7 +95,7 @@ impl Default for LogicalTarget {
             identifier: String::from("default"),
             compression: Default::default(),
             serialization: Iri::new(
-                vocab::formats::CLASS::NTRIPLES.to_string(),
+                vocab::formats::CLASS::NQUADS.to_string(),
             )
             .unwrap(),
             output_type: Default::default(),
