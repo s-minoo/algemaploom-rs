@@ -1,12 +1,17 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
+use interpreter::rml_model::term_map::{
+    GraphMap, SubjectMap, TermMapInfo, TermMapType,
+};
 use interpreter::rml_model::PredicateObjectMap;
 use operator::{Extend, Function, Operator, RcExtendFunction};
 use sophia_api::term::TTerm;
 
 use super::RMLTranslator;
+use crate::rmlalgebra::util::{
+    extract_gm_tm_infos, extract_tm_infos_from_poms,
+};
 
 #[derive(Debug, Clone)]
 pub struct ExtendTranslator<'a> {
@@ -96,21 +101,11 @@ pub fn translate_extend_pairs(
     sm: &SubjectMap,
     poms: &[PredicateObjectMap],
 ) -> HashMap<String, Function> {
-    let sub_extend =
-        extract_extend_function_from_term_map(variable_map, &sm.tm_info);
+    let mut tms = extract_tm_infos_from_poms(poms);
+    tms.push(&sm.tm_info);
+    tms.extend(extract_gm_tm_infos(sm, poms));
 
-    let poms_extend = poms.iter().flat_map(|pom| {
-        let predicate_extends = pom.predicate_maps.iter().map(move |pm| {
-            extract_extend_function_from_term_map(variable_map, &pm.tm_info)
-        });
-
-        let object_extends = pom.object_maps.iter().map(move |om| {
-            extract_extend_function_from_term_map(variable_map, &om.tm_info)
-        });
-        predicate_extends.chain(object_extends)
-    });
-
-    let extend_ops_map: HashMap<String, Function> =
-        poms_extend.chain(vec![sub_extend]).collect();
-    extend_ops_map
+    tms.into_iter()
+        .map(|tm| extract_extend_function_from_term_map(variable_map, tm))
+        .collect()
 }

@@ -8,8 +8,24 @@ use operator::Target;
 
 use super::types::{Quads, RefPOM, Triples};
 
+pub fn extract_gm_tm_infos<'a>(
+    sm: &'a SubjectMap,
+    poms: &'a [PredicateObjectMap],
+) -> Vec<&'a TermMapInfo> {
+    let mut result = vec![];
+
+    result.extend(sm.graph_maps.iter().map(|gm| &gm.tm_info));
+
+    poms.into_iter().for_each(|pom| {
+        result.extend(pom.predicate_maps.iter().map(|pm| &pm.tm_info));
+        result.extend(pom.object_maps.iter().map(|om| &om.tm_info));
+    });
+
+    result
+}
+
 pub fn extract_tm_infos_from_poms(
-    poms: Vec<&PredicateObjectMap>,
+    poms: &[PredicateObjectMap],
 ) -> Vec<&TermMapInfo> {
     poms.iter()
         .flat_map(|pom| {

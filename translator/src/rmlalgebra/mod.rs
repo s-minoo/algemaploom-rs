@@ -22,7 +22,9 @@ use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
 use self::operators::RMLTranslator;
 use self::types::Triples;
-use self::util::{extract_tm_infos_from_poms, generate_lt_quads_from_spo};
+use self::util::{
+    extract_gm_tm_infos, extract_tm_infos_from_poms, generate_lt_quads_from_spo,
+};
 use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_quads_from_doc, generate_variable_map,
@@ -139,8 +141,9 @@ fn add_non_join_related_ops(
     let target_map = &search_map.target_map;
     let mut plan = plan.borrow_mut();
 
-    let mut tms = extract_tm_infos_from_poms(no_join_poms.iter().collect());
+    let mut tms = extract_tm_infos_from_poms(no_join_poms);
     tms.push(&sm.tm_info);
+    tms.extend(extract_gm_tm_infos(sm, no_join_poms));
 
     let extend_translator = ExtendTranslator { tms, variable_map };
     let extend_op = extend_translator.translate();
@@ -437,8 +440,7 @@ mod tests {
             triples_maps: triples_map_vec,
         });
         let mut tms = vec![&triples_map.subject_map.tm_info];
-        let tms_poms =
-            extract_tm_infos_from_poms(triples_map.po_maps.iter().collect());
+        let tms_poms = extract_tm_infos_from_poms(&triples_map.po_maps);
         tms.extend(tms_poms);
 
         let extend_translator = ExtendTranslator { tms, variable_map };
