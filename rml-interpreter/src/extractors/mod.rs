@@ -1,17 +1,17 @@
-use std::collections::HashSet;
+
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use lazy_static::lazy_static;
-use regex::Regex;
-use sophia_api::term::TTerm;
+
+
+
 use sophia_inmem::graph::FastGraph;
 use sophia_term::{RcTerm, Term};
 use vocab::{ToString, PAIR};
 
 use self::error::ParseError;
 use crate::extractors::store::get_objects;
-use crate::rml_model::term_map::{FunctionMap, TermMapInfo, TermMapType};
+use crate::rml_model::term_map::{TermMapInfo};
 use crate::TermString;
 
 pub mod error;

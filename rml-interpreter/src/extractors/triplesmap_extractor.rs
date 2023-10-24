@@ -4,7 +4,7 @@ use sophia_inmem::graph::FastGraph;
 use sophia_term::Term;
 use vocab::ToString;
 
-use super::error::ParseError;
+
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::{FromVocab, TermMapExtractor};

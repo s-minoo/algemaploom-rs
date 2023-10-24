@@ -8,7 +8,7 @@ use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::Extractor;
 use crate::rml_model::join::JoinCondition;
 use crate::rml_model::term_map::{
-    FunctionMap, GraphMap, ObjectMap, TermMapInfo,
+    GraphMap, ObjectMap, TermMapInfo,
 };
 use crate::IriString;
 

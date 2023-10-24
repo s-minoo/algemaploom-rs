@@ -1,4 +1,4 @@
-use std::rc::Rc;
+
 
 use sophia_api::graph::Graph;
 use sophia_api::term::TermKind;
@@ -12,7 +12,7 @@ use super::store::{get_object, get_objects};
 use super::{Extractor, ExtractorResult, FromVocab};
 use crate::rml_model::source_target::LogicalTarget;
 use crate::rml_model::term_map::{FunctionMap, TermMapInfo, TermMapType};
-use crate::TermString;
+
 
 fn extract_term_map_type_value(
     subject_ref: &RcTerm,
