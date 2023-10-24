@@ -19,6 +19,7 @@
 # predefined messages
 # this section is optional
 {
+    deadcode = "chore: remove deadcode"
     clippy  = "chore: clippy fix warnings"
     println = "chore: remove printlns"
     style =  "style: rustfmt file"
