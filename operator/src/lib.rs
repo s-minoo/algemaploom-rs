@@ -5,7 +5,7 @@ pub mod tuples;
 pub mod value;
 
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher, self};
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use anyhow::Result;
