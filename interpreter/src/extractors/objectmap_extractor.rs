@@ -75,7 +75,7 @@ impl TermMapExtractor<ObjectMap> for ObjectMap {
         let lang_pred = vocab::r2rml::PROPERTY::LANGUAGE.to_rcterm();
         let language = get_object(graph_ref, subj_ref, &lang_pred)
             .ok()
-            .map(|tshared| tshared.to_string());
+            .map(|tshared| tshared.value_raw().0.to_string());
         let parent_tm = extract_parent_tm(subj_ref, graph_ref).ok();
         let join_condition = extract_join_condition(subj_ref, graph_ref).ok();
 

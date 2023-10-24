@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use sophia_term::literal::convert::DataType;
 use vocab::ToString;
 
 use crate::rmlalgebra::types::Quads;
@@ -14,10 +15,14 @@ pub fn unterminated_triple_strings(
     let sm = triples.sm;
     let sm_var = variable_map.get(&sm.tm_info.identifier).unwrap();
 
-    let cls_templates = sm
-        .classes
-        .iter()
-        .map(|cls| format!("{} <{}> {}", sm_var, vocab::rdf::PROPERTY::TYPE.to_string(), cls));
+    let cls_templates = sm.classes.iter().map(|cls| {
+        format!(
+            "{} <{}> {}",
+            sm_var,
+            vocab::rdf::PROPERTY::TYPE.to_string(),
+            cls
+        )
+    });
     result.extend(cls_templates);
 
     for pom in &triples.poms {
@@ -26,7 +31,14 @@ pub fn unterminated_triple_strings(
 
             pom.om.iter().map(move |om| {
                 let om_var = variable_map.get(&om.tm_info.identifier).unwrap();
-                format!("{} {}", pm_var, om_var)
+                let pm_om_string = format!("{} {}", pm_var, om_var);
+                if let Some(lang) = &om.language {
+                    format!("{}@{}", pm_om_string, lang)
+                } else if let Some(dtype) = &om.data_type {
+                    format!("{}^^{}", pm_om_string, dtype)
+                } else {
+                    pm_om_string
+                }
             })
         });
 
