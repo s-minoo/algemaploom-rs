@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use interpreter::rml_model::term_map::{
+use rml_interpreter::rml_model::term_map::{
     GraphMap, SubjectMap, TermMapInfo, TermMapType,
 };
-use interpreter::rml_model::PredicateObjectMap;
+use rml_interpreter::rml_model::PredicateObjectMap;
 use operator::{Extend, Function, Operator, RcExtendFunction};
 use sophia_api::term::TTerm;
 

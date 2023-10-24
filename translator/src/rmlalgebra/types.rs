@@ -2,10 +2,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use interpreter::rml_model::term_map::{
+use rml_interpreter::rml_model::term_map::{
     GraphMap, ObjectMap, PredicateMap, SubjectMap,
 };
-use interpreter::rml_model::{PredicateObjectMap, TriplesMap};
+use rml_interpreter::rml_model::{PredicateObjectMap, TriplesMap};
 use operator::Target;
 use plangenerator::plan::{Plan, Processed};
 

@@ -8,7 +8,7 @@ edition = "2021"
 opt-level = 3
 
 [workspace]
-members = ["interpreter",  "operator", "vocab", "plangenerator", "translator"]
+members = ["rml-interpreter",  "operator", "vocab", "plangenerator", "translator"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
@@ -32,7 +32,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 clap.workspace = true
 
-interpreter = {path = "./interpreter/"}
+rml-interpreter = {path = "./rml-interpreter/"}
 operator = {path = "./operator/"}
 plangenerator = {path = "./plangenerator/"}
 translator = {path = "./translator/"}

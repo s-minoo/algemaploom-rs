@@ -3,7 +3,7 @@ mod cli;
 use std::path::PathBuf;
 
 use colored::Colorize;
-use interpreter::extractors::io::parse_file;
+use rml_interpreter::extractors::io::parse_file;
 use plangenerator::error::PlanError;
 use translator::rmlalgebra::translate_to_algebra;
 use walkdir::{DirEntry, WalkDir};

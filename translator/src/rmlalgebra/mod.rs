@@ -6,9 +6,9 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use interpreter::rml_model::join::JoinCondition;
-use interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
-use interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
+use rml_interpreter::rml_model::join::JoinCondition;
+use rml_interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
+use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use operator::{
     Extend, Fragmenter, Function, Operator, Projection, RcExtendFunction,
     Serializer, Source,
@@ -358,9 +358,9 @@ mod tests {
     use std::borrow::Borrow;
     use std::collections::HashSet;
 
-    use interpreter::extractors::io::parse_file;
-    use interpreter::extractors::triplesmap_extractor::extract_triples_maps;
-    use interpreter::rml_model::term_map;
+    use rml_interpreter::extractors::io::parse_file;
+    use rml_interpreter::extractors::triplesmap_extractor::extract_triples_maps;
+    use rml_interpreter::rml_model::term_map;
     use sophia_term::Term;
 
     use super::*;

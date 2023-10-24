@@ -280,26 +280,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "interpreter"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "lazy_static",
- "operator",
- "plangenerator",
- "regex",
- "serde",
- "serde_json",
- "sophia_api",
- "sophia_inmem",
- "sophia_term",
- "sophia_turtle",
- "uuid",
- "vocab",
-]
-
-[[package]]
 name = "is-terminal"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -352,12 +332,12 @@ dependencies = [
  "clap",
  "colored",
  "csv",
- "interpreter",
  "lazy_static",
  "operator",
  "petgraph",
  "plangenerator",
  "regex",
+ "rml-interpreter",
  "serde_json",
  "thiserror",
  "tokio",
@@ -568,6 +548,26 @@ dependencies = [
  "oxilangtag",
  "oxiri",
  "rio_api",
+]
+
+[[package]]
+name = "rml-interpreter"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "lazy_static",
+ "operator",
+ "plangenerator",
+ "regex",
+ "serde",
+ "serde_json",
+ "sophia_api",
+ "sophia_inmem",
+ "sophia_term",
+ "sophia_turtle",
+ "uuid",
+ "vocab",
 ]
 
 [[package]]
@@ -832,11 +832,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "interpreter",
  "lazy_static",
  "operator",
  "plangenerator",
  "regex",
+ "rml-interpreter",
  "serde",
  "serde_json",
  "sophia_api",

@@ -12,7 +12,7 @@ sophia_turtle = "0.7.2"
 vocab  = {path= "../vocab/"}
 operator = {path= "../operator/"}
 plangenerator = {path = "../plangenerator/"}
-interpreter = {path = "../interpreter/"}
+rml-interpreter = {path = "../rml-interpreter/"}
 
 anyhow.workspace = true
 uuid.workspace = true
