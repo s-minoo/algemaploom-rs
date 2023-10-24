@@ -36,11 +36,6 @@ pub struct Triples<'a> {
     pub poms: Vec<RefPOM<'a>>,
 }
 
-impl<'a> Triples<'a> {
-    pub fn new(sm: &'a SubjectMap) -> Self {
-        Self { sm, poms: vec![] }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct SearchMap<'a> {

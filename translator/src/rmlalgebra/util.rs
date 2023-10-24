@@ -38,15 +38,6 @@ pub fn extract_tm_infos_from_poms(
         .collect()
 }
 
-pub fn file_target(count: usize) -> Target {
-    let mut config = HashMap::new();
-    config.insert("path".to_string(), format!("{}_output.nt", count));
-    Target {
-        configuration: config,
-        target_type:   operator::IOType::File,
-        data_format:   operator::formats::DataFormat::NTriples,
-    }
-}
 
 pub fn generate_lt_quads_from_doc(
     doc: &Document,
