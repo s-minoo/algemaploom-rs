@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{command, Parser};
-use interpreter::extractors::error::ParseError;
-use interpreter::extractors::io::parse_file;
+use rml_interpreter::extractors::error::ParseError;
+use rml_interpreter::extractors::io::parse_file;
 
 #[derive(Debug, Clone, Parser)]
 #[command(

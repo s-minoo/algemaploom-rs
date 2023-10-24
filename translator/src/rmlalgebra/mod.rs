@@ -359,7 +359,7 @@ mod tests {
 
     use rml_interpreter::extractors::io::parse_file;
     use rml_interpreter::extractors::triplesmap_extractor::extract_triples_maps;
-    use rml_interpreter::rml_model::term_map;
+    use rml_interpreter::rml_model::term_map::{self, TermMapInfo};
     use sophia_term::Term;
 
     use super::*;
