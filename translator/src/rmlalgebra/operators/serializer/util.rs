@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use vocab::ToString;
+
 use crate::rmlalgebra::types::Quads;
 
 pub fn unterminated_triple_strings(
@@ -15,7 +17,7 @@ pub fn unterminated_triple_strings(
     let cls_templates = sm
         .classes
         .iter()
-        .map(|cls| format!("{} a {}", sm_var, cls));
+        .map(|cls| format!("{} <{}> {}", sm_var, vocab::rdf::PROPERTY::TYPE.to_string(), cls));
     result.extend(cls_templates);
 
     for pom in &triples.poms {
