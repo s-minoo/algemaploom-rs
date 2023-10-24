@@ -81,7 +81,7 @@ mod tests {
             .map(|map_const| {
                 PredicateMap::extract_constant_term_map(&map_const)
             })
-            .collect();
+            .collect::<ExtractorResult<_>>()?;
 
         assert_eq!(pms.len(), 3);
 

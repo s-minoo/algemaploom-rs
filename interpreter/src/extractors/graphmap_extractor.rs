@@ -1,6 +1,6 @@
 use sophia_api::term::TermKind;
 
-use super::{Extractor, FromVocab, TermMapExtractor};
+use super::{Extractor, ExtractorResult, FromVocab, TermMapExtractor};
 use crate::extractors::error::ParseError;
 use crate::rml_model::term_map::{GraphMap, TermMapInfo};
 
@@ -65,9 +65,12 @@ impl TermMapExtractor<GraphMap> for GraphMap {
             .map(|map_subj| Self::create_term_map(map_subj, graph_ref))
             .collect::<super::ExtractorResult<_>>()?;
 
-        let constant_tms = map_const_obj_vec.iter().map(|map_const_obj_vec| {
-            Self::extract_constant_term_map(map_const_obj_vec)
-        });
+        let constant_tms: Vec<_> = map_const_obj_vec
+            .iter()
+            .map(|map_const_obj_vec| {
+                Self::extract_constant_term_map(map_const_obj_vec)
+            })
+            .collect::<ExtractorResult<Vec<_>>>()?;
 
         result.extend(constant_tms);
 

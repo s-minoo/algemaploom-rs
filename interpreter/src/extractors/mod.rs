@@ -42,10 +42,21 @@ pub trait TermMapExtractor<T: Debug> {
         graph_ref: &FastGraph,
     ) -> ExtractorResult<T>;
 
-    fn extract_constant_term_map(map_const: &Term<Rc<str>>) -> T {
+    fn extract_constant_term_map(
+        map_const: &Term<Rc<str>>,
+    ) -> ExtractorResult<T> {
+        match map_const {
+            Term::BNode(_) => {
+                return Err(ParseError::GenericError(format!(
+                    "Constant-valued term map cannot be a BlankNode"
+                )))
+            }
+            _ => (),
+        };
+
         let tm_info = TermMapInfo::from_constant_value(map_const.clone());
 
-        Self::create_constant_map(tm_info)
+        Ok(Self::create_constant_map(tm_info))
     }
 
     fn extract_from_container(
@@ -72,9 +83,12 @@ pub trait TermMapExtractor<T: Debug> {
             .map(|map_subj| Self::create_term_map(map_subj, graph_ref))
             .collect::<ExtractorResult<_>>()?;
 
-        let constant_tms = map_const_obj_vec.iter().map(|map_const_obj_vec| {
-            Self::extract_constant_term_map(map_const_obj_vec)
-        });
+        let constant_tms = map_const_obj_vec
+            .iter()
+            .map(|map_const_obj_vec| {
+                Self::extract_constant_term_map(map_const_obj_vec)
+            })
+            .collect::<ExtractorResult<Vec<_>>>()?;
 
         result.extend(constant_tms);
 
