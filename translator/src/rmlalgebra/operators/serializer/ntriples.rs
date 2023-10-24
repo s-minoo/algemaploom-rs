@@ -19,7 +19,7 @@ impl SerializeTranslator for NTriplesSerializer {
             let terminated_triples =
                 unterminated_triple_strings(quad, variable_map)
                     .into_iter()
-                    .map(|str| format!("{}.", str));
+                    .map(|str| format!("{} .", str));
 
             triples_string.extend(terminated_triples);
         }

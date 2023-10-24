@@ -31,7 +31,7 @@ pub fn main() -> Result<(), PlanError> {
         let mut output_prefix = Some("output".to_string());
         if let Some(derived_prefix) = file_path.file_stem() {
             let derived_string = derived_prefix.to_string_lossy();
-            output_prefix.insert(derived_string.to_string());
+            let _ = output_prefix.insert(derived_string.to_string());
         }
         if let Err(err) = translate_rml_file(
             file_path.to_string_lossy(),
@@ -65,17 +65,15 @@ pub fn main() -> Result<(), PlanError> {
         }
     }
 
-
     err_vec.iter().for_each(|(file, err)| {
-
-        eprintln!("{}: Errored while translating {}", "Error".red(), file.yellow()); 
-        let err_string = format!("{}", err); 
-        eprintln!("{}\n", err_string.red()); 
-
+        eprintln!(
+            "{}: Errored while translating {}",
+            "Error".red(),
+            file.yellow()
+        );
+        let err_string = format!("{}", err);
+        eprintln!("{}\n", err_string.red());
     });
-
-
-
 
     Ok(())
 }

@@ -20,7 +20,7 @@ impl SerializeTranslator for NQuadsSerializer {
 
             if quad.gms.is_empty() {
                 quad_strings
-                    .extend(unterminated_triples.map(|trip| trip + "."));
+                    .extend(unterminated_triples.map(|trip| trip + " ."));
             } else {
                 for gm in &quad.gms {
                     let gm_var =
@@ -28,7 +28,7 @@ impl SerializeTranslator for NQuadsSerializer {
 
                     let quads_with_gm = unterminated_triples
                         .clone()
-                        .map(|trip| format!("{} {}.", trip, gm_var));
+                        .map(|trip| format!("{} {} .", trip, gm_var));
                     quad_strings.extend(quads_with_gm);
                 }
             }

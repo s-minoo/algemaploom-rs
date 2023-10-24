@@ -178,7 +178,7 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
     let mut result_map: HashMap<String, String> = HashMap::new();
 
     for (tm_idx, triples_map) in doc.triples_maps.iter().enumerate() {
-        let tm_prefix = format!("tm{}", tm_idx);
+        let tm_prefix = format!("?tm{}", tm_idx);
         result_map.insert(triples_map.identifier.clone(), tm_prefix.clone());
 
         let subject_map = &triples_map.subject_map;
