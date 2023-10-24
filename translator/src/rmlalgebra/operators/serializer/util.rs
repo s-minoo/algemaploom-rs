@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use sophia_term::literal::convert::DataType;
+
 use vocab::ToString;
 
 use crate::rmlalgebra::types::Quads;

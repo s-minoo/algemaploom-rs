@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+
 
 use rml_interpreter::rml_model::term_map::{
-    GraphMap, SubjectMap, TermMapInfo, TermMapType,
+    SubjectMap, TermMapInfo, TermMapType,
 };
 use rml_interpreter::rml_model::PredicateObjectMap;
 use operator::{Extend, Function, Operator, RcExtendFunction};
@@ -51,7 +51,7 @@ pub fn extract_extend_function_from_term_map(
             let param_func_pairs = fn_map
                 .param_om_pairs
                 .iter()
-                .map(|(param, om)| {
+                .map(|(_param, om)| {
                     extract_extend_function_from_term_map(
                         variable_map,
                         &om.tm_info,

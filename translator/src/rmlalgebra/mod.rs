@@ -6,22 +6,21 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use rml_interpreter::rml_model::join::JoinCondition;
-use rml_interpreter::rml_model::term_map::{SubjectMap, TermMapInfo, TermMapType};
+
+use rml_interpreter::rml_model::term_map::{SubjectMap};
 use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use operator::{
-    Extend, Fragmenter, Function, Operator, Projection, RcExtendFunction,
-    Serializer, Source,
+    Extend, Operator, Projection, Source,
 };
 use plangenerator::error::PlanError;
 use plangenerator::plan::{join, Init, Plan, Processed, RcRefCellPlan};
-use sophia_api::term::TTerm;
+
 
 use self::operators::extend::*;
 use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
 use self::operators::RMLTranslator;
-use self::types::Triples;
+
 use self::util::{
     extract_gm_tm_infos, extract_tm_infos_from_poms, generate_lt_quads_from_spo,
 };

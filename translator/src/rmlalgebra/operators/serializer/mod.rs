@@ -9,7 +9,7 @@ use operator::Serializer;
 
 use self::nquads::NQuadsSerializer;
 use self::ntriples::NTriplesSerializer;
-use crate::rmlalgebra::types::{Quads, Triples};
+use crate::rmlalgebra::types::{Quads};
 
 trait SerializeTranslator {
     fn translate(
