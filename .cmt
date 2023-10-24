@@ -19,6 +19,7 @@
 # predefined messages
 # this section is optional
 {
+    clippy  = "chore: clippy fix warnings"
     println = "chore: remove printlns"
     style =  "style: rustfmt file"
     vb = "chore: version bump"
