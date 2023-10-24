@@ -79,6 +79,23 @@ impl TermMapExtractor<SubjectMap> for SubjectMap {
     fn get_term_map_info(&self) -> TermMapInfo {
         self.tm_info.clone()
     }
+
+    fn extract_from_container(
+        graph_ref: &sophia_inmem::graph::FastGraph,
+        container_map_subj_ref: &RcTerm,
+    ) -> super::ExtractorResult<SubjectMap> {
+        Self::extract_many_from_container(graph_ref, container_map_subj_ref)
+            .and_then(|mut sms| {
+                if sms.len() > 1 {
+                    Err(ParseError::GenericError(format!(
+                        "There can only be ONE subject map for {}",
+                        container_map_subj_ref
+                    )))
+                } else {
+                    sms.pop().ok_or(ParseError::Infallible)
+                }
+            })
+    }
 }
 
 #[cfg(test)]
