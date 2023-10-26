@@ -23,15 +23,19 @@ pub enum ShExMLToken {
     IteratorType(String), 
     IteratorQuery(String),
 
+    // Baseprefix
+    BasePrefix,
     // prefix namespace
     PrefixNS(String),
     // prefix local name
     PrefixLN(String),
+    
+    URI(String),
 
     // Identifier used by source, matcher, function, expression
     Ident(String),
-    // Value
-    Value(String),
+    // Field query
+    FieldQuery(String),
 
 
 

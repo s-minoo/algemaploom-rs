@@ -1,0 +1,170 @@
+mod tests;
+
+use chumsky::chain::Chain;
+use chumsky::prelude::*;
+use chumsky::text::{newline, TextParser};
+use chumsky::Parser;
+
+use crate::token::ShExMLToken;
+
+macro_rules! t {
+    ($t:ty) => {
+        impl Parser<char, $t, Error = Simple<char>>
+    };
+}
+
+pub fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
+    just(st).to(token)
+}
+
+pub fn within_angled_brackets() -> t!(String) {
+    none_of("<>")
+        .repeated()
+        .at_least(1)
+        .padded()
+        .map(|c| c.into_iter().collect::<String>())
+}
+
+pub fn iterator() -> t!(Vec<ShExMLToken>) {
+    let header = iterator_header().padded();
+
+    recursive(|iter| {
+        header
+            .then_ignore(just("{"))
+            .chain::<ShExMLToken, _, _>(
+                field().repeated().at_least(1).flatten(),
+            )
+            .chain(just("}").padded().to(vec![ShExMLToken::BrackEnd]).or(iter))
+            .then_ignore(just("}").or_not())
+            .padded()
+    })
+}
+
+pub fn field() -> t!(Vec<ShExMLToken>) {
+    let field_tag = just("FIELD").padded().to(ShExMLToken::Field);
+    let push_field_tag =
+        just("PUSHED_FIELD").padded().to(ShExMLToken::PushField);
+    let pop_field_tag = just("POPPED_FIELD").padded().to(ShExMLToken::PopField);
+    let field_name = ident().padded();
+    let field_query = within_angled_brackets()
+        .padded()
+        .delimited_by(just("<"), just(">"))
+        .map(ShExMLToken::FieldQuery);
+
+    choice((field_tag, push_field_tag, pop_field_tag))
+        .chain(field_name)
+        .chain(field_query)
+}
+
+pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
+    let iterator_tag = just("ITERATOR").padded().to(ShExMLToken::Iterator);
+    let iterator_name = ident().padded();
+
+    let iterator_type = protocol().padded().map(ShExMLToken::IteratorType);
+    let iterator_query =
+        within_angled_brackets().map(ShExMLToken::IteratorQuery);
+
+    let iter_query_pair = iterator_type
+        .chain(iterator_query)
+        .delimited_by(just("<"), just(">"));
+
+    iterator_tag.chain(iterator_name).chain(iter_query_pair)
+}
+
+pub fn source() -> t!(Vec<ShExMLToken>) {
+    let source_tag = just("SOURCE").padded().to(ShExMLToken::Source);
+    let source_name = ident().padded();
+    let source_iri = protocol_iri_ref().or(path()
+        .map(|st| ShExMLToken::URI(st))
+        .delimited_by(just("<"), just(">")));
+    source_tag.chain(source_name).chain(source_iri)
+}
+
+pub fn ident() -> t!(ShExMLToken) {
+    pn_char()
+        .repeated()
+        .at_least(1)
+        .map(|v| ShExMLToken::Ident(v.into_iter().collect()))
+}
+
+pub fn prefix() -> t!(Vec<ShExMLToken>) {
+    let prefix_tag = just("PREFIX").padded().to(ShExMLToken::Prefix);
+    let pname = pn_prefix()
+        .or_not()
+        .then_ignore(just(":"))
+        .padded()
+        .flatten()
+        .map(|pname_vec| {
+            if pname_vec.is_empty() {
+                ShExMLToken::BasePrefix
+            } else {
+                let prefix = pname_vec.into_iter().collect();
+                ShExMLToken::PrefixNS(prefix)
+            }
+        });
+
+    prefix_tag
+        .chain(pname)
+        .chain(protocol_iri_ref().delimited_by(just("<"), just(">")))
+}
+
+pub fn protocol() -> t!(String) {
+    filter(|c: &char| c.is_ascii_alphabetic())
+        .repeated()
+        .at_least(1)
+        .chain(just(':'))
+        .map(|c| c.into_iter().collect())
+}
+
+pub fn path() -> t!(String) {
+    none_of("<>\"{}|^`\\[]")
+        .repeated()
+        .at_least(1)
+        .map(|e| e.into_iter().collect())
+}
+
+pub fn protocol_iri_ref() -> t!(ShExMLToken) {
+    let uri = protocol()
+        .chain::<String, _, _>(just("//").map(|c| c.to_string()))
+        .chain(path())
+        .map(|z: Vec<String>| ShExMLToken::URI(z.into_iter().collect()));
+
+    uri
+}
+
+fn pn_char_base() -> t!(char) {
+    filter(|c: &char| c.is_alphabetic())
+}
+
+fn pn_char_u() -> t!(char) {
+    pn_char_base().or(just('_'))
+}
+fn pn_char() -> t!(char) {
+    pn_char_u()
+        .or(just('-'))
+        .or(filter(|c: &char| c.is_numeric()))
+}
+fn pn_prefix() -> t!(Vec<char>) {
+    let ne = just('.')
+        .repeated()
+        .then(pn_char().repeated().at_least(1))
+        .map(|(x, y)| {
+            let mut o: Vec<char> = Vec::with_capacity(x.len() + y.len());
+            x.append_to(&mut o);
+            y.append_to(&mut o);
+            o
+        })
+        .repeated()
+        .flatten();
+
+    pn_char_base().then(ne.or_not()).map(|(x, y)| {
+        if let Some(y) = y {
+            let mut o = Vec::with_capacity(y.len() + 1);
+            o.push(x);
+            o.extend(y);
+            o
+        } else {
+            vec![x]
+        }
+    })
+}
