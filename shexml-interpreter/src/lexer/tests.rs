@@ -24,6 +24,19 @@ fn protocol_test() {
 }
 
 #[test]
+fn join_union_expression_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>
+        ";
+
+    let (tokens_opt, errors) =
+        expression().padded().then(end()).parse_recovery(exp_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    println!("{:?}", tokens_opt);
+}
+
+#[test]
 fn iterator_test() {
     let iter_str = "
 ITERATOR example <xpath: /path/to/entity> {
@@ -36,9 +49,7 @@ ITERATOR example <xpath: /path/to/entity> {
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
-    
 }
-
 
 #[test]
 fn iterator_nest_test() {
@@ -48,6 +59,10 @@ fn iterator_nest_test() {
     ITERATOR nestedIterator <jsonpath: nestedElements[*]> {
         POPPED_FIELD field2 <field1>
         FIELD field3 <field3>
+        ITERATOR nestedIterator <jsonpath: nestedElements[*]> {
+            POPPED_FIELD field2 <field1>
+            FIELD field3 <field3>
+        }
     }
 }";
 

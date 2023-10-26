@@ -13,14 +13,13 @@ pub enum ShExMLToken {
     Field,
     PushField,
     PopField,
-    Union, 
-    Join, 
+    Union,
+    Join,
     StringSep(String),
-    If, 
-
+    If,
 
     // "jsonpath:" "csvperrow" "xmlpath:" etc..
-    IteratorType(String), 
+    IteratorType(String),
     IteratorQuery(String),
 
     // Baseprefix
@@ -29,15 +28,13 @@ pub enum ShExMLToken {
     PrefixNS(String),
     // prefix local name
     PrefixLN(String),
-    
+
     URI(String),
 
     // Identifier used by source, matcher, function, expression
     Ident(String),
     // Field query
     FieldQuery(String),
-
-
 
     // :
     PrefixSep,
@@ -60,6 +57,9 @@ pub enum ShExMLToken {
     //,
     Comma,
 
+    //.
+    Dot,
+
     //[
     BrackStart,
     //]
@@ -68,5 +68,8 @@ pub enum ShExMLToken {
     //@
     ShapeLinkStart,
 
-    ShapeName(String)
+    ShapeName(String),
 }
+
+
+

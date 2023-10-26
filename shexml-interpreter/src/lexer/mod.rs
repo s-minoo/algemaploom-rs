@@ -2,14 +2,13 @@ mod tests;
 
 use chumsky::chain::Chain;
 use chumsky::prelude::*;
-use chumsky::text::{newline, TextParser};
 use chumsky::Parser;
 
 use crate::token::ShExMLToken;
 
 macro_rules! t {
     ($t:ty) => {
-        impl Parser<char, $t, Error = Simple<char>>
+        impl Parser<char, $t, Error = Simple<char>> + Clone
     };
 }
 
@@ -23,6 +22,42 @@ pub fn within_angled_brackets() -> t!(String) {
         .at_least(1)
         .padded()
         .map(|c| c.into_iter().collect::<String>())
+}
+
+pub fn expresion_recurs() -> t!(Vec<ShExMLToken>) {
+    todo()
+}
+
+pub fn expression() -> t!(Vec<ShExMLToken>) {
+    let expressiont_tag =
+        just("EXPRESSION").padded().to(ShExMLToken::Expression);
+    let exp_ident = ident().padded();
+
+    let sub_ident = ident()
+        .chain(just('.').to(ShExMLToken::Dot))
+        .repeated()
+        .at_least(1)
+        .flatten()
+        .chain(ident());
+
+    let join_ident = just("JOIN")
+        .to(ShExMLToken::Join)
+        .padded()
+        .chain(sub_ident.clone())
+        .padded();
+
+    let union_ident = just("UNION")
+        .to(ShExMLToken::Union)
+        .padded()
+        .chain(sub_ident.clone())
+        .padded();
+
+    let join_union = sub_ident.chain::<ShExMLToken, _, _>(
+        join_ident.or(union_ident).repeated().at_least(1).flatten(),
+    );
+
+    let exp_inner = join_union.delimited_by(just("<"), just(">"));
+    expressiont_tag.chain(exp_ident).chain(exp_inner)
 }
 
 pub fn iterator() -> t!(Vec<ShExMLToken>) {
