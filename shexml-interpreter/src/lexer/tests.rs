@@ -24,6 +24,19 @@ fn protocol_test() {
 }
 
 #[test]
+fn string_op_expression_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
+        ";
+
+    let (tokens_opt, errors) =
+        expression().padded().then(end()).parse_recovery(exp_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    println!("{:?}", tokens_opt);
+}
+
+#[test]
 fn join_union_expression_test() {
     let exp_str = "
         EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>

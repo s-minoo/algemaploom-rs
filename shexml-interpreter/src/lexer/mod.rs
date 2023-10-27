@@ -13,7 +13,7 @@ macro_rules! t {
 }
 
 pub fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
-    just(st).to(token)
+    just(st).padded().to(token)
 }
 
 pub fn within_angled_brackets() -> t!(String) {
@@ -24,13 +24,8 @@ pub fn within_angled_brackets() -> t!(String) {
         .map(|c| c.into_iter().collect::<String>())
 }
 
-pub fn expresion_recurs() -> t!(Vec<ShExMLToken>) {
-    todo()
-}
-
 pub fn expression() -> t!(Vec<ShExMLToken>) {
-    let expressiont_tag =
-        just("EXPRESSION").padded().to(ShExMLToken::Expression);
+    let expressiont_tag = token("EXPRESSION", ShExMLToken::Expression);
     let exp_ident = ident().padded();
 
     let sub_ident = ident()
@@ -40,23 +35,46 @@ pub fn expression() -> t!(Vec<ShExMLToken>) {
         .flatten()
         .chain(ident());
 
-    let join_ident = just("JOIN")
-        .to(ShExMLToken::Join)
-        .padded()
+    let join_ident = token("JOIN", ShExMLToken::Join)
         .chain(sub_ident.clone())
         .padded();
 
-    let union_ident = just("UNION")
-        .to(ShExMLToken::Union)
-        .padded()
+    let union_ident = token("UNION", ShExMLToken::Union)
         .chain(sub_ident.clone())
         .padded();
 
-    let join_union = sub_ident.chain::<ShExMLToken, _, _>(
+    let join_union = sub_ident.clone().chain::<ShExMLToken, _, _>(
         join_ident.or(union_ident).repeated().at_least(1).flatten(),
     );
 
-    let exp_inner = join_union.delimited_by(just("<"), just(">"));
+    let str_op_right = just('+')
+        .padded()
+        .ignored()
+        .then(
+            pn_char()
+                .repeated()
+                .at_least(1)
+                .delimited_by(just('"'), just('"'))
+                .map(|string_sep| {
+                    ShExMLToken::StringSep(string_sep.into_iter().collect())
+                })
+                .then_ignore(just('+').padded()),
+        )
+        .then(sub_ident.clone().padded())
+        .map(|((_, token), tokens)| {
+            let mut result = vec![token];
+
+            result.extend_from_slice(&tokens);
+            result
+        });
+
+    let str_operation = sub_ident
+        .clone()
+        .chain(str_op_right.repeated().at_least(1).flatten());
+
+    let exp_inner = join_union
+        .or(str_operation)
+        .delimited_by(just("<"), just(">"));
     expressiont_tag.chain(exp_ident).chain(exp_inner)
 }
 
@@ -76,10 +94,9 @@ pub fn iterator() -> t!(Vec<ShExMLToken>) {
 }
 
 pub fn field() -> t!(Vec<ShExMLToken>) {
-    let field_tag = just("FIELD").padded().to(ShExMLToken::Field);
-    let push_field_tag =
-        just("PUSHED_FIELD").padded().to(ShExMLToken::PushField);
-    let pop_field_tag = just("POPPED_FIELD").padded().to(ShExMLToken::PopField);
+    let field_tag = token("FIELD", ShExMLToken::Field);
+    let push_field_tag = token("PUSHED_FIELD", ShExMLToken::PushField);
+    let pop_field_tag = token("POPPED_FIELD", ShExMLToken::PopField);
     let field_name = ident().padded();
     let field_query = within_angled_brackets()
         .padded()
@@ -92,7 +109,7 @@ pub fn field() -> t!(Vec<ShExMLToken>) {
 }
 
 pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
-    let iterator_tag = just("ITERATOR").padded().to(ShExMLToken::Iterator);
+    let iterator_tag = token("ITERATOR", ShExMLToken::Iterator);
     let iterator_name = ident().padded();
 
     let iterator_type = protocol().padded().map(ShExMLToken::IteratorType);
@@ -107,7 +124,7 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
 }
 
 pub fn source() -> t!(Vec<ShExMLToken>) {
-    let source_tag = just("SOURCE").padded().to(ShExMLToken::Source);
+    let source_tag = token("SOURCE", ShExMLToken::Source);
     let source_name = ident().padded();
     let source_iri = protocol_iri_ref().or(path()
         .map(|st| ShExMLToken::URI(st))
@@ -123,7 +140,7 @@ pub fn ident() -> t!(ShExMLToken) {
 }
 
 pub fn prefix() -> t!(Vec<ShExMLToken>) {
-    let prefix_tag = just("PREFIX").padded().to(ShExMLToken::Prefix);
+    let prefix_tag = token("PREFIX", ShExMLToken::Prefix);
     let pname = pn_prefix()
         .or_not()
         .then_ignore(just(":"))
