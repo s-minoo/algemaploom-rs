@@ -26,7 +26,45 @@ pub fn within_angled_brackets() -> t!(String) {
 }
 
 pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
-    todo()
+    let aut_inc_tag = token("AUTOINCREMENT", ShExMLToken::AutoIncrement);
+    let ident = ident().padded();
+    let prefix_str = text::ident::<char, _>()
+        .map(|chars: String| ShExMLToken::AutoIncPrefix(chars))
+        .delimited_by(just('"'), just('"'))
+        .then_ignore(just('+').padded());
+
+    let sufix_str = just('+').padded().ignore_then(
+        text::ident()
+            .map(|chars: String| ShExMLToken::AutoIncSuffix(chars))
+            .delimited_by(just('"'), just('"')),
+    );
+
+    let start_inc = text::digits::<char, _>(10)
+        .padded()
+        .map(|digit: String| ShExMLToken::AutoIncStart(digit.parse().unwrap()));
+
+    let end_inc =
+        just("to").padded().ignore_then(text::digits(10).map(
+            |digit: String| ShExMLToken::AutoIncEnd(digit.parse().unwrap()),
+        ));
+
+    let step_inc =
+        just("by").padded().ignore_then(text::digits(10).map(
+            |digit: String| ShExMLToken::AutoIncStep(digit.parse().unwrap()),
+        ));
+
+    let aut_inc_exp = prefix_str
+        .or_not()
+        .chain::<ShExMLToken, _, _>(start_inc)
+        .chain::<ShExMLToken, _, _>(end_inc.or_not())
+        .chain::<ShExMLToken, _, _>(step_inc.or_not())
+        .chain::<ShExMLToken, _, _>(sufix_str.or_not());
+
+    let auto_inc_exp_delim = token("<", ShExMLToken::AngleStart)
+        .chain::<ShExMLToken, Vec<_>, _>(aut_inc_exp)
+        .chain(token(">", ShExMLToken::AngleEnd));
+
+    aut_inc_tag.chain(ident).chain(auto_inc_exp_delim)
 }
 
 pub fn matcher() -> t!(Vec<ShExMLToken>) {
@@ -160,7 +198,11 @@ pub fn iterator() -> t!(Vec<ShExMLToken>) {
                     .map(|tok| vec![tok])
                     .or(iter),
             )
-            .chain(token("}", ShExMLToken::BrackEnd).map(|tok| vec![tok]).or_not())
+            .chain(
+                token("}", ShExMLToken::BrackEnd)
+                    .map(|tok| vec![tok])
+                    .or_not(),
+            )
             .padded()
     })
 }

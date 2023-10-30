@@ -6,6 +6,7 @@ pub enum ShExMLToken {
     Iterator,
     Matcher,
     Expression,
+    AutoIncrement,
 
     //interim
     As,
@@ -17,6 +18,16 @@ pub enum ShExMLToken {
     Join,
     StringSep(String),
     If,
+
+
+    //prefix autoinc
+    AutoIncPrefix(String),
+    AutoIncStart(u32),
+    AutoIncEnd(u32),
+    AutoIncStep(u32), 
+    AutoIncSuffix(String),
+
+
 
     // "jsonpath:" "csvperrow" "xmlpath:" etc..
     IteratorType(String),

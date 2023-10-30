@@ -25,6 +25,129 @@ fn protocol_test() {
 }
 
 #[test]
+fn auto_inc_only_start_test() {
+    let match_str = "
+     AUTOINCREMENT myId <2>   
+     ";
+
+    let (tokens_opt, errors) = autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected = Some(vec![
+        ShExMLToken::AutoIncrement,
+        ShExMLToken::Ident("myId".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::AutoIncStart(2),
+        ShExMLToken::AngleEnd,
+    ]);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        tokens_opt,
+        expected
+    )
+}
+
+#[test]
+fn auto_inc_end_test() {
+    let match_str = "
+     AUTOINCREMENT myId <\"my\" + 0 to 20>   
+     ";
+
+    let (tokens_opt, errors) = autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected = Some(vec![
+        ShExMLToken::AutoIncrement,
+        ShExMLToken::Ident("myId".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::AutoIncPrefix("my".to_string()),
+        ShExMLToken::AutoIncStart(0),
+        ShExMLToken::AutoIncEnd(20),
+        ShExMLToken::AngleEnd,
+    ]);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        tokens_opt,
+        expected
+    )
+}
+
+#[test]
+fn auto_inc_start_test() {
+    let match_str = "
+     AUTOINCREMENT myId <\"my\" + 0 >   
+     ";
+
+    let (tokens_opt, errors) = autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected = Some(vec![
+        ShExMLToken::AutoIncrement,
+        ShExMLToken::Ident("myId".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::AutoIncPrefix("my".to_string()),
+        ShExMLToken::AutoIncStart(0),
+        ShExMLToken::AngleEnd,
+    ]);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        tokens_opt,
+        expected
+    )
+}
+
+#[test]
+fn auto_inc_complete_test() {
+    let match_str = "
+     AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
+     ";
+
+    let (tokens_opt, errors) = autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected = Some(vec![
+        ShExMLToken::AutoIncrement,
+        ShExMLToken::Ident("myId".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::AutoIncPrefix("my".to_string()),
+        ShExMLToken::AutoIncStart(0),
+        ShExMLToken::AutoIncEnd(10),
+        ShExMLToken::AutoIncStep(2),
+        ShExMLToken::AutoIncSuffix("Id".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        tokens_opt,
+        expected
+    )
+}
+
+#[test]
 fn multiple_matching_matcher_test() {
     let match_str = "
         MATCHER regions <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias &
@@ -128,10 +251,10 @@ fn iterator_header_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Iterator,
         ShExMLToken::Ident("example".to_string()),
-        ShExMLToken::AngleStart, 
+        ShExMLToken::AngleStart,
         ShExMLToken::IteratorType("xpath:".to_string()),
         ShExMLToken::IteratorQuery("/path/to/entity".to_string()),
-        ShExMLToken::AngleEnd, 
+        ShExMLToken::AngleEnd,
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -151,9 +274,9 @@ fn source_local_path_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Source,
         ShExMLToken::Ident("json_file".to_string()),
-        ShExMLToken::AngleStart, 
+        ShExMLToken::AngleStart,
         ShExMLToken::URI("file.json".to_string()),
-        ShExMLToken::AngleEnd, 
+        ShExMLToken::AngleEnd,
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -173,9 +296,9 @@ fn source_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Source,
         ShExMLToken::Ident("xml_file".to_string()),
-        ShExMLToken::AngleStart, 
+        ShExMLToken::AngleStart,
         ShExMLToken::URI("https://example.com/file.xml".to_string()),
-        ShExMLToken::AngleEnd, 
+        ShExMLToken::AngleEnd,
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -197,9 +320,9 @@ fn empty_prefix_name_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Prefix,
         ShExMLToken::BasePrefix,
-        ShExMLToken::AngleStart, 
+        ShExMLToken::AngleStart,
         ShExMLToken::URI("https://base.com/".to_string()),
-        ShExMLToken::AngleEnd, 
+        ShExMLToken::AngleEnd,
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -221,9 +344,9 @@ fn prefix_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Prefix,
         ShExMLToken::PrefixNS("ex".to_string()),
-        ShExMLToken::AngleStart, 
+        ShExMLToken::AngleStart,
         ShExMLToken::URI("https://example.com/".to_string()),
-        ShExMLToken::AngleEnd, 
+        ShExMLToken::AngleEnd,
     ]);
     assert!(
         tokens_opt == expected_tokens,
