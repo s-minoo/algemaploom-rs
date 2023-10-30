@@ -25,6 +25,37 @@ fn protocol_test() {
 }
 
 #[test]
+fn function_test() {
+    
+    let function_str = "
+        FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
+        ";
+    let (tokens_opt, errors) = functions()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(function_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected = Some(vec![
+        ShExMLToken::Function,
+        ShExMLToken::Ident("helper".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::FunctionLang("scala:".to_string()),
+        ShExMLToken::URI("https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        tokens_opt,
+        expected
+    )
+
+}
+
+#[test]
 fn auto_inc_only_start_test() {
     let match_str = "
      AUTOINCREMENT myId <2>   

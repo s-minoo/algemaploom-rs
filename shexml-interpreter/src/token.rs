@@ -7,6 +7,7 @@ pub enum ShExMLToken {
     Matcher,
     Expression,
     AutoIncrement,
+    Function,
 
     //interim
     As,
@@ -19,6 +20,9 @@ pub enum ShExMLToken {
     StringSep(String),
     If,
 
+
+    //function language
+    FunctionLang(String), 
 
     //prefix autoinc
     AutoIncPrefix(String),

@@ -25,6 +25,19 @@ pub fn within_angled_brackets() -> t!(String) {
         .map(|c| c.into_iter().collect::<String>())
 }
 
+pub fn functions() -> t!(Vec<ShExMLToken>) {
+    let function_tag = token("FUNCTIONS", ShExMLToken::Function);
+    let function_ident = ident().padded();
+
+    let protocol = protocol().padded().map(ShExMLToken::FunctionLang);
+    let uri = protocol_iri_ref().or(path().map(|st| ShExMLToken::URI(st)));
+
+    let function_exp = token("<", ShExMLToken::AngleStart)
+        .chain(protocol.chain(uri))
+        .chain(token(">", ShExMLToken::AngleEnd).padded());
+    function_tag.chain(function_ident).chain(function_exp)
+}
+
 pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
     let aut_inc_tag = token("AUTOINCREMENT", ShExMLToken::AutoIncrement);
     let ident = ident().padded();
