@@ -1,5 +1,6 @@
 #[cfg(test)]
 use super::*;
+
 #[test]
 fn protocol_test() {
     let proc1 = "jdbc:".to_string();
@@ -21,6 +22,37 @@ fn protocol_test() {
         tokens_opt,
         expected_tokens
     );
+}
+
+#[test]
+fn multiple_matching_matcher_test() {
+    let match_str = "
+        MATCHER regions <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias &
+                Spain, España, Espagne AS Spain>
+        ";
+
+    let (tokens_opt, errors) = matcher()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+}
+
+#[test]
+fn single_matcher_test() {
+    let match_str = "
+        MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
+        ";
+
+    let (tokens_opt, errors) = matcher()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
 }
 
 #[test]
@@ -96,8 +128,10 @@ fn iterator_header_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Iterator,
         ShExMLToken::Ident("example".to_string()),
+        ShExMLToken::AngleStart, 
         ShExMLToken::IteratorType("xpath:".to_string()),
         ShExMLToken::IteratorQuery("/path/to/entity".to_string()),
+        ShExMLToken::AngleEnd, 
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -117,7 +151,9 @@ fn source_local_path_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Source,
         ShExMLToken::Ident("json_file".to_string()),
+        ShExMLToken::AngleStart, 
         ShExMLToken::URI("file.json".to_string()),
+        ShExMLToken::AngleEnd, 
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -137,7 +173,9 @@ fn source_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Source,
         ShExMLToken::Ident("xml_file".to_string()),
+        ShExMLToken::AngleStart, 
         ShExMLToken::URI("https://example.com/file.xml".to_string()),
+        ShExMLToken::AngleEnd, 
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -159,7 +197,9 @@ fn empty_prefix_name_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Prefix,
         ShExMLToken::BasePrefix,
+        ShExMLToken::AngleStart, 
         ShExMLToken::URI("https://base.com/".to_string()),
+        ShExMLToken::AngleEnd, 
     ]);
     assert!(
         tokens_opt == expected_tokens,
@@ -181,7 +221,9 @@ fn prefix_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Prefix,
         ShExMLToken::PrefixNS("ex".to_string()),
+        ShExMLToken::AngleStart, 
         ShExMLToken::URI("https://example.com/".to_string()),
+        ShExMLToken::AngleEnd, 
     ]);
     assert!(
         tokens_opt == expected_tokens,

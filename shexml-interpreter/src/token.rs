@@ -33,6 +33,9 @@ pub enum ShExMLToken {
 
     // Identifier used by source, matcher, function, expression
     Ident(String),
+    
+    // values used in matcher
+    Value(String),
     // Field query
     FieldQuery(String),
 
@@ -64,6 +67,10 @@ pub enum ShExMLToken {
     BrackStart,
     //]
     BrackEnd,
+
+    //&
+    MatcherSplit, 
+
 
     //@
     ShapeLinkStart,

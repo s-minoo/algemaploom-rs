@@ -2,6 +2,7 @@ mod tests;
 
 use chumsky::chain::Chain;
 use chumsky::prelude::*;
+use chumsky::text::Character;
 use chumsky::Parser;
 
 use crate::token::ShExMLToken;
@@ -22,6 +23,67 @@ pub fn within_angled_brackets() -> t!(String) {
         .at_least(1)
         .padded()
         .map(|c| c.into_iter().collect::<String>())
+}
+
+pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
+    todo()
+}
+
+pub fn matcher() -> t!(Vec<ShExMLToken>) {
+    let mat_tag = token("MATCHER", ShExMLToken::Matcher);
+    let mat_ident = ident().padded();
+    let mats_value = none_of("<>,&")
+        .repeated()
+        .at_least(1)
+        .padded()
+        .map(|v_char: Vec<char>| v_char.into_iter().collect::<String>())
+        .map(|str| {
+            str.split(" AS ")
+                .map(|c| c.to_string())
+                .collect::<Vec<String>>()
+        })
+        .map(|mut splitted_str| {
+            let mut result = vec![];
+
+            if splitted_str.len() > 1 {
+                let ident = ShExMLToken::Ident(
+                    splitted_str.pop().unwrap().trim().to_string(),
+                );
+                let value = ShExMLToken::Value(
+                    splitted_str.pop().unwrap().trim().to_string(),
+                );
+                result.push(value);
+                result.push(ShExMLToken::As);
+                result.push(ident);
+            } else {
+                let value = splitted_str.pop().unwrap();
+                result.push(ShExMLToken::Value(value.trim().to_string()));
+            }
+            result
+        });
+
+    mat_tag.chain(mat_ident).chain(
+        token("<", ShExMLToken::AngleStart)
+            .chain(
+                mats_value
+                    .then(
+                        token(",", ShExMLToken::Comma)
+                            .or(token("&", ShExMLToken::MatcherSplit))
+                            .or_not(),
+                    )
+                    .map(|(mut tokens, opt_tok)| {
+                        if let Some(delim_tok) = opt_tok {
+                            tokens.push(delim_tok);
+                        }
+
+                        tokens
+                    })
+                    .repeated()
+                    .at_least(1)
+                    .flatten(),
+            )
+            .chain(token(">", ShExMLToken::AngleEnd)),
+    )
 }
 
 pub fn expression() -> t!(Vec<ShExMLToken>) {
@@ -72,9 +134,15 @@ pub fn expression() -> t!(Vec<ShExMLToken>) {
         .clone()
         .chain(str_op_right.repeated().at_least(1).flatten());
 
-    let exp_inner = join_union
-        .or(str_operation)
-        .delimited_by(just("<"), just(">"));
+    let exp_inner = token("<", ShExMLToken::AngleStart)
+        .chain(
+            join_union
+                .or(str_operation)
+                .repeated()
+                .at_least(1)
+                .flatten(),
+        )
+        .chain(token(">", ShExMLToken::AngleEnd));
     expressiont_tag.chain(exp_ident).chain(exp_inner)
 }
 
@@ -83,12 +151,16 @@ pub fn iterator() -> t!(Vec<ShExMLToken>) {
 
     recursive(|iter| {
         header
-            .then_ignore(just("{"))
+            .chain(token("{", ShExMLToken::BrackStart))
             .chain::<ShExMLToken, _, _>(
                 field().repeated().at_least(1).flatten(),
             )
-            .chain(just("}").padded().to(vec![ShExMLToken::BrackEnd]).or(iter))
-            .then_ignore(just("}").or_not())
+            .chain::<ShExMLToken, _, _>(
+                token("}", ShExMLToken::BrackEnd)
+                    .map(|tok| vec![tok])
+                    .or(iter),
+            )
+            .chain(token("}", ShExMLToken::BrackEnd).map(|tok| vec![tok]).or_not())
             .padded()
     })
 }
@@ -116,9 +188,9 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
     let iterator_query =
         within_angled_brackets().map(ShExMLToken::IteratorQuery);
 
-    let iter_query_pair = iterator_type
-        .chain(iterator_query)
-        .delimited_by(just("<"), just(">"));
+    let iter_query_pair = token("<", ShExMLToken::AngleStart)
+        .chain(iterator_type.chain(iterator_query))
+        .chain(token(">", ShExMLToken::AngleEnd));
 
     iterator_tag.chain(iterator_name).chain(iter_query_pair)
 }
@@ -126,9 +198,9 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
 pub fn source() -> t!(Vec<ShExMLToken>) {
     let source_tag = token("SOURCE", ShExMLToken::Source);
     let source_name = ident().padded();
-    let source_iri = protocol_iri_ref().or(path()
-        .map(|st| ShExMLToken::URI(st))
-        .delimited_by(just("<"), just(">")));
+    let source_iri = token("<", ShExMLToken::AngleStart)
+        .chain(protocol_iri_ref().or(path().map(|st| ShExMLToken::URI(st))))
+        .chain(token(">", ShExMLToken::AngleEnd));
     source_tag.chain(source_name).chain(source_iri)
 }
 
@@ -155,9 +227,11 @@ pub fn prefix() -> t!(Vec<ShExMLToken>) {
             }
         });
 
-    prefix_tag
-        .chain(pname)
-        .chain(protocol_iri_ref().delimited_by(just("<"), just(">")))
+    prefix_tag.chain(pname).chain(
+        token("<", ShExMLToken::AngleStart)
+            .chain(protocol_iri_ref())
+            .chain(token(">", ShExMLToken::AngleEnd)),
+    )
 }
 
 pub fn protocol() -> t!(String) {
