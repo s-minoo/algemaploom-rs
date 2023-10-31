@@ -1,48 +1,50 @@
-
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Default)]
-pub struct ShExMLDocument<'a> {
-    pub prefix_names:     Vec<PrefixName<'a>>,
+pub struct ShExMLDocument {
+    pub prefix_nspaces:   Vec<PrefixNameSpace>,
     pub sources:          Vec<Source>,
-    pub iterators:        Vec<Iterator<'a>>,
-    pub expression_stmts: Vec<ExpressionStatement<'a>>,
+    pub iterators:        Vec<Iterator>,
+    pub expression_stmts: Vec<ExpressionStatement>,
     pub matchers:         Vec<Matcher>,
-    pub shapes:           Vec<Shape<'a>>,
+    pub shapes:           Vec<Shape>,
 }
 
 #[derive(Debug, Clone)]
-pub struct PrefixName<'a> {
-    pub prefix: &'a str,
-    pub local:  &'a str,
+pub struct PrefixNameSpace {
+    pub prefix: String,
+    pub local:  String,
 }
 
-impl<'a> From<PrefixName<'a>> for String {
-    fn from(value: PrefixName) -> Self {
+impl<'a> From<PrefixNameSpace> for String {
+    fn from(value: PrefixNameSpace) -> Self {
         format!("{}:{}", value.prefix, value.local)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Field<'a> {
-    pub name:  &'a str,
-    pub query: &'a str,
+pub struct Field {
+    pub name:  String,
+    pub query: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct Source {}
-
-#[derive(Debug, Clone)]
-pub struct Iterator<'a> {
-    pub fields:          Vec<Field<'a>>,
-    pub push_fields:     Vec<Field<'a>>,
-    pub pop_fields:      Vec<Field<'a>>,
-    pub nested_iterator: Option<Box<Iterator<'a>>>,
+pub struct Source {
+    pub name: String, 
+    pub uri: String, 
 }
 
 #[derive(Debug, Clone)]
-pub struct ExpressionStatement<'a> {
-    pub name:       &'a str,
+pub struct Iterator {
+    pub fields:          Vec<Field>,
+    pub push_fields:     Vec<Field>,
+    pub pop_fields:      Vec<Field>,
+    pub nested_iterator: Option<Box<Iterator>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ExpressionStatement {
+    pub name:       String,
     pub expression: Expression,
 }
 
@@ -66,8 +68,8 @@ pub struct Matcher {
 }
 
 #[derive(Debug, Clone)]
-pub struct Shape<'a> {
-    pub name:              PrefixName<'a>,
-    pub pred_object_pairs: HashMap<PrefixName<'a>, String>,
-    pub pred_shape_paris:  HashMap<PrefixName<'a>, Box<Shape<'a>>>,
+pub struct Shape {
+    pub name:              PrefixNameSpace,
+    pub pred_object_pairs: HashMap<PrefixNameSpace, String>,
+    pub pred_shape_paris:  HashMap<PrefixNameSpace, Box<Shape>>,
 }

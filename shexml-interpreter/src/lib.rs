@@ -4,10 +4,9 @@ mod parser;
 
 use std::path::Path;
 
-use r#type::ShExMLDocument;
+use crate::parser::r#type::ShExMLDocument; 
 
-
-pub fn parse_file<P: AsRef<Path>>(file_path: P) -> ShExMLDocument<'static> {
+pub fn parse_file<P: AsRef<Path>>(file_path: P) -> ShExMLDocument {
     todo!()
 }
 
