@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ShExMLToken {
-    //prologue
+    /// prologue
     Prefix,
     Source,
     Iterator,
@@ -9,7 +9,7 @@ pub enum ShExMLToken {
     AutoIncrement,
     Function,
 
-    //interim
+    /// interim
     As,
     Matching,
     Field,
@@ -20,78 +20,90 @@ pub enum ShExMLToken {
     StringSep(String),
     If,
 
+    /// function language
+    FunctionLang(String),
 
-    //function language
-    FunctionLang(String), 
-
-    //prefix autoinc
+    /// prefix autoinc
     AutoIncPrefix(String),
     AutoIncStart(u32),
     AutoIncEnd(u32),
-    AutoIncStep(u32), 
+    AutoIncStep(u32),
     AutoIncSuffix(String),
 
-
-
-    // "jsonpath:" "csvperrow" "xmlpath:" etc..
+    /// "jsonpath:" "csvperrow" "xmlpath:" etc..
     IteratorType(String),
     IteratorQuery(String),
 
-    // Baseprefix
+    /// Baseprefix
     BasePrefix,
-    // prefix namespace
+    /// prefix namespace
     PrefixNS(String),
-    // prefix local name
+    /// prefix local name
     PrefixLN(String),
 
     URI(String),
 
-    // Identifier used by source, matcher, function, expression
+    /// Identifier used by source, matcher, function, expression
     Ident(String),
-    
-    // values used in matcher
+
+    /// Expression ident
+    ExpressionIdent(String),
+
+    /// values used in matcher
     Value(String),
-    // Field query
+    /// Field query
     FieldQuery(String),
 
-    // :
+    /// :
     PrefixSep,
 
-    // <
+    /// <
     AngleStart,
-    // >
+    /// >
     AngleEnd,
 
-    //{
+    /// {
     CurlStart,
-    //}
+    /// }
     CurlEnd,
 
-    //;
+    /// ;
     PredicateSplit,
-    //,
+    /// ,
     ObjectSplit,
 
-    //,
+    /// ,
     Comma,
 
-    //.
+    /// .
     Dot,
 
-    //[
+    /// &
+    MatcherSplit,
+
+
+    /// @
+    AtSymb,
+     
+    //
+    ShapeNode {
+        prefix: String,
+        local:  String,
+    },
+    ShapeTerm {
+        prefix: String,
+        local:  String,
+    },
+    Datatype(String),
+    LangTag(String),
+
+    /// (
     BrackStart,
-    //]
+    /// )
     BrackEnd,
 
-    //&
-    MatcherSplit, 
-
-
-    //@
-    ShapeLinkStart,
-
-    ShapeName(String),
+    /// [
+    SqBrackStart,
+    /// ]
+    SqBrackEnd,
 }
-
-
-

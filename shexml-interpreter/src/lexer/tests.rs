@@ -25,8 +25,407 @@ fn protocol_test() {
 }
 
 #[test]
+fn function_if_shape_test() {
+    let shape_str = "
+
+:Films :[films.id IF helper.isBefore2010(films.year)] {
+    :name [films.name] ;
+    :year [films.year] ;
+    :countryOfOrigin [films.country IF helper.outsideUSA(films.country)] ;
+}        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+    let helper = ShExMLToken::Ident("helper".to_string()); 
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::If, 
+        helper.clone(), 
+        ShExMLToken::Dot, 
+        ShExMLToken::Ident("isBefore2010".to_string()), 
+        ShExMLToken::BrackStart, 
+        film_exp.clone(), 
+        ShExMLToken::Dot, 
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::BrackEnd, 
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "countryOfOrigin".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(), 
+        ShExMLToken::Dot, 
+        ShExMLToken::Ident("country".to_string()),
+        ShExMLToken::If, 
+        helper.clone(), 
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("outsideUSA".to_string()),
+        ShExMLToken::BrackStart,
+        ShExMLToken::Ident("films".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("country".to_string()),
+        ShExMLToken::BrackEnd,
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn function_shape_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year :[films.year] ;
+    :bigName dbr:[helper.allCapitals(films.name)] ;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "bigName".to_string(),
+        },
+        ShExMLToken::PrefixNS("dbr".to_string()),
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        ShExMLToken::Ident("helper".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("allCapitals".to_string()),
+        ShExMLToken::BrackStart,
+        ShExMLToken::Ident("films".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::BrackEnd,
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn matching_shape_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year :[films.year] ;
+    :country dbr:[films.country MATCHING spain] ;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "country".to_string(),
+        },
+        ShExMLToken::PrefixNS("dbr".to_string()),
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("country".to_string()),
+        ShExMLToken::Matching,
+        ShExMLToken::Ident("spain".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn graphed_shape_test() {
+    let shape_str = "
+
+:MyGraph [[
+    :Films :[films.id] {
+        :name [films.name] ;
+        :year :[films.year] ;
+    }
+]]
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "MyGraph".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        ShExMLToken::SqBrackStart,
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::SqBrackEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn simple_single_shape_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year :[films.year] ;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
 fn function_test() {
-    
     let function_str = "
         FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
         ";
@@ -49,10 +448,9 @@ fn function_test() {
     assert!(
         tokens_opt == expected,
         "Expected output is: {:#?}\nGenerated output was: {:#?}",
-        tokens_opt,
-        expected
+        expected,
+        tokens_opt
     )
-
 }
 
 #[test]
@@ -79,8 +477,8 @@ fn auto_inc_only_start_test() {
     assert!(
         tokens_opt == expected,
         "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
         tokens_opt,
-        expected
     )
 }
 
@@ -110,8 +508,8 @@ fn auto_inc_end_test() {
     assert!(
         tokens_opt == expected,
         "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
         tokens_opt,
-        expected
     )
 }
 
@@ -140,8 +538,8 @@ fn auto_inc_start_test() {
     assert!(
         tokens_opt == expected,
         "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
         tokens_opt,
-        expected
     )
 }
 
@@ -173,8 +571,8 @@ fn auto_inc_complete_test() {
     assert!(
         tokens_opt == expected,
         "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
         tokens_opt,
-        expected
     )
 }
 
@@ -351,6 +749,7 @@ fn empty_prefix_name_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Prefix,
         ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
         ShExMLToken::AngleStart,
         ShExMLToken::URI("https://base.com/".to_string()),
         ShExMLToken::AngleEnd,
@@ -375,6 +774,7 @@ fn prefix_test() {
     let expected_tokens = Some(vec![
         ShExMLToken::Prefix,
         ShExMLToken::PrefixNS("ex".to_string()),
+        ShExMLToken::PrefixSep,
         ShExMLToken::AngleStart,
         ShExMLToken::URI("https://example.com/".to_string()),
         ShExMLToken::AngleEnd,

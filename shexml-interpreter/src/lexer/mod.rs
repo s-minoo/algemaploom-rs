@@ -5,7 +5,7 @@ use chumsky::prelude::*;
 use chumsky::text::Character;
 use chumsky::Parser;
 
-use crate::token::ShExMLToken;
+use crate::token::{self, ShExMLToken};
 
 macro_rules! t {
     ($t:ty) => {
@@ -13,16 +13,160 @@ macro_rules! t {
     };
 }
 
-pub fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
+macro_rules! shape_node {
+    ($t:ident) => {
+        pn_prefix()
+            .or_not()
+            .then_ignore(just(':'))
+            .then(pn_char().repeated().at_least(1))
+            .map(|(prefix_opt, local)| {
+                let mut prefix: String = "".to_string();
+                let local = local.into_iter().collect();
+                if let Some(found_prefix) = prefix_opt {
+                    prefix = found_prefix.into_iter().collect();
+                }
+                ShExMLToken::$t { prefix, local }
+            })
+    };
+}
+
+fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
     just(st).padded().to(token)
 }
 
-pub fn within_angled_brackets() -> t!(String) {
+fn within_angled_brackets() -> t!(String) {
     none_of("<>")
         .repeated()
         .at_least(1)
         .padded()
         .map(|c| c.into_iter().collect::<String>())
+}
+
+pub fn shapes() -> t!(Vec<ShExMLToken>) {
+    let shape_node = shape_node!(ShapeNode);
+    let predicate = shape_node!(ShapeTerm);
+    let graph_node = shape_node!(ShapeNode);
+
+    let pred_object = predicate.padded().chain(shape_object())
+        .padded()
+        .chain(token(";",ShExMLToken::PredicateSplit));
+
+    let subject =
+        prefix_namespace().chain::<ShExMLToken, _, _>(shape_node_expression());
+
+    let single_shape = shape_node
+        .padded()
+        .chain(subject)
+        .padded()
+        .chain(token("{", ShExMLToken::CurlStart))
+        .padded()
+        .chain::<ShExMLToken, _, _>(
+            pred_object.repeated().at_least(1).flatten(),
+        )
+        .padded()
+        .chain(token("}", ShExMLToken::CurlEnd))
+        .padded();
+
+    let with_graph = graph_node
+        .chain(
+            token("[", ShExMLToken::SqBrackStart)
+                .repeated()
+                .at_least(2)
+                .at_most(2),
+        )
+        .chain::<ShExMLToken, _, _>(
+            single_shape.clone().repeated().at_least(1).flatten(),
+        )
+        .padded()
+        .chain::<ShExMLToken, _, _>(
+            token("]", ShExMLToken::SqBrackEnd)
+                .repeated()
+                .at_least(2)
+                .at_most(2),
+        );
+
+    with_graph.or(single_shape)
+}
+
+fn shape_object() -> t!(Vec<ShExMLToken>) {
+    let language_tag = token("@", ShExMLToken::AtSymb).chain(
+        shape_node_expression().or(pn_char().repeated().at_least(1).map(
+            |chars| vec![ShExMLToken::LangTag(chars.into_iter().collect())],
+        )),
+    );
+
+    let data_type_static = prefix_namespace().chain::<ShExMLToken, _, _>(
+        pn_char().repeated().at_least(1).map(|chars| {
+            vec![ShExMLToken::PrefixLN(chars.into_iter().collect())]
+        }),
+    );
+
+    let data_type = choice((
+        prefix_namespace().chain(shape_node_expression()),
+        shape_node_expression(),
+        data_type_static,
+    ));
+
+    let shape_link = token("@", ShExMLToken::AtSymb)
+        .chain(token(":", ShExMLToken::PrefixSep))
+        .chain(ident());
+
+    let object = choice((
+        shape_link,
+        prefix_namespace().chain::<ShExMLToken, _, _>(shape_node_expression()),
+        shape_node_expression(),
+    ))
+    .padded();
+
+    object
+        .padded()
+        .chain::<ShExMLToken, _, _>(language_tag.or(data_type).or_not())
+        .padded()
+        
+}
+
+fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
+    let matching = shape_sub_ident()
+        .padded()
+        .chain(token("MATCHING ", ShExMLToken::Matching))
+        .chain(ident());
+
+    let if_block = shape_sub_ident()
+        .padded()
+        .chain(token("IF ", ShExMLToken::If))
+        .chain::<ShExMLToken, _, _>(shape_function_application());
+
+    token("[", ShExMLToken::SqBrackStart)
+        .chain(choice((
+            matching,
+            if_block,
+            shape_function_application(),
+            shape_sub_ident(),
+        )))
+        .chain(token("]", ShExMLToken::SqBrackEnd))
+}
+
+fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
+    ident().chain(
+        token(".", ShExMLToken::Dot)
+            .chain(ident())
+            .repeated()
+            .flatten(),
+    )
+}
+
+fn shape_function_application() -> t!(Vec<ShExMLToken>) {
+    shape_sub_ident()
+        .chain(token("(", ShExMLToken::BrackStart))
+        .chain::<ShExMLToken, _, _>(shape_sub_ident())
+        .chain::<ShExMLToken, _, _>(
+            token(",", ShExMLToken::Comma)
+                .padded()
+                .chain(shape_sub_ident())
+                .repeated()
+                .flatten(),
+        )
+        .chain(token(")", ShExMLToken::BrackEnd))
 }
 
 pub fn functions() -> t!(Vec<ShExMLToken>) {
@@ -268,19 +412,7 @@ pub fn ident() -> t!(ShExMLToken) {
 
 pub fn prefix() -> t!(Vec<ShExMLToken>) {
     let prefix_tag = token("PREFIX", ShExMLToken::Prefix);
-    let pname = pn_prefix()
-        .or_not()
-        .then_ignore(just(":"))
-        .padded()
-        .flatten()
-        .map(|pname_vec| {
-            if pname_vec.is_empty() {
-                ShExMLToken::BasePrefix
-            } else {
-                let prefix = pname_vec.into_iter().collect();
-                ShExMLToken::PrefixNS(prefix)
-            }
-        });
+    let pname = prefix_namespace();
 
     prefix_tag.chain(pname).chain(
         token("<", ShExMLToken::AngleStart)
@@ -289,7 +421,23 @@ pub fn prefix() -> t!(Vec<ShExMLToken>) {
     )
 }
 
-pub fn protocol() -> t!(String) {
+fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
+    pn_prefix()
+        .or_not()
+        .then_ignore(just(":"))
+        .padded()
+        .flatten()
+        .map(|pname_vec| {
+            if pname_vec.is_empty() {
+                vec![ShExMLToken::BasePrefix, ShExMLToken::PrefixSep]
+            } else {
+                let prefix = pname_vec.into_iter().collect();
+                vec![ShExMLToken::PrefixNS(prefix), ShExMLToken::PrefixSep]
+            }
+        })
+}
+
+fn protocol() -> t!(String) {
     filter(|c: &char| c.is_ascii_alphabetic())
         .repeated()
         .at_least(1)
@@ -297,14 +445,14 @@ pub fn protocol() -> t!(String) {
         .map(|c| c.into_iter().collect())
 }
 
-pub fn path() -> t!(String) {
+fn path() -> t!(String) {
     none_of("<>\"{}|^`\\[]")
         .repeated()
         .at_least(1)
         .map(|e| e.into_iter().collect())
 }
 
-pub fn protocol_iri_ref() -> t!(ShExMLToken) {
+fn protocol_iri_ref() -> t!(ShExMLToken) {
     let uri = protocol()
         .chain::<String, _, _>(just("//").map(|c| c.to_string()))
         .chain(path())
