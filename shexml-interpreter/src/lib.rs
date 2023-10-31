@@ -1,6 +1,6 @@
-pub mod r#type;
 mod token;
 mod lexer;
+mod parser;
 
 use std::path::Path;
 
