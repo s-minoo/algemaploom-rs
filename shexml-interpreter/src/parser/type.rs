@@ -22,23 +22,33 @@ impl<'a> From<PrefixNameSpace> for String {
     }
 }
 
+
+#[derive(Debug, Clone, Copy)]
+pub enum FieldType {
+    Normal, 
+    Push,
+    Pop
+}
+
 #[derive(Debug, Clone)]
 pub struct Field {
+    pub field_type: FieldType,
     pub name:  String,
     pub query: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct Source {
-    pub name: String, 
-    pub uri: String, 
+    pub name: String,
+    pub uri:  String,
 }
 
 #[derive(Debug, Clone)]
 pub struct Iterator {
+    pub ident:           String,
+    pub query:           String,
+    pub iter_type:       String,
     pub fields:          Vec<Field>,
-    pub push_fields:     Vec<Field>,
-    pub pop_fields:      Vec<Field>,
     pub nested_iterator: Option<Box<Iterator>>,
 }
 

@@ -2,7 +2,6 @@ mod tests;
 
 use chumsky::chain::Chain;
 use chumsky::prelude::*;
-use chumsky::text::Character;
 use chumsky::Parser;
 
 use crate::token::{self, ShExMLToken};
@@ -47,9 +46,11 @@ pub fn shapes() -> t!(Vec<ShExMLToken>) {
     let predicate = shape_node!(ShapeTerm);
     let graph_node = shape_node!(ShapeNode);
 
-    let pred_object = predicate.padded().chain(shape_object())
+    let pred_object = predicate
         .padded()
-        .chain(token(";",ShExMLToken::PredicateSplit));
+        .chain(shape_object())
+        .padded()
+        .chain(token(";", ShExMLToken::PredicateSplit));
 
     let subject =
         prefix_namespace().chain::<ShExMLToken, _, _>(shape_node_expression());
@@ -122,7 +123,6 @@ fn shape_object() -> t!(Vec<ShExMLToken>) {
         .padded()
         .chain::<ShExMLToken, _, _>(language_tag.or(data_type).or_not())
         .padded()
-        
 }
 
 fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
