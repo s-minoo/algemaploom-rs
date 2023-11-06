@@ -1,9 +1,17 @@
 mod tests;
 pub mod r#type;
+use std::collections::HashMap;
+
 use chumsky::prelude::*;
 
 use self::r#type::*;
 use crate::token::*;
+
+macro_rules! shex_just {
+    ($exp:expr) => {
+        just::<ShExMLToken, _, Simple<ShExMLToken>>($exp)
+    };
+}
 
 macro_rules! t {
     ($t:ty) => {
@@ -23,6 +31,40 @@ fn token_string<T: AsRef<str> + Clone>(
     target: T,
 ) -> t!(String) {
     just(tok).map(move |_| target.as_ref().to_string())
+}
+
+fn matchers() -> t!(Matcher) {
+    let field_values = extract_string!(Value)
+        .chain::<String, _, _>(
+            shex_just!(ShExMLToken::Comma)
+                .ignore_then(extract_string!(Value))
+                .repeated(),
+        )
+        .then_ignore(just(ShExMLToken::As))
+        .then(extract_string!(Ident))
+        .map(|(values, key)| (key, values));
+
+    just(ShExMLToken::Matcher)
+        .ignore_then(extract_string!(Ident))
+        .then::<Vec<(String, Vec<String>)>, _>(
+            just(ShExMLToken::AngleStart)
+                .ignore_then(field_values.clone())
+                .chain(
+                    just(ShExMLToken::MatcherSplit)
+                        .ignore_then(field_values)
+                        .repeated(),
+                )
+                .then_ignore(just(ShExMLToken::AngleEnd)),
+        )
+        .map(|(ident, key_values_vec)| {
+            let mut rename_map = HashMap::new();
+
+            for (key, values) in key_values_vec {
+                rename_map.insert(key, values.into_iter().collect());
+            }
+
+            Matcher { ident, rename_map }
+        })
 }
 
 fn exp_ident() -> t!(String) {

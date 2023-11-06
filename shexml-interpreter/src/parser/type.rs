@@ -73,6 +73,7 @@ pub enum Expression {
 
 #[derive(Debug, Clone)]
 pub struct Matcher {
+    pub ident: String,
     pub rename_map: HashMap<String, HashSet<String>>,
 }
 

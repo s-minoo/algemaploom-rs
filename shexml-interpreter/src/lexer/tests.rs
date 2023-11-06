@@ -603,8 +603,31 @@ fn single_matcher_test() {
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    let expected_tokens = Some(vec![
+        ShExMLToken::Matcher,
+        ShExMLToken::Ident("ast".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::Value("Principality of Asturias".to_string()),
+        ShExMLToken::Comma,
+        ShExMLToken::Value("Principado de Asturias".to_string()),
+        ShExMLToken::Comma,
+        ShExMLToken::Value("Principáu d'Asturies".to_string()),
+        ShExMLToken::Comma,
+        ShExMLToken::Value("Asturies".to_string()),
+        ShExMLToken::As,
+        ShExMLToken::Ident("Asturias".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+
     println!("{:?}", tokens_opt);
     assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        expected_tokens == tokens_opt,
+        "Expected tokens: {:#?}\nGenerated output: {:#?}",
+        expected_tokens,
+        tokens_opt
+    );
 }
 
 #[test]
@@ -613,8 +636,10 @@ fn string_op_expression_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) =
-        expression().padded().then_ignore(end()).parse_recovery(exp_str);
+    let (tokens_opt, errors) = expression()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
@@ -626,8 +651,10 @@ fn join_union_expression_test() {
         EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>
         ";
 
-    let (tokens_opt, errors) =
-        expression().padded().then_ignore(end()).parse_recovery(exp_str);
+    let (tokens_opt, errors) = expression()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
     let file_ident = ShExMLToken::Ident("file".to_string());
 
     assert!(errors.len() == 0, "{:?}", errors);
