@@ -22,19 +22,18 @@ impl<'a> From<PrefixNameSpace> for String {
     }
 }
 
-
 #[derive(Debug, Clone, Copy)]
 pub enum FieldType {
-    Normal, 
+    Normal,
     Push,
-    Pop
+    Pop,
 }
 
 #[derive(Debug, Clone)]
 pub struct Field {
     pub field_type: FieldType,
-    pub name:  String,
-    pub query: String,
+    pub name:       String,
+    pub query:      String,
 }
 
 #[derive(Debug, Clone)]

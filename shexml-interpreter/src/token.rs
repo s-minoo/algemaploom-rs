@@ -81,10 +81,9 @@ pub enum ShExMLToken {
     /// &
     MatcherSplit,
 
-
     /// @
     AtSymb,
-     
+
     //
     ShapeNode {
         prefix: String,

@@ -1,3 +1,4 @@
+mod tests;
 pub mod r#type;
 use chumsky::prelude::*;
 
@@ -16,6 +17,60 @@ macro_rules! extract_string {
          ShExMLToken::$t(string) => string
         }
     };
+}
+fn token_string<T: AsRef<str> + Clone>(
+    tok: ShExMLToken,
+    target: T,
+) -> t!(String) {
+    just(tok).map(move |_| target.as_ref().to_string())
+}
+
+fn exp_ident() -> t!(String) {
+    extract_string!(Ident)
+        .chain(
+            just(ShExMLToken::Dot)
+                .ignore_then(extract_string!(Ident))
+                .repeated()
+                .at_least(1),
+        )
+        .map(|strings: Vec<String>| strings.join("."))
+}
+
+fn expressions() -> t!(Vec<ExpressionStatement>) {
+    just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
+        .ignore_then(extract_string!(Ident))
+        .then(exp_join_union().or(exp_string_op()))
+        .map(|(name, expression)| ExpressionStatement { name, expression })
+        .repeated()
+        .at_least(1)
+}
+
+fn exp_join_union() -> t!(Expression) {
+    let basic_expression = exp_ident().map(|path| Expression::Basic { path });
+    basic_expression
+        .clone()
+        .then(
+            just(ShExMLToken::Union)
+                .to(Expression::Union as fn(_, _) -> _)
+                .or(just(ShExMLToken::Join)
+                    .to(Expression::Join as fn(_, _) -> _))
+                .then(basic_expression.clone())
+                .repeated(),
+        )
+        .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)))
+}
+
+fn exp_string_op() -> t!(Expression) {
+    exp_ident()
+        .then(extract_string!(StringSep))
+        .then(exp_ident())
+        .map(|((left_path, concate_string), right_path)| {
+            Expression::ConcateString {
+                left_path,
+                concate_string,
+                right_path,
+            }
+        })
 }
 
 fn sources() -> t!(Vec<Source>) {
