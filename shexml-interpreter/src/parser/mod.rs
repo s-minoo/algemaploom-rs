@@ -19,13 +19,14 @@ macro_rules! t {
     };
 }
 
-macro_rules! extract_string {
+macro_rules! unfold_token_value {
     ($t:ident) => {
         select! {
          ShExMLToken::$t(string) => string
         }
     };
 }
+
 fn token_string<T: AsRef<str> + Clone>(
     tok: ShExMLToken,
     target: T,
@@ -33,19 +34,49 @@ fn token_string<T: AsRef<str> + Clone>(
     just(tok).map(move |_| target.as_ref().to_string())
 }
 
-fn matchers() -> t!(Matcher) {
-    let field_values = extract_string!(Value)
+fn auto_increments() -> t!(Vec<AutoIncrement>) {
+    let auto_inc_ident_exp = unfold_token_value!(Ident)
+        .then(
+            unfold_token_value!(AutoIncPrefix)
+                .or_not()
+                .then(unfold_token_value!(AutoIncStart))
+                .then(unfold_token_value!(AutoIncStep).or_not())
+                .then(unfold_token_value!(AutoIncEnd).or_not())
+                .then(unfold_token_value!(AutoIncSuffix).or_not())
+                .delimited_by(
+                    just(ShExMLToken::AngleStart),
+                    just(ShExMLToken::AngleEnd),
+                ),
+        )
+        .map(|(ident, ((((prefix, start), step), end), suffix))| {
+            AutoIncrement {
+                ident,
+                start,
+                prefix,
+                suffix,
+                end,
+                step,
+            }
+        });
+
+    just(ShExMLToken::AutoIncrement)
+        .ignore_then(auto_inc_ident_exp)
+        .repeated()
+}
+
+fn matchers() -> t!(Vec<Matcher>) {
+    let field_values = unfold_token_value!(Value)
         .chain::<String, _, _>(
             shex_just!(ShExMLToken::Comma)
-                .ignore_then(extract_string!(Value))
+                .ignore_then(unfold_token_value!(Value))
                 .repeated(),
         )
         .then_ignore(just(ShExMLToken::As))
-        .then(extract_string!(Ident))
+        .then(unfold_token_value!(Ident))
         .map(|(values, key)| (key, values));
 
     just(ShExMLToken::Matcher)
-        .ignore_then(extract_string!(Ident))
+        .ignore_then(unfold_token_value!(Ident))
         .then::<Vec<(String, Vec<String>)>, _>(
             just(ShExMLToken::AngleStart)
                 .ignore_then(field_values.clone())
@@ -65,13 +96,14 @@ fn matchers() -> t!(Matcher) {
 
             Matcher { ident, rename_map }
         })
+        .repeated()
 }
 
 fn exp_ident() -> t!(String) {
-    extract_string!(Ident)
+    unfold_token_value!(Ident)
         .chain(
             just(ShExMLToken::Dot)
-                .ignore_then(extract_string!(Ident))
+                .ignore_then(unfold_token_value!(Ident))
                 .repeated()
                 .at_least(1),
         )
@@ -80,7 +112,7 @@ fn exp_ident() -> t!(String) {
 
 fn expressions() -> t!(Vec<ExpressionStatement>) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
-        .ignore_then(extract_string!(Ident))
+        .ignore_then(unfold_token_value!(Ident))
         .then(exp_join_union().or(exp_string_op()))
         .map(|(name, expression)| ExpressionStatement { name, expression })
         .repeated()
@@ -104,7 +136,7 @@ fn exp_join_union() -> t!(Expression) {
 
 fn exp_string_op() -> t!(Expression) {
     exp_ident()
-        .then(extract_string!(StringSep))
+        .then(unfold_token_value!(StringSep))
         .then(exp_ident())
         .map(|((left_path, concate_string), right_path)| {
             Expression::ConcateString {
@@ -117,8 +149,8 @@ fn exp_string_op() -> t!(Expression) {
 
 fn sources() -> t!(Vec<Source>) {
     just(ShExMLToken::Source)
-        .ignore_then(extract_string!(Ident))
-        .then(extract_string!(URI).delimited_by(
+        .ignore_then(unfold_token_value!(Ident))
+        .then(unfold_token_value!(URI).delimited_by(
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),
         ))
@@ -141,11 +173,11 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
 
     recursive(|iter| {
         just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Iterator)
-            .ignore_then(extract_string!(Ident))
+            .ignore_then(unfold_token_value!(Ident))
             .then(
-                extract_string!(IteratorType)
+                unfold_token_value!(IteratorType)
                     .or_not()
-                    .then(extract_string!(IteratorQuery))
+                    .then(unfold_token_value!(IteratorQuery))
                     .map(|(opt_type, query)| {
                         if let Some(iter_type) = opt_type {
                             (iter_type, query)
@@ -188,8 +220,8 @@ fn fields(field_type_token: ShExMLToken) -> t!(Vec<Field>) {
     };
 
     just(field_type_token)
-        .ignore_then(extract_string!(Ident))
-        .then(extract_string!(FieldQuery))
+        .ignore_then(unfold_token_value!(Ident))
+        .then(unfold_token_value!(FieldQuery))
         .map(move |(name, query)| {
             Field {
                 name,

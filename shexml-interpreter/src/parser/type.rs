@@ -73,8 +73,18 @@ pub enum Expression {
 
 #[derive(Debug, Clone)]
 pub struct Matcher {
-    pub ident: String,
+    pub ident:      String,
     pub rename_map: HashMap<String, HashSet<String>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AutoIncrement {
+    pub ident:  String,
+    pub start:  u32,
+    pub prefix: Option<String>,
+    pub suffix: Option<String>,
+    pub end:    Option<u32>,
+    pub step:   Option<u32>,
 }
 
 #[derive(Debug, Clone)]
