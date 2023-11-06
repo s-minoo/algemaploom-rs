@@ -41,7 +41,7 @@ fn function_if_shape_test() {
 
     println!("{:#?}", tokens_opt);
     let film_exp = ShExMLToken::Ident("films".to_string());
-    let helper = ShExMLToken::Ident("helper".to_string()); 
+    let helper = ShExMLToken::Ident("helper".to_string());
 
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
@@ -54,15 +54,15 @@ fn function_if_shape_test() {
         film_exp.clone(),
         ShExMLToken::Dot,
         ShExMLToken::Ident("id".to_string()),
-        ShExMLToken::If, 
-        helper.clone(), 
-        ShExMLToken::Dot, 
-        ShExMLToken::Ident("isBefore2010".to_string()), 
-        ShExMLToken::BrackStart, 
-        film_exp.clone(), 
-        ShExMLToken::Dot, 
+        ShExMLToken::If,
+        helper.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("isBefore2010".to_string()),
+        ShExMLToken::BrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
         ShExMLToken::Ident("year".to_string()),
-        ShExMLToken::BrackEnd, 
+        ShExMLToken::BrackEnd,
         ShExMLToken::SqBrackEnd,
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
@@ -90,11 +90,11 @@ fn function_if_shape_test() {
             local:  "countryOfOrigin".to_string(),
         },
         ShExMLToken::SqBrackStart,
-        film_exp.clone(), 
-        ShExMLToken::Dot, 
+        film_exp.clone(),
+        ShExMLToken::Dot,
         ShExMLToken::Ident("country".to_string()),
-        ShExMLToken::If, 
-        helper.clone(), 
+        ShExMLToken::If,
+        helper.clone(),
         ShExMLToken::Dot,
         ShExMLToken::Ident("outsideUSA".to_string()),
         ShExMLToken::BrackStart,
@@ -614,7 +614,7 @@ fn string_op_expression_test() {
         ";
 
     let (tokens_opt, errors) =
-        expression().padded().then(end()).parse_recovery(exp_str);
+        expression().padded().then_ignore(end()).parse_recovery(exp_str);
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
@@ -627,10 +627,41 @@ fn join_union_expression_test() {
         ";
 
     let (tokens_opt, errors) =
-        expression().padded().then(end()).parse_recovery(exp_str);
+        expression().padded().then_ignore(end()).parse_recovery(exp_str);
+    let file_ident = ShExMLToken::Ident("file".to_string());
 
     assert!(errors.len() == 0, "{:?}", errors);
+    let expected_tokens = Some(vec![
+        ShExMLToken::Expression,
+        ShExMLToken::Ident("exp".to_string()),
+        ShExMLToken::AngleStart,
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it1".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::Union,
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it2".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::Union,
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it1".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
     println!("{:?}", tokens_opt);
+
+    assert!(
+        tokens_opt == expected_tokens,
+        "Expected tokens: {:#?}, Generated Output: {:#?}",
+        expected_tokens,
+        tokens_opt
+    );
 }
 
 #[test]
