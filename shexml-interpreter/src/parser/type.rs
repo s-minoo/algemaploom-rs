@@ -16,7 +16,6 @@ pub struct Prefix {
     pub uri:    String,
 }
 
-
 impl<'a> From<PrefixNameSpace> for String {
     fn from(value: PrefixNameSpace) -> Self {
         format!("{}:{}", value.prefix, value.local)
@@ -98,8 +97,14 @@ pub struct Function {
 #[derive(Debug, Clone)]
 pub struct Shape {
     pub name:              PrefixNameSpace,
+    pub subject:           Subject,
     pub pred_object_pairs: HashMap<PrefixNameSpace, String>,
     pub pred_shape_paris:  HashMap<PrefixNameSpace, Box<Shape>>,
+}
+#[derive(Debug, Clone)]
+pub struct Subject {
+    pub prefix:     String,
+    pub expression: String,
 }
 
 #[derive(Debug, Clone)]
