@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Default)]
 pub struct ShExMLDocument {
-    pub prefix_nspaces:   Vec<PrefixNameSpace>,
+    pub prefixes:         Vec<Prefix>,
     pub sources:          Vec<Source>,
     pub iterators:        Vec<Iterator>,
     pub expression_stmts: Vec<ExpressionStatement>,
@@ -11,10 +11,11 @@ pub struct ShExMLDocument {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrefixNameSpace {
+pub struct Prefix {
     pub prefix: String,
-    pub local:  String,
+    pub uri:    String,
 }
+
 
 impl<'a> From<PrefixNameSpace> for String {
     fn from(value: PrefixNameSpace) -> Self {
@@ -99,4 +100,10 @@ pub struct Shape {
     pub name:              PrefixNameSpace,
     pub pred_object_pairs: HashMap<PrefixNameSpace, String>,
     pub pred_shape_paris:  HashMap<PrefixNameSpace, Box<Shape>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PrefixNameSpace {
+    pub prefix: String,
+    pub local:  String,
 }
