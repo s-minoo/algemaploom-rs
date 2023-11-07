@@ -56,7 +56,7 @@ python version >= 3.10 and the following packages:
    cd ./target/release/
    ./translator  file  <RML_DOCUMENT>
    ```
-   For more information/options of CLI app: 
+   For more information/options of CLI app:
    ```sh
    ./translator  -h
    ```
@@ -69,6 +69,15 @@ python version >= 3.10 and the following packages:
    dot -Tplain {generated dot file} > output.txt
    ```
    <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Test cases
+
+Currently, the translator will generate valid mapping plans for the official
+[RML test cases](https://github.com/kg-construct/rml-test-casesk) with mapping plans
+for CSV data sources (all test cases ending in **CSV**).
+
+The generated mapping plans for the test cases are inside the
+[/resources/csv-testcases](/resources/csv-testcases).
 
 ## Acknowledgement
 

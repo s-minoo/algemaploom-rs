@@ -354,12 +354,17 @@ fn add_join_fragmenter(
     plan: &mut Plan<Processed>,
     alias: &str,
 ) -> Result<Plan<Processed>, PlanError> {
-    let default_fragment = plan.get_fragment_str();
-    let fragmenter = Fragmenter {
-        from: default_fragment.clone(),
-        to:   vec![default_fragment, alias.to_string()],
-    };
-    plan.fragment(fragmenter)
+    if plan.fragment_node_idx == plan.last_node_idx {
+        plan.update_prev_fragment_node(alias);
+        Ok(plan.clone())
+    } else {
+        let default_fragment = plan.get_fragment_str();
+        let fragmenter = Fragmenter {
+            from: default_fragment.clone(),
+            to:   vec![default_fragment, alias.to_string()],
+        };
+        plan.fragment(fragmenter)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -372,11 +377,14 @@ impl NotAliasedJoinedPlan<Processed> {
         &mut self,
         alias: &str,
     ) -> Result<AliasedJoinedPlan<Processed>, PlanError> {
-        let right_plan = &mut *self.right_plan.borrow_mut();
-        *right_plan = add_join_fragmenter(right_plan, alias)?;
-
-        let left_plan = &mut *self.left_plan.borrow_mut();
-        *left_plan = add_join_fragmenter(left_plan, alias)?;
+        {
+            let right_plan = &mut *self.right_plan.borrow_mut();
+            *right_plan = add_join_fragmenter(right_plan, alias)?;
+        }
+        {
+            let left_plan = &mut *self.left_plan.borrow_mut();
+            *left_plan = add_join_fragmenter(left_plan, alias)?;
+        }
 
         Ok(AliasedJoinedPlan {
             left_plan:  Rc::clone(&self.left_plan),
@@ -395,31 +403,49 @@ pub struct AliasedJoinedPlan<T> {
 
 impl AliasedJoinedPlan<Processed> {
     fn add_join_op_to_plan(&mut self, join_op: Operator) -> Plan<Processed> {
-        let left_plan = self.left_plan.borrow_mut();
-        let right_plan = self.right_plan.borrow_mut();
-        let graph = &mut left_plan.graph.borrow_mut();
         let fragment_str = &self.alias;
+        let node_idx;
+        {
+            let left_plan = self.left_plan.borrow_mut();
+            let graph = &mut left_plan.graph.borrow_mut();
 
-        let join_node = PlanNode {
-            id:       format!("Join_{}", graph.node_count()),
-            operator: join_op,
-        };
+            let join_node = PlanNode {
+                id:       format!("Join_{}", graph.node_count()),
+                operator: join_op,
+            };
 
-        let node_idx = graph.add_node(join_node);
+            node_idx = graph.add_node(join_node);
 
-        let left_node = left_plan.last_node_idx.unwrap();
-        let left_edge = PlanEdge {
-            fragment: fragment_str.to_string(),
-        };
+            let left_node = left_plan.last_node_idx.unwrap();
+            let left_edge = PlanEdge {
+                fragment: fragment_str.to_string(),
+            };
 
-        graph.add_edge(left_node, node_idx, left_edge);
+            graph.add_edge(left_node, node_idx, left_edge);
+        }
 
-        let right_node = right_plan.last_node_idx.unwrap();
-        let right_edge = PlanEdge {
-            fragment: fragment_str.to_string(),
-        };
+        {
+            let left_plan = self.left_plan.borrow_mut();
+            let graph = &mut left_plan.graph.borrow_mut();
 
-        graph.add_edge(right_node, node_idx, right_edge);
+            if let Ok(plan) = self.right_plan.try_borrow_mut() {
+                let right_node = plan.last_node_idx.unwrap();
+                let right_edge = PlanEdge {
+                    fragment: fragment_str.to_string(),
+                };
+
+                graph.add_edge(right_node, node_idx, right_edge);
+            } else {
+                let right_node = left_plan.last_node_idx.unwrap();
+                let right_edge = PlanEdge {
+                    fragment: fragment_str.to_string(),
+                };
+
+                graph.add_edge(right_node, node_idx, right_edge);
+            }
+        }
+
+        let left_plan = self.left_plan.borrow_mut();
         left_plan.next_idx(Some(node_idx))
     }
     pub fn where_by<A>(
