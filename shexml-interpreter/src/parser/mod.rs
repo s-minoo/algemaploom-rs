@@ -34,6 +34,27 @@ fn token_string<T: AsRef<str> + Clone>(
     just(tok).map(move |_| target.as_ref().to_string())
 }
 
+fn functions() -> t!(Vec<Function>) {
+    shex_just!(ShExMLToken::Function)
+        .ignore_then(unfold_token_value!(Ident))
+        .then(
+            unfold_token_value!(FunctionLang)
+                .then(unfold_token_value!(URI))
+                .delimited_by(
+                    just(ShExMLToken::AngleStart),
+                    just(ShExMLToken::AngleEnd),
+                ),
+        )
+        .map(|(ident, (lang_type, uri))| {
+            Function {
+                ident,
+                lang_type,
+                uri,
+            }
+        })
+        .repeated()
+}
+
 fn auto_increments() -> t!(Vec<AutoIncrement>) {
     let auto_inc_ident_exp = unfold_token_value!(Ident)
         .then(
