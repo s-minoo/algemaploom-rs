@@ -253,21 +253,20 @@ fn fields(field_type_token: ShExMLToken) -> t!(Vec<Field>) {
         .repeated()
 }
 
-fn prefixes() -> t!(Vec<PrefixNameSpace>) {
-    let string_val_parser = select! {
+fn prefixes() -> t!(Vec<Prefix>) {
+    let prefix_ns = select! {
         ShExMLToken::PrefixNS(ns) => ns,
         ShExMLToken::BasePrefix => "".to_string(),
-        ShExMLToken::URI(uri) => uri,
 
     };
 
     just(ShExMLToken::Prefix)
-        .ignore_then(string_val_parser)
-        .then(string_val_parser.delimited_by(
+        .ignore_then(prefix_ns)
+        .then(unfold_token_value!(URI).delimited_by(
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),
         ))
-        .map(|(prefix, local)| PrefixNameSpace { prefix, local })
+        .map(|(prefix, uri)| Prefix { prefix, uri })
         .repeated()
         .at_least(1)
 }
