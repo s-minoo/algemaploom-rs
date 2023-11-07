@@ -88,6 +88,13 @@ pub struct AutoIncrement {
 }
 
 #[derive(Debug, Clone)]
+pub struct Function {
+    pub ident:     String,
+    pub lang_type: String,
+    pub uri:       String,
+}
+
+#[derive(Debug, Clone)]
 pub struct Shape {
     pub name:              PrefixNameSpace,
     pub pred_object_pairs: HashMap<PrefixNameSpace, String>,
