@@ -7,7 +7,7 @@ pub struct ShExMLDocument {
     pub iterators:        Vec<Iterator>,
     pub expression_stmts: Vec<ExpressionStatement>,
     pub matchers:         Vec<Matcher>,
-    pub shapes:           Vec<Shape>,
+    pub graph_shapes:     Vec<GraphShapes>,
 }
 
 #[derive(Debug, Clone)]
@@ -32,14 +32,14 @@ pub enum FieldType {
 #[derive(Debug, Clone)]
 pub struct Field {
     pub field_type: FieldType,
-    pub name:       String,
+    pub ident:      String,
     pub query:      String,
 }
 
 #[derive(Debug, Clone)]
 pub struct Source {
-    pub name: String,
-    pub uri:  String,
+    pub ident: String,
+    pub uri:   String,
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +53,7 @@ pub struct Iterator {
 
 #[derive(Debug, Clone)]
 pub struct ExpressionStatement {
-    pub name:       String,
+    pub ident:      String,
     pub expression: Expression,
 }
 
@@ -95,8 +95,14 @@ pub struct Function {
 }
 
 #[derive(Debug, Clone)]
+pub struct GraphShapes {
+    pub prefix_ns: PrefixNameSpace,
+    pub shapes:    Vec<Shape>,
+}
+
+#[derive(Debug, Clone)]
 pub struct Shape {
-    pub name:              PrefixNameSpace,
+    pub prefix_ns:         PrefixNameSpace,
     pub subject:           Subject,
     pub pred_object_pairs: HashMap<PrefixNameSpace, String>,
     pub pred_shape_paris:  HashMap<PrefixNameSpace, Box<Shape>>,

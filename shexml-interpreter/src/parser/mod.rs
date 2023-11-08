@@ -34,6 +34,10 @@ fn token_string<T: AsRef<str> + Clone>(
     just(tok).map(move |_| target.as_ref().to_string())
 }
 
+fn shapes() -> t!(Vec<Shape>) {
+    todo()
+}
+
 fn functions() -> t!(Vec<Function>) {
     shex_just!(ShExMLToken::Function)
         .ignore_then(unfold_token_value!(Ident))
@@ -135,7 +139,7 @@ fn expressions() -> t!(Vec<ExpressionStatement>) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
         .then(exp_join_union().or(exp_string_op()))
-        .map(|(name, expression)| ExpressionStatement { name, expression })
+        .map(|(name, expression)| ExpressionStatement { ident: name, expression })
         .repeated()
         .at_least(1)
 }
@@ -175,7 +179,7 @@ fn sources() -> t!(Vec<Source>) {
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),
         ))
-        .map(|(ident, uri)| Source { name: ident, uri })
+        .map(|(ident, uri)| Source { ident, uri })
         .repeated()
         .at_least(1)
 }
@@ -245,7 +249,7 @@ fn fields(field_type_token: ShExMLToken) -> t!(Vec<Field>) {
         .then(unfold_token_value!(FieldQuery))
         .map(move |(name, query)| {
             Field {
-                name,
+                ident: name,
                 query,
                 field_type,
             }
