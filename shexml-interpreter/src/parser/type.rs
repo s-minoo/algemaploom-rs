@@ -77,7 +77,7 @@ pub struct Matcher {
     pub rename_map: HashMap<String, HashSet<String>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AutoIncrement {
     pub ident:  String,
     pub start:  u32,
@@ -102,18 +102,45 @@ pub struct GraphShapes {
 
 #[derive(Debug, Clone)]
 pub struct Shape {
-    pub prefix_ns:         PrefixNameSpace,
-    pub subject:           Subject,
-    pub pred_object_pairs: HashMap<PrefixNameSpace, String>,
-    pub pred_shape_paris:  HashMap<PrefixNameSpace, Box<Shape>>,
+    pub prefix_ns:             PrefixNameSpace,
+    pub subject:               Subject,
+    pub pred_shape_expr_pairs: HashMap<PrefixNameSpace, ShapeExpression>,
+    pub pred_shape_paris:      HashMap<PrefixNameSpace, Box<Shape>>,
 }
+
 #[derive(Debug, Clone)]
+pub struct ShapeReference {
+    pub expr_ident: String,
+    pub field:      Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ShapeExpression {
+    Reference(ShapeReference),
+
+    Matching {
+        expr_ident:    String,
+        matcher_ident: String,
+    },
+
+    Conditional {
+        reference:        ShapeReference,
+        conditional_expr: Box<ShapeExpression>,
+    },
+
+    Function {
+        fun_method_ident: ShapeReference, 
+        params_idents: Vec<ShapeReference>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subject {
     pub prefix:     String,
     pub expression: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrefixNameSpace {
     pub prefix: String,
     pub local:  String,

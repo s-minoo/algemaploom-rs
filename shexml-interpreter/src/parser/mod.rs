@@ -35,7 +35,53 @@ fn token_string<T: AsRef<str> + Clone>(
 }
 
 fn shapes() -> t!(Vec<Shape>) {
+    // let shape_prefix_ns = select! {
+    //     ShExMLToken::ShapeNode { prefix, local } => PrefixNameSpace{prefix, local},
+    // };
     todo()
+}
+
+fn shape_expression() -> t!(ShapeExpression) {
+    let reference_expr = unfold_token_value!(Ident)
+        .then(
+            shex_just!(ShExMLToken::Dot)
+                .ignore_then(unfold_token_value!(Ident))
+                .or_not(),
+        )
+        .map(|(expr_ident, field)| ShapeReference { expr_ident, field });
+
+    let func_params = reference_expr
+        .clone()
+        .separated_by(just(ShExMLToken::Comma));
+    let func_expr = reference_expr
+        .clone()
+        .then(func_params.delimited_by(
+            just(ShExMLToken::BrackStart),
+            just(ShExMLToken::BrackEnd),
+        ))
+        .map(|(fun_method_ident, params_idents)| {
+            ShapeExpression::Function {
+                fun_method_ident,
+                params_idents,
+            }
+        });
+
+    let conditional_expr = reference_expr
+        .clone()
+        .then_ignore(just(ShExMLToken::If))
+        .then(func_expr.clone())
+        .map(|(reference, function)| {
+            ShapeExpression::Conditional {
+                reference,
+                conditional_expr: Box::new(function),
+            }
+        });
+
+    choice((
+        conditional_expr,
+        func_expr,
+        reference_expr.map(ShapeExpression::Reference),
+    ))
 }
 
 fn functions() -> t!(Vec<Function>) {
@@ -139,7 +185,12 @@ fn expressions() -> t!(Vec<ExpressionStatement>) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
         .then(exp_join_union().or(exp_string_op()))
-        .map(|(name, expression)| ExpressionStatement { ident: name, expression })
+        .map(|(name, expression)| {
+            ExpressionStatement {
+                ident: name,
+                expression,
+            }
+        })
         .repeated()
         .at_least(1)
 }
