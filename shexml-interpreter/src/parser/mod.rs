@@ -3,6 +3,7 @@ pub mod r#type;
 use std::collections::HashMap;
 
 use chumsky::prelude::*;
+use chumsky::Parser;
 
 use self::r#type::*;
 use crate::token::*;
@@ -35,10 +36,66 @@ fn token_string<T: AsRef<str> + Clone>(
 }
 
 fn shapes() -> t!(Vec<Shape>) {
-    // let shape_prefix_ns = select! {
-    //     ShExMLToken::ShapeNode { prefix, local } => PrefixNameSpace{prefix, local},
-    // };
-    todo()
+    let shape_expr = just(ShExMLToken::SqBrackStart)
+        .ignore_then(shape_expression())
+        .then_ignore(just(ShExMLToken::SqBrackEnd));
+
+    let shape_expr_prefix = select! {
+        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
+        ShExMLToken::PrefixNS(prefix) => PrefixNameSpace::NamedPrefix(prefix),
+    };
+
+    let prefix_shape_pair = shape_expr_prefix
+        .then_ignore(just(ShExMLToken::PrefixSep))
+        .then(shape_expr);
+
+    let shape_ident = select! {
+        ShExMLToken::ShapeNode{prefix, local} => prefix + &local
+    };
+
+    let predicate = select! {
+        ShExMLToken::ShapeTerm{prefix, local} =>{
+            let mut p_ns = PrefixNameSpace::BasePrefix;
+            if !prefix.is_empty(){
+
+                p_ns = PrefixNameSpace::NamedPrefix(prefix);
+            }
+        Predicate{ prefix: p_ns, name: local}
+        }
+    };
+
+    shape_ident
+        .clone()
+        .then(
+            prefix_shape_pair
+                .clone()
+                .map(|(prefix, expression)| Subject { prefix, expression }),
+        )
+        .then_ignore(just(ShExMLToken::CurlStart))
+        .then(
+            predicate
+                .clone()
+                .then(
+                    prefix_shape_pair.clone().map(|(prefix, expression)| {
+                        Object { prefix, expression }
+                    }),
+                )
+                .then_ignore(just(ShExMLToken::PredicateSplit))
+                .repeated()
+                .at_least(1),
+        )
+        .then_ignore(just(ShExMLToken::CurlEnd))
+        .map(|((ident, subject), pred_obj_pairs)| {
+            let pred_obj_pairs: Vec<(Predicate, Object)> = pred_obj_pairs;
+
+            Shape {
+                ident,
+                subject,
+                pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+            }
+        })
+        .repeated()
+        .at_least(1)
 }
 
 fn shape_expression() -> t!(ShapeExpression) {

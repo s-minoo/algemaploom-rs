@@ -16,12 +16,6 @@ pub struct Prefix {
     pub uri:    String,
 }
 
-impl<'a> From<PrefixNameSpace> for String {
-    fn from(value: PrefixNameSpace) -> Self {
-        format!("{}:{}", value.prefix, value.local)
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum FieldType {
     Normal,
@@ -96,25 +90,24 @@ pub struct Function {
 
 #[derive(Debug, Clone)]
 pub struct GraphShapes {
-    pub prefix_ns: PrefixNameSpace,
-    pub shapes:    Vec<Shape>,
+    pub ident:  String,
+    pub shapes: Vec<Shape>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Shape {
-    pub prefix_ns:             PrefixNameSpace,
-    pub subject:               Subject,
-    pub pred_shape_expr_pairs: HashMap<PrefixNameSpace, ShapeExpression>,
-    pub pred_shape_paris:      HashMap<PrefixNameSpace, Box<Shape>>,
+    pub ident:          String,
+    pub subject:        Subject,
+    pub pred_obj_pairs: HashMap<Predicate, Object>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShapeReference {
     pub expr_ident: String,
     pub field:      Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ShapeExpression {
     Reference(ShapeReference),
 
@@ -129,19 +122,31 @@ pub enum ShapeExpression {
     },
 
     Function {
-        fun_method_ident: ShapeReference, 
-        params_idents: Vec<ShapeReference>,
+        fun_method_ident: ShapeReference,
+        params_idents:    Vec<ShapeReference>,
     },
+}
+
+#[derive(Debug, Clone)]
+pub struct Object {
+    pub prefix:     PrefixNameSpace,
+    pub expression: ShapeExpression,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Predicate {
+    pub prefix: PrefixNameSpace,
+    pub name:   String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subject {
-    pub prefix:     String,
-    pub expression: String,
+    pub prefix:     PrefixNameSpace,
+    pub expression: ShapeExpression,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrefixNameSpace {
-    pub prefix: String,
-    pub local:  String,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum PrefixNameSpace {
+    NamedPrefix(String),
+    BasePrefix,
 }
