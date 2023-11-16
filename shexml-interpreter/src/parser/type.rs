@@ -10,7 +10,7 @@ pub struct ShExMLDocument {
     pub graph_shapes:     Vec<GraphShapes>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Prefix {
     pub prefix: String,
     pub uri:    String,

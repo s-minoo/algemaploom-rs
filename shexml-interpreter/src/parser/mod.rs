@@ -374,6 +374,7 @@ fn prefixes() -> t!(Vec<Prefix>) {
 
     just(ShExMLToken::Prefix)
         .ignore_then(prefix_ns)
+        .then_ignore(just(ShExMLToken::PrefixSep))
         .then(unfold_token_value!(URI).delimited_by(
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),

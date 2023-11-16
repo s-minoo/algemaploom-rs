@@ -391,7 +391,12 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
         .chain(iterator_type.chain(iterator_query))
         .chain(token(">", ShExMLToken::AngleEnd));
 
-    iterator_tag.chain(iterator_name).chain(iter_query_pair).repeated().at_least(1).flatten()
+    iterator_tag
+        .chain(iterator_name)
+        .chain(iter_query_pair)
+        .repeated()
+        .at_least(1)
+        .flatten()
 }
 
 pub fn source() -> t!(Vec<ShExMLToken>) {
@@ -419,11 +424,16 @@ pub fn prefix() -> t!(Vec<ShExMLToken>) {
     let prefix_tag = token("PREFIX", ShExMLToken::Prefix);
     let pname = prefix_namespace();
 
-    prefix_tag.chain(pname).chain(
-        token("<", ShExMLToken::AngleStart)
-            .chain(protocol_iri_ref())
-            .chain(token(">", ShExMLToken::AngleEnd)),
-    )
+    prefix_tag
+        .chain(pname)
+        .chain(
+            token("<", ShExMLToken::AngleStart)
+                .chain(protocol_iri_ref())
+                .chain(token(">", ShExMLToken::AngleEnd)),
+        )
+        .repeated()
+        .at_least(1)
+        .flatten()
 }
 
 fn prefix_namespace() -> t!(Vec<ShExMLToken>) {

@@ -3,6 +3,62 @@ use super::*;
 use crate::{lexer, parser};
 
 #[test]
+fn prefix_multiple_test() {
+    let prefix_1 = r#"PREFIX ex: <https://example.com/>
+    PREFIX ex23: <https://example23.com/>
+
+        "#;
+
+    let (tokens_opt, _) = lexer::prefix().parse_recovery(prefix_1);
+    println!("{:?}", tokens_opt);
+    let (parsed_items, error) =
+        parser::prefixes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(error.len() == 0, "{:#?}", error);
+    let expected_items = Some(vec![
+        Prefix {
+            prefix: "ex".to_string(),
+            uri:    "https://example.com/".to_string(),
+        },
+        Prefix {
+            prefix: "ex23".to_string(),
+            uri:    "https://example23.com/".to_string(),
+        },
+    ]);
+    assert!(
+        parsed_items == expected_items,
+        "{:?} is the parsed items
+            {:?} is the expected items
+            ",
+        parsed_items,
+        expected_items
+    );
+}
+#[test]
+fn prefix_test() {
+    let prefix_1 = "PREFIX ex: <https://example.com/>";
+
+    let (tokens_opt, _) = lexer::prefix().parse_recovery(prefix_1);
+    println!("{:?}", tokens_opt);
+    let (parsed_items, error) =
+        parser::prefixes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(error.len() == 0, "{:#?}", error);
+    let expected_items = Some(vec![Prefix {
+        prefix: "ex".to_string(),
+        uri:    "https://example.com/".to_string(),
+    }]);
+    assert!(
+        parsed_items == expected_items,
+        "{:?} is the parsed items
+            {:?} is the expected items
+            ",
+        parsed_items,
+        expected_items
+    );
+}
+
+#[test]
 fn source_multiple_test() {
     let source_str = r#"SOURCE xml_file <https://example.com/file.xml>
     SOURCE json_file <local/file.json>
