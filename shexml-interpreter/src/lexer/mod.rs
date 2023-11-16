@@ -391,7 +391,7 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
         .chain(iterator_type.chain(iterator_query))
         .chain(token(">", ShExMLToken::AngleEnd));
 
-    iterator_tag.chain(iterator_name).chain(iter_query_pair)
+    iterator_tag.chain(iterator_name).chain(iter_query_pair).repeated().at_least(1).flatten()
 }
 
 pub fn source() -> t!(Vec<ShExMLToken>) {
@@ -400,7 +400,12 @@ pub fn source() -> t!(Vec<ShExMLToken>) {
     let source_iri = token("<", ShExMLToken::AngleStart)
         .chain(protocol_iri_ref().or(path().map(|st| ShExMLToken::URI(st))))
         .chain(token(">", ShExMLToken::AngleEnd));
-    source_tag.chain(source_name).chain(source_iri)
+    source_tag
+        .chain(source_name)
+        .chain(source_iri)
+        .repeated()
+        .at_least(1)
+        .flatten()
 }
 
 pub fn ident() -> t!(ShExMLToken) {
