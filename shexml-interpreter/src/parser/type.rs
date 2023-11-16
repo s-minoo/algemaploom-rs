@@ -30,7 +30,7 @@ pub struct Field {
     pub query:      String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Source {
     pub ident: String,
     pub uri:   String,
