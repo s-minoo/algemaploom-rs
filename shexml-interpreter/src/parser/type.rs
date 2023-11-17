@@ -16,14 +16,14 @@ pub struct Prefix {
     pub uri:    String,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FieldType {
     Normal,
     Push,
     Pop,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
     pub field_type: FieldType,
     pub ident:      String,
@@ -36,7 +36,7 @@ pub struct Source {
     pub uri:   String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Iterator {
     pub ident:           String,
     pub query:           String,

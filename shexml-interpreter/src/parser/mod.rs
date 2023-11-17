@@ -301,8 +301,7 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
         .or(popped_fields)
         .or(pushed_fields)
         .repeated()
-        .at_least(1)
-        .flatten();
+        .at_least(1);
 
     recursive(|iter| {
         just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Iterator)
@@ -328,41 +327,41 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
             .map(|((ident, (iter_type, query)), fields)| {
                 (ident, iter_type, query, fields)
             })
-            .then(iter.or_not())
-            .then_ignore(just(ShExMLToken::BrackEnd))
+            .then(just(ShExMLToken::BrackEnd).map(|_| None).or(iter))
+            .then_ignore(just(ShExMLToken::BrackEnd).or_not())
             .map(|((ident, iter_type, query, fields), iterator_opt)| {
-                Box::new(Iterator {
+                Some(Box::new(Iterator {
                     ident,
                     query,
                     iter_type,
                     fields,
                     nested_iterator: iterator_opt,
-                })
+                }))
             })
     })
     .repeated()
     .at_least(1)
+    .flatten()
 }
 
-fn fields(field_type_token: ShExMLToken) -> t!(Vec<Field>) {
-    let field_type = match field_type_token {
+fn fields(field_type_token: ShExMLToken) -> t!(Field) {
+    let field_type = select! {
         ShExMLToken::PushField => FieldType::Push,
         ShExMLToken::Field => FieldType::Normal,
         ShExMLToken::PopField => FieldType::Pop,
         _ => FieldType::Normal,
     };
 
-    just(field_type_token)
-        .ignore_then(unfold_token_value!(Ident))
+    field_type
+        .then(unfold_token_value!(Ident))
         .then(unfold_token_value!(FieldQuery))
-        .map(move |(name, query)| {
+        .map(|((field_type, name), query)| {
             Field {
                 ident: name,
                 query,
                 field_type,
             }
         })
-        .repeated()
 }
 
 fn prefixes() -> t!(Vec<Prefix>) {
