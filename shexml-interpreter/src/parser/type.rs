@@ -45,13 +45,13 @@ pub struct Iterator {
     pub nested_iterator: Option<Box<Iterator>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExpressionStatement {
     pub ident:      String,
     pub expression: Expression,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
     ConcateString {
         left_path:      String,

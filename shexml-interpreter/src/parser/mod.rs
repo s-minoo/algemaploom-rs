@@ -241,7 +241,9 @@ fn exp_ident() -> t!(String) {
 fn expressions() -> t!(Vec<ExpressionStatement>) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
-        .then(exp_join_union().or(exp_string_op()))
+        .then_ignore(just(ShExMLToken::AngleStart))
+        .then(exp_string_op().or(exp_join_union()))
+        .then_ignore(just(ShExMLToken::AngleEnd))
         .map(|(name, expression)| {
             ExpressionStatement {
                 ident: name,
@@ -260,11 +262,11 @@ fn exp_join_union() -> t!(Expression) {
             just(ShExMLToken::Union)
                 .to(Expression::Union as fn(_, _) -> _)
                 .or(just(ShExMLToken::Join)
-                    .to(Expression::Join as fn(_, _) -> _))
-                .then(basic_expression.clone())
-                .repeated(),
+                    .to(Expression::Join as fn(_, _) -> _)),
         )
-        .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)))
+        .repeated()
+        .then(basic_expression)
+        .foldr(|(lhs, op), rhs| op(Box::new(lhs), Box::new(rhs)))
 }
 
 fn exp_string_op() -> t!(Expression) {
