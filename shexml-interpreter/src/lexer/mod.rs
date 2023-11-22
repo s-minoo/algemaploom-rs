@@ -86,7 +86,11 @@ pub fn shapes() -> t!(Vec<ShExMLToken>) {
                 .at_most(2),
         );
 
-    with_graph.or(single_shape)
+    (with_graph.or(single_shape))
+        .padded()
+        .repeated()
+        .at_least(1)
+        .flatten()
 }
 
 fn shape_object() -> t!(Vec<ShExMLToken>) {
@@ -179,10 +183,13 @@ pub fn functions() -> t!(Vec<ShExMLToken>) {
     let function_exp = token("<", ShExMLToken::AngleStart)
         .chain(protocol.chain(uri))
         .chain(token(">", ShExMLToken::AngleEnd).padded());
-    function_tag.chain(function_ident).chain(function_exp)
+    (function_tag.chain(function_ident).chain(function_exp))
+        .padded()
+        .repeated()
+        .flatten()
 }
 
-pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
+pub fn autoincrements() -> t!(Vec<ShExMLToken>) {
     let aut_inc_tag = token("AUTOINCREMENT", ShExMLToken::AutoIncrement);
     let ident = ident().padded();
     let prefix_str = text::ident::<char, _>()
@@ -221,10 +228,13 @@ pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
         .chain::<ShExMLToken, Vec<_>, _>(aut_inc_exp)
         .chain(token(">", ShExMLToken::AngleEnd));
 
-    aut_inc_tag.chain(ident).chain(auto_inc_exp_delim)
+    (aut_inc_tag.chain(ident).chain(auto_inc_exp_delim))
+        .padded()
+        .repeated()
+        .flatten()
 }
 
-pub fn matcher() -> t!(Vec<ShExMLToken>) {
+pub fn matchers() -> t!(Vec<ShExMLToken>) {
     let mat_tag = token("MATCHER", ShExMLToken::Matcher);
     let mat_ident = ident().padded();
     let mats_value = none_of("<>,&")
@@ -257,7 +267,7 @@ pub fn matcher() -> t!(Vec<ShExMLToken>) {
             result
         });
 
-    mat_tag.chain(mat_ident).chain(
+    (mat_tag.chain(mat_ident).chain(
         token("<", ShExMLToken::AngleStart)
             .chain(
                 mats_value
@@ -278,10 +288,13 @@ pub fn matcher() -> t!(Vec<ShExMLToken>) {
                     .flatten(),
             )
             .chain(token(">", ShExMLToken::AngleEnd)),
-    )
+    ))
+    .padded()
+    .repeated()
+    .flatten()
 }
 
-pub fn expression() -> t!(Vec<ShExMLToken>) {
+pub fn expressions() -> t!(Vec<ShExMLToken>) {
     let expressiont_tag = token("EXPRESSION", ShExMLToken::Expression);
     let exp_ident = ident().padded();
 
@@ -338,13 +351,17 @@ pub fn expression() -> t!(Vec<ShExMLToken>) {
                 .flatten(),
         )
         .chain(token(">", ShExMLToken::AngleEnd));
-    expressiont_tag.chain(exp_ident).chain(exp_inner)
+    (expressiont_tag.chain(exp_ident).chain(exp_inner))
+        .padded()
+        .repeated()
+        .at_least(1)
+        .flatten()
 }
 
-pub fn iterator() -> t!(Vec<ShExMLToken>) {
+pub fn iterators() -> t!(Vec<ShExMLToken>) {
     let header = iterator_header().padded();
 
-    recursive(|iter| {
+    (recursive(|iter| {
         header
             .chain(token("{", ShExMLToken::BrackStart))
             .chain::<ShExMLToken, _, _>(
@@ -361,7 +378,11 @@ pub fn iterator() -> t!(Vec<ShExMLToken>) {
                     .or_not(),
             )
             .padded()
-    })
+    }))
+    .padded()
+    .repeated()
+    .at_least(1)
+    .flatten()
 }
 
 pub fn field() -> t!(Vec<ShExMLToken>) {
@@ -399,7 +420,7 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
         .flatten()
 }
 
-pub fn source() -> t!(Vec<ShExMLToken>) {
+pub fn sources() -> t!(Vec<ShExMLToken>) {
     let source_tag = token("SOURCE", ShExMLToken::Source);
     let source_name = ident().padded();
     let source_iri = token("<", ShExMLToken::AngleStart)
@@ -408,6 +429,7 @@ pub fn source() -> t!(Vec<ShExMLToken>) {
     source_tag
         .chain(source_name)
         .chain(source_iri)
+        .padded()
         .repeated()
         .at_least(1)
         .flatten()
@@ -420,7 +442,7 @@ pub fn ident() -> t!(ShExMLToken) {
         .map(|v| ShExMLToken::Ident(v.into_iter().collect()))
 }
 
-pub fn prefix() -> t!(Vec<ShExMLToken>) {
+pub fn prefixes() -> t!(Vec<ShExMLToken>) {
     let prefix_tag = token("PREFIX", ShExMLToken::Prefix);
     let pname = prefix_namespace();
 
@@ -431,6 +453,7 @@ pub fn prefix() -> t!(Vec<ShExMLToken>) {
                 .chain(protocol_iri_ref())
                 .chain(token(">", ShExMLToken::AngleEnd)),
         )
+        .padded()
         .repeated()
         .at_least(1)
         .flatten()
