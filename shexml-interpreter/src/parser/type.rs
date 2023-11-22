@@ -81,7 +81,7 @@ pub struct AutoIncrement {
     pub step:   Option<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
     pub ident:     String,
     pub lang_type: String,
@@ -94,7 +94,7 @@ pub struct GraphShapes {
     pub shapes: Vec<Shape>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Shape {
     pub ident:          String,
     pub subject:        Subject,
@@ -127,9 +127,9 @@ pub enum ShapeExpression {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Object {
-    pub prefix:     PrefixNameSpace,
+    pub prefix:     Option<PrefixNameSpace>,
     pub expression: ShapeExpression,
 }
 

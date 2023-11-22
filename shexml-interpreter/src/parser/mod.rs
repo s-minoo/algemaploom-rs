@@ -45,9 +45,12 @@ fn shapes() -> t!(Vec<Shape>) {
         ShExMLToken::PrefixNS(prefix) => PrefixNameSpace::NamedPrefix(prefix),
     };
 
-    let prefix_shape_pair = shape_expr_prefix
-        .then_ignore(just(ShExMLToken::PrefixSep))
-        .then(shape_expr);
+    let prefix_shape_pair =
+        shape_expr_prefix.then_ignore(just(ShExMLToken::PrefixSep));
+
+    let subj_prefix = prefix_shape_pair.clone().then(shape_expr.clone());
+
+    let obj_prefix = prefix_shape_pair.or_not().then(shape_expr);
 
     let shape_ident = select! {
         ShExMLToken::ShapeNode{prefix, local} => prefix + &local
@@ -67,7 +70,7 @@ fn shapes() -> t!(Vec<Shape>) {
     shape_ident
         .clone()
         .then(
-            prefix_shape_pair
+            subj_prefix
                 .clone()
                 .map(|(prefix, expression)| Subject { prefix, expression }),
         )
@@ -76,7 +79,7 @@ fn shapes() -> t!(Vec<Shape>) {
             predicate
                 .clone()
                 .then(
-                    prefix_shape_pair.clone().map(|(prefix, expression)| {
+                    obj_prefix.map(|(prefix, expression)| {
                         Object { prefix, expression }
                     }),
                 )
@@ -164,16 +167,16 @@ fn functions() -> t!(Vec<Function>) {
 
 fn auto_increments() -> t!(Vec<AutoIncrement>) {
     let auto_inc_ident_exp = unfold_token_value!(Ident)
-        .then_ignore(just(ShExMLToken::AngleStart)) 
+        .then_ignore(just(ShExMLToken::AngleStart))
         .then(
             unfold_token_value!(AutoIncPrefix)
                 .or_not()
                 .then(unfold_token_value!(AutoIncStart))
                 .then(unfold_token_value!(AutoIncEnd).or_not())
                 .then(unfold_token_value!(AutoIncStep).or_not())
-                .then(unfold_token_value!(AutoIncSuffix).or_not())
+                .then(unfold_token_value!(AutoIncSuffix).or_not()),
         )
-        .then_ignore(just(ShExMLToken::AngleEnd)) 
+        .then_ignore(just(ShExMLToken::AngleEnd))
         .map(|(ident, ((((prefix, start), end), step), suffix))| {
             AutoIncrement {
                 ident,
@@ -187,7 +190,8 @@ fn auto_increments() -> t!(Vec<AutoIncrement>) {
 
     just(ShExMLToken::AutoIncrement)
         .ignore_then(auto_inc_ident_exp)
-        .repeated().at_least(1)
+        .repeated()
+        .at_least(1)
 }
 
 fn matchers() -> t!(Vec<Matcher>) {

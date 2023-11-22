@@ -10,12 +10,300 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
 ) {
     assert!(
         parsed_items == expected_items,
-        "{:?} is the parsed items
-            {:?} is the expected items
+        "{:#?} is the parsed items
+            {:#?} is the expected items
             ",
         parsed_items,
         expected_items
     );
+}
+
+#[test]
+fn shape_condition_if_test() {
+    let shape_str = "
+
+:Films :[films.id IF helper.isBefore2010(films.year)] {
+    :name [films.name] ;
+    :year :[films.year] ;
+    :countryOfOrigin [films.country IF helper.outsideUSA(films.country)] ;
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shapes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let subject = Subject {
+        prefix:     PrefixNameSpace::BasePrefix,
+        expression: ShapeExpression::Conditional {
+            reference:        ShapeReference {
+                expr_ident: "films".to_string(),
+                field:      Some("id".to_string()),
+            },
+            conditional_expr: Box::new(ShapeExpression::Function {
+                fun_method_ident: ShapeReference {
+                    expr_ident: "helper".to_string(),
+                    field:      Some("isBefore2010".to_string()),
+                },
+                params_idents:    vec![ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }],
+            }),
+        },
+    };
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "countryOfOrigin".to_string(),
+            },
+            Object {
+                prefix:     None,
+                expression: ShapeExpression::Conditional {
+                    reference:        ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field:      Some("country".to_string()),
+                    },
+                    conditional_expr: Box::new(ShapeExpression::Function {
+                        fun_method_ident: ShapeReference {
+                            expr_ident: "helper".to_string(),
+                            field:      Some("outsideUSA".to_string()),
+                        },
+                        params_idents:    vec![ShapeReference {
+                            expr_ident: "films".to_string(),
+                            field:      Some("country".to_string()),
+                        }],
+                    }),
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "name".to_string(),
+            },
+            Object {
+                prefix:     None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("name".to_string()),
+                }),
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "year".to_string(),
+            },
+            Object {
+                prefix:     Some(PrefixNameSpace::BasePrefix),
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let expected_items = Some(vec![Shape {
+        ident: "Films".to_string(),
+        subject,
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
+fn shape_function_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year :[films.year] ;
+    :bigName dbr:[helper.allCapitals(films.name)] ;
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shapes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "bigName".to_string(),
+            },
+            Object {
+                prefix:     Some(PrefixNameSpace::NamedPrefix(
+                    "dbr".to_string(),
+                )),
+                expression: ShapeExpression::Function {
+                    fun_method_ident: ShapeReference {
+                        expr_ident: "helper".to_string(),
+                        field:      Some("allCapitals".to_string()),
+                    },
+                    params_idents:    vec![ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field:      Some("name".to_string()),
+                    }],
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "name".to_string(),
+            },
+            Object {
+                prefix:     None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("name".to_string()),
+                }),
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "year".to_string(),
+            },
+            Object {
+                prefix:     Some(PrefixNameSpace::BasePrefix),
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let expected_items = Some(vec![Shape {
+        ident:          "Films".to_string(),
+        subject:        Subject {
+            prefix:     PrefixNameSpace::BasePrefix,
+            expression: ShapeExpression::Reference(ShapeReference {
+                expr_ident: "films".to_string(),
+                field:      Some("id".to_string()),
+            }),
+        },
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
+fn shape_simple_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year :[films.year] ;
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shapes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "name".to_string(),
+            },
+            Object {
+                prefix:     None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("name".to_string()),
+                }),
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "year".to_string(),
+            },
+            Object {
+                prefix:     Some(PrefixNameSpace::BasePrefix),
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let expected_items = Some(vec![Shape {
+        ident:          "Films".to_string(),
+        subject:        Subject {
+            prefix:     PrefixNameSpace::BasePrefix,
+            expression: ShapeExpression::Reference(ShapeReference {
+                expr_ident: "films".to_string(),
+                field:      Some("id".to_string()),
+            }),
+        },
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
+fn function_test() {
+    let function_str = "
+        FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
+        ";
+    let (tokens_opt, errors) = lexer::functions()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(function_str);
+
+    println!("{:?}", tokens_opt);
+
+    let (parsed_items, errors) =
+        parser::functions().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let expected_items = Some(vec![Function {
+        ident:     "helper".to_string(),
+        lang_type: "scala:".to_string(),
+        uri:       "https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
 }
 
 #[test]
