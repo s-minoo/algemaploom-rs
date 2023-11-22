@@ -16,6 +16,112 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
     );
 }
 
+
+
+#[test]
+fn expression_join_union_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
+        ";
+
+    let (tokens_opt, errors) = lexer::expression()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
+
+    println!("{:?}", tokens_opt);
+    let (parsed_items, errors) =
+        parser::expressions().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let union_exp = Box::new(Expression::Union(
+        Box::new(Expression::Basic {
+            path: "file.it2.name".to_string(),
+        }),
+        Box::new(Expression::Basic {
+            path: "file.it3.name".to_string(),
+        }),
+    ));
+    let expression = Expression::Join(
+        Box::new(Expression::Basic {
+            path: "file.it1.name".to_string(),
+        }),
+        union_exp,
+    );
+
+    let expected_items = Some(vec![ExpressionStatement {
+        ident: "exp".to_string(),
+        expression,
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items);
+}
+
+#[test]
+fn expression_join_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.name JOIN file.it2.name>
+        ";
+
+    let (tokens_opt, errors) = lexer::expression()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
+
+    println!("{:?}", tokens_opt);
+    let (parsed_items, errors) =
+        parser::expressions().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let expression = Expression::Join(
+        Box::new(Expression::Basic {
+            path: "file.it1.name".to_string(),
+        }),
+        Box::new(Expression::Basic {
+            path: "file.it2.name".to_string(),
+        }),
+    );
+
+    let expected_items = Some(vec![ExpressionStatement {
+        ident: "exp".to_string(),
+        expression,
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items);
+}
+
+#[test]
+fn expression_string_op_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
+        ";
+
+    let (tokens_opt, errors) = lexer::expression()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
+
+    println!("{:?}", tokens_opt);
+    let (parsed_items, errors) =
+        parser::expressions().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let expression = Expression::ConcateString {
+        left_path:      "file.it1.id".to_string(),
+        concate_string: "-seper-".to_string(),
+        right_path:     "file.it2.name".to_string(),
+    };
+    let expected_items = Some(vec![ExpressionStatement {
+        ident: "exp".to_string(),
+        expression,
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items);
+}
+
 #[test]
 fn iterator_nested_test() {
     let iter_str = "
@@ -90,12 +196,13 @@ ITERATOR example <xpath: /path/to/entity> {
     FIELD field3 <path/to/field3>
 }";
 
-    let (tokens_opt, errors) =
-        lexer::iterator().then(end()).parse_recovery(iter_str);
+    let (tokens_opt, errors) = lexer::iterator()
+        .then_ignore(end())
+        .parse_recovery(iter_str);
 
     println!("{:#?}", tokens_opt);
     assert!(errors.len() == 0, "{:?}", errors);
-    let parsed_items = parser::iterators().parse(tokens_opt.unwrap().0).ok();
+    let parsed_items = parser::iterators().parse(tokens_opt.unwrap()).ok();
 
     let fields = vec![
         Field {
