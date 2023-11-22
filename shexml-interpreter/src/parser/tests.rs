@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[cfg(test)]
 use super::*;
 use crate::{lexer, parser};
@@ -15,8 +17,79 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
         expected_items
     );
 }
+#[test]
+fn matcher_multiple_test() {
+    let match_str = "
+        MATCHER regions <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias &
+                Spain, España, Espagne AS Spain>
+        ";
 
+    let (tokens_opt, errors) = lexer::matcher()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+    let (parsed_items, errors) =
+        parser::matchers().parse_recovery(tokens_opt.unwrap());
 
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let asturias_set: HashSet<_> = HashSet::from_iter(vec![
+        "Principality of Asturias".to_string(),
+        "Principado de Asturias".to_string(),
+        "Principáu d'Asturies".to_string(),
+        "Asturies".to_string(),
+    ]);
+
+    let spain_set: HashSet<_> = HashSet::from_iter(vec![
+        "Spain".to_string(),
+        "Espagne".to_string(),
+        "España".to_string(),
+    ]);
+
+    let expected_items = Some(vec![Matcher {
+        ident:      "regions".to_string(),
+        rename_map: vec![
+            ("Asturias".to_string(), asturias_set),
+            ("Spain".to_string(), spain_set),
+        ]
+        .into_iter()
+        .collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
+fn matcher_single_test() {
+    let match_str = "
+        MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
+        ";
+
+    let (tokens_opt, errors) = lexer::matcher()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    let (parsed_items, errors) =
+        parser::matchers().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    let values_set = HashSet::from_iter(vec![
+        "Principality of Asturias".to_string(),
+        "Principado de Asturias".to_string(),
+        "Principáu d'Asturies".to_string(),
+        "Asturies".to_string(),
+    ]);
+
+    let expected_items = Some(vec![Matcher {
+        ident:      "ast".to_string(),
+        rename_map: vec![("Asturias".to_string(), values_set)]
+            .into_iter()
+            .collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items);
+}
 
 #[test]
 fn expression_join_union_test() {
