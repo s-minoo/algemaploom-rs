@@ -17,6 +17,97 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
         expected_items
     );
 }
+
+#[test]
+fn auto_inc_only_start_test() {
+    let match_str = "
+     AUTOINCREMENT myId <2>   
+     ";
+
+    let (tokens_opt, errors) = lexer::autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+
+    let (parsed_items, errors) =
+        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let expected_items = Some(vec![AutoIncrement {
+        ident:  "myId".to_string(),
+        start:  2,
+        prefix: None,
+        suffix: None,
+        end:    None,
+        step:   None,
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
+fn auto_inc_start_test() {
+    let match_str = "
+     AUTOINCREMENT myId <\"my\" + 0 >   
+     ";
+
+    let (tokens_opt, errors) = lexer::autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+
+    let (parsed_items, errors) =
+        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let expected_items = Some(vec![AutoIncrement {
+        ident:  "myId".to_string(),
+        start:  0,
+        prefix: Some("my".to_string()),
+        suffix: None,
+        end:    None,
+        step:   None,
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
+fn auto_inc_test() {
+    let match_str = "
+     AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
+     ";
+
+    let (tokens_opt, errors) = lexer::autoincrement()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(match_str);
+
+    println!("{:?}", tokens_opt);
+
+    let (parsed_items, errors) =
+        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let expected_items = Some(vec![AutoIncrement {
+        ident:  "myId".to_string(),
+        start:  0,
+        prefix: Some("my".to_string()),
+        suffix: Some("Id".to_string()),
+        end:    Some(10),
+        step:   Some(2),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
 #[test]
 fn matcher_multiple_test() {
     let match_str = "

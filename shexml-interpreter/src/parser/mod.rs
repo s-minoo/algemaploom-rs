@@ -164,19 +164,17 @@ fn functions() -> t!(Vec<Function>) {
 
 fn auto_increments() -> t!(Vec<AutoIncrement>) {
     let auto_inc_ident_exp = unfold_token_value!(Ident)
+        .then_ignore(just(ShExMLToken::AngleStart)) 
         .then(
             unfold_token_value!(AutoIncPrefix)
                 .or_not()
                 .then(unfold_token_value!(AutoIncStart))
-                .then(unfold_token_value!(AutoIncStep).or_not())
                 .then(unfold_token_value!(AutoIncEnd).or_not())
+                .then(unfold_token_value!(AutoIncStep).or_not())
                 .then(unfold_token_value!(AutoIncSuffix).or_not())
-                .delimited_by(
-                    just(ShExMLToken::AngleStart),
-                    just(ShExMLToken::AngleEnd),
-                ),
         )
-        .map(|(ident, ((((prefix, start), step), end), suffix))| {
+        .then_ignore(just(ShExMLToken::AngleEnd)) 
+        .map(|(ident, ((((prefix, start), end), step), suffix))| {
             AutoIncrement {
                 ident,
                 start,
@@ -189,7 +187,7 @@ fn auto_increments() -> t!(Vec<AutoIncrement>) {
 
     just(ShExMLToken::AutoIncrement)
         .ignore_then(auto_inc_ident_exp)
-        .repeated()
+        .repeated().at_least(1)
 }
 
 fn matchers() -> t!(Vec<Matcher>) {
