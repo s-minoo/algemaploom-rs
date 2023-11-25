@@ -41,6 +41,17 @@ fn within_angled_brackets() -> t!(String) {
         .map(|c| c.into_iter().collect::<String>())
 }
 
+pub fn shexml() -> t!(Vec<ShExMLToken>) {
+    prefixes()
+        .chain::<ShExMLToken, _, _>(sources())
+        .chain::<ShExMLToken, _, _>(iterators())
+        .chain::<ShExMLToken, _, _>(expressions())
+        .chain::<ShExMLToken, _, _>(
+            matchers().or(autoincrements()).or(functions()).or_not(),
+        )
+        .chain::<ShExMLToken, _, _>(shapes())
+}
+
 pub fn shapes() -> t!(Vec<ShExMLToken>) {
     let shape_node = shape_node!(ShapeNode);
     let predicate = shape_node!(ShapeTerm);

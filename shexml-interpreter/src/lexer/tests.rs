@@ -25,6 +25,43 @@ fn protocol_test() {
 }
 
 #[test]
+fn shexml_test() {
+    let shexml_doc = r#"
+
+PREFIX : <http://example.com/>
+SOURCE films_xml_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.xml>
+SOURCE films_json_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.json>
+ITERATOR film_xml <xpath: //film> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year [films.year] ;
+    :country [films.country] ;
+    :director [films.directors];
+} "#;
+
+    let (tokens_opt, errors) = shexml().parse_recovery(shexml_doc);
+
+    println!("{:#?}", tokens_opt);
+
+    assert!(errors.len() == 1, "{:?}", errors);
+}
+
+#[test]
 fn function_if_shape_test() {
     let shape_str = "
 
