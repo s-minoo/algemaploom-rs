@@ -1,7 +1,20 @@
 use colored::Colorize;
 use plangenerator::error::PlanError;
-use rml_interpreter::extractors::io::parse_file;
+use rml_interpreter::extractors::io::{parse_file, parse_str};
 use translator::rmlalgebra::translate_to_algebra;
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
+
+#[wasm_bindgen]
+pub fn translate_rml_str(rml_doc: &str) -> Result<String, JsValue> {
+    let document = parse_str(rml_doc)
+        .or_else(|err| Err(format!("Error parsing RML: {:?}", err)))?;
+    let mapping_plan = translate_to_algebra(document).or_else(|err| {
+        Err(format!("Error translating to algebra: {:?}", err))
+    })?;
+
+    Ok(mapping_plan.to_string())
+}
 
 fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
     file: F,

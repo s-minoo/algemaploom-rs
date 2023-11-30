@@ -11,6 +11,7 @@ use operator::display::PrettyDisplay;
 use operator::{Fragmenter, Join, Operator, Serializer, Source, Target};
 use petgraph::dot::Dot;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::Graph;
 use serde_json::json;
 
 use crate::error::PlanError;
@@ -194,6 +195,12 @@ impl<T> Plan<T> {
     pub fn write(&mut self, path: PathBuf) -> Result<()> {
         self.write_fmt(path, &|dot| format!("{:?}", dot))?;
         Ok(())
+    }
+
+    pub fn to_string(&self) -> String {
+        let graph = &*self.graph.borrow_mut();
+        let dot = Dot::with_config(graph, &[]);
+        format!("{:?}", dot)
     }
 }
 
