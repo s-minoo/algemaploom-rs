@@ -35,6 +35,74 @@ fn token_string<T: AsRef<str> + Clone>(
     just(tok).map(move |_| target.as_ref().to_string())
 }
 
+fn shexml() -> t!(ShExMLDocument) {
+    prefixes()
+        .then(sources())
+        .then(iterators())
+        .map(|((prefixes, sources), iters)| (prefixes, sources, iters))
+        .then(expressions())
+        .then(matchers())
+        .then(auto_increments())
+        .then(functions())
+        .then(graph_shapes())
+        .map(
+            |(
+                (
+                    (
+                        (
+                            ((prefixes, sources, iterators), expression_stmts),
+                            matchers,
+                        ),
+                        auto_increments,
+                    ),
+                    functions,
+                ),
+                graph_shapes,
+            )| {
+                ShExMLDocument {
+                    prefixes,
+                    sources,
+                    iterators,
+                    expression_stmts,
+                    matchers,
+                    auto_increments,
+                    functions,
+                    graph_shapes,
+                }
+            },
+        )
+}
+
+fn graph_shapes() -> t!(Vec<GraphShapes>) {
+    let graph_ident = select! {
+        ShExMLToken::ShapeNode{prefix, local} => prefix + &local
+    };
+
+    let graph = graph_ident
+        .then_ignore(
+            just(ShExMLToken::SqBrackStart)
+                .repeated()
+                .at_least(2)
+                .at_most(2),
+        )
+        .then(shapes())
+        .then_ignore(
+            just(ShExMLToken::SqBrackEnd)
+                .repeated()
+                .at_least(2)
+                .at_most(2),
+        )
+        .map(|(ident, shapes)| GraphShapes { ident, shapes });
+
+    graph
+        .or(shapes().map(|shapes| GraphShapes {
+            ident: "".to_string(),
+            shapes,
+        }))
+        .repeated()
+        .at_least(1)
+}
+
 fn shapes() -> t!(Vec<Shape>) {
     let shape_expr = just(ShExMLToken::SqBrackStart)
         .ignore_then(shape_expression())
@@ -66,7 +134,6 @@ fn shapes() -> t!(Vec<Shape>) {
         Predicate{ prefix: p_ns, name: local}
         }
     };
-
     shape_ident
         .clone()
         .then(
@@ -79,8 +146,9 @@ fn shapes() -> t!(Vec<Shape>) {
             predicate
                 .clone()
                 .then(
-                    obj_prefix.map(|(prefix, expression)| {
-                        Object { prefix, expression }
+                    obj_prefix.map(|(prefix, expression)| Object {
+                        prefix,
+                        expression,
                     }),
                 )
                 .then_ignore(just(ShExMLToken::PredicateSplit))
@@ -119,22 +187,20 @@ fn shape_expression() -> t!(ShapeExpression) {
             just(ShExMLToken::BrackStart),
             just(ShExMLToken::BrackEnd),
         ))
-        .map(|(fun_method_ident, params_idents)| {
-            ShapeExpression::Function {
+        .map(
+            |(fun_method_ident, params_idents)| ShapeExpression::Function {
                 fun_method_ident,
                 params_idents,
-            }
-        });
+            },
+        );
 
     let conditional_expr = reference_expr
         .clone()
         .then_ignore(just(ShExMLToken::If))
         .then(func_expr.clone())
-        .map(|(reference, function)| {
-            ShapeExpression::Conditional {
-                reference,
-                conditional_expr: Box::new(function),
-            }
+        .map(|(reference, function)| ShapeExpression::Conditional {
+            reference,
+            conditional_expr: Box::new(function),
         });
 
     choice((
@@ -155,12 +221,10 @@ fn functions() -> t!(Vec<Function>) {
                     just(ShExMLToken::AngleEnd),
                 ),
         )
-        .map(|(ident, (lang_type, uri))| {
-            Function {
-                ident,
-                lang_type,
-                uri,
-            }
+        .map(|(ident, (lang_type, uri))| Function {
+            ident,
+            lang_type,
+            uri,
         })
         .repeated()
 }
@@ -246,11 +310,9 @@ fn expressions() -> t!(Vec<ExpressionStatement>) {
         .then_ignore(just(ShExMLToken::AngleStart))
         .then(exp_string_op().or(exp_join_union()))
         .then_ignore(just(ShExMLToken::AngleEnd))
-        .map(|(name, expression)| {
-            ExpressionStatement {
-                ident: name,
-                expression,
-            }
+        .map(|(name, expression)| ExpressionStatement {
+            ident: name,
+            expression,
         })
         .repeated()
         .at_least(1)
@@ -359,12 +421,10 @@ fn fields(field_type_token: ShExMLToken) -> t!(Field) {
     field_type
         .then(unfold_token_value!(Ident))
         .then(unfold_token_value!(FieldQuery))
-        .map(|((field_type, name), query)| {
-            Field {
-                ident: name,
-                query,
-                field_type,
-            }
+        .map(|((field_type, name), query)| Field {
+            ident: name,
+            query,
+            field_type,
         })
 }
 

@@ -4,8 +4,10 @@ use std::collections::{HashMap, HashSet};
 pub struct ShExMLDocument {
     pub prefixes:         Vec<Prefix>,
     pub sources:          Vec<Source>,
-    pub iterators:        Vec<Iterator>,
+    pub iterators:        Vec<Box<Iterator>>,
     pub expression_stmts: Vec<ExpressionStatement>,
+    pub auto_increments:  Vec<AutoIncrement>,
+    pub functions:        Vec<Function>,
     pub matchers:         Vec<Matcher>,
     pub graph_shapes:     Vec<GraphShapes>,
 }
