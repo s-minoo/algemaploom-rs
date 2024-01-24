@@ -18,6 +18,120 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
     );
 }
 
+
+#[test]
+fn graph_shape_test() {
+    let graph_shape_str = "  
+:BaseGraph [[ 
+    :Films :[films.id IF helper.isBefore2010(films.year)] {
+        :name [films.name] ;
+        :year :[films.year] ;
+        :countryOfOrigin [films.country IF helper.outsideUSA(films.country)] ;
+    }
+]]
+        ";
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(graph_shape_str);
+
+    assert!(
+        errors.len() == 0, "{:?}", errors
+        );
+
+    let (parsed_items, errors) =
+        parser::graph_shapes().parse_recovery(tokens_opt.unwrap());
+    
+    let subject = Subject {
+        prefix:     PrefixNameSpace::BasePrefix,
+        expression: ShapeExpression::Conditional {
+            reference:        ShapeReference {
+                expr_ident: "films".to_string(),
+                field:      Some("id".to_string()),
+            },
+            conditional_expr: Box::new(ShapeExpression::Function {
+                fun_method_ident: ShapeReference {
+                    expr_ident: "helper".to_string(),
+                    field:      Some("isBefore2010".to_string()),
+                },
+                params_idents:    vec![ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }],
+            }),
+        },
+    };
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "countryOfOrigin".to_string(),
+            },
+            Object {
+                prefix:     None,
+                expression: ShapeExpression::Conditional {
+                    reference:        ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field:      Some("country".to_string()),
+                    },
+                    conditional_expr: Box::new(ShapeExpression::Function {
+                        fun_method_ident: ShapeReference {
+                            expr_ident: "helper".to_string(),
+                            field:      Some("outsideUSA".to_string()),
+                        },
+                        params_idents:    vec![ShapeReference {
+                            expr_ident: "films".to_string(),
+                            field:      Some("country".to_string()),
+                        }],
+                    }),
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "name".to_string(),
+            },
+            Object {
+                prefix:     None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("name".to_string()),
+                }),
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                name:   "year".to_string(),
+            },
+            Object {
+                prefix:     Some(PrefixNameSpace::BasePrefix),
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+
+    let shape = Shape{
+        ident: "Films".to_string(),
+        subject,
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    }; 
+
+    let expected_items = Some(vec![GraphShapes{
+        ident: "BaseGraph".to_string(),
+        shapes: vec![shape],
+    }]);
+
+    assert!(errors.len() == 0, "{:?}", errors); 
+    assert_parse_expected(parsed_items, expected_items);
+}
+
 #[test]
 fn shape_condition_if_test() {
     let shape_str = "
