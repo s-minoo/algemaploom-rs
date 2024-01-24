@@ -90,7 +90,7 @@ pub struct Function {
     pub uri:       String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GraphShapes {
     pub ident:  String,
     pub shapes: Vec<Shape>,
