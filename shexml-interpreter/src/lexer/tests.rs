@@ -58,7 +58,7 @@ EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
 
     println!("{:#?}", tokens_opt);
 
-    assert!(errors.len() == 1, "{:?}", errors);
+    assert!(errors.len() == 0, "{:?}", errors);
 }
 
 #[test]
