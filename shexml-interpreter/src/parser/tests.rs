@@ -19,6 +19,48 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
 }
 
 #[test]
+fn shexml_simple_test() {
+    let document_str = "
+PREFIX : <http://example.com/>
+SOURCE films_xml_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.xml>
+SOURCE films_json_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.json>
+ITERATOR film_xml <xpath: //film> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year [films.year] ;
+    :country [films.country] ;
+    :director [films.directors] ;
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shexml().parse_recovery(document_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shexml().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(parsed_items.is_some(), "{:?}", parsed_items);
+}
+
+#[test]
 fn multiple_graph_test() {
     let mutli_graph_str = " 
 :BaseGraph [[ 
@@ -70,7 +112,7 @@ fn multiple_graph_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "countryOfOrigin".to_string(),
+                local: "countryOfOrigin".to_string(),
             },
             Object {
                 prefix: None,
@@ -95,7 +137,7 @@ fn multiple_graph_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
                 prefix: None,
@@ -111,7 +153,7 @@ fn multiple_graph_test() {
     let pred_obj_pairs_2 = vec![(
         Predicate {
             prefix: PrefixNameSpace::BasePrefix,
-            name: "year".to_string(),
+            local: "year".to_string(),
         },
         Object {
             prefix: Some(PrefixNameSpace::BasePrefix),
@@ -123,24 +165,37 @@ fn multiple_graph_test() {
     )];
 
     let shape = Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject,
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
     };
 
     let shape_2 = Shape {
-        ident: "Films2".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films2".to_string(),
+        },
+
         subject: subject_2,
         pred_obj_pairs: pred_obj_pairs_2.into_iter().collect(),
     };
 
     let expected_items = Some(vec![
         GraphShapes {
-            ident: "BaseGraph".to_string(),
+            ident: ShapeIdent {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "BaseGraph".to_string(),
+            },
             shapes: vec![shape],
         },
         GraphShapes {
-            ident: "AnotherGraph".to_string(),
+            ident: ShapeIdent {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "AnotherGraph".to_string(),
+            },
             shapes: vec![shape_2],
         },
     ]);
@@ -197,7 +252,7 @@ fn graph_multiple_shapes_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "countryOfOrigin".to_string(),
+                local: "countryOfOrigin".to_string(),
             },
             Object {
                 prefix: None,
@@ -222,7 +277,7 @@ fn graph_multiple_shapes_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
                 prefix: None,
@@ -238,7 +293,7 @@ fn graph_multiple_shapes_test() {
     let pred_obj_pairs_2 = vec![(
         Predicate {
             prefix: PrefixNameSpace::BasePrefix,
-            name: "year".to_string(),
+            local: "year".to_string(),
         },
         Object {
             prefix: Some(PrefixNameSpace::BasePrefix),
@@ -250,19 +305,28 @@ fn graph_multiple_shapes_test() {
     )];
 
     let shape = Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject,
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
     };
 
     let shape_2 = Shape {
-        ident: "Films2".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films2".to_string(),
+        },
         subject: subject_2,
         pred_obj_pairs: pred_obj_pairs_2.into_iter().collect(),
     };
 
     let expected_items = Some(vec![GraphShapes {
-        ident: "BaseGraph".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "BaseGraph".to_string(),
+        },
         shapes: vec![shape, shape_2],
     }]);
 
@@ -315,7 +379,7 @@ fn graph_shape_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "countryOfOrigin".to_string(),
+                local: "countryOfOrigin".to_string(),
             },
             Object {
                 prefix: None,
@@ -340,7 +404,7 @@ fn graph_shape_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
                 prefix: None,
@@ -353,7 +417,7 @@ fn graph_shape_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
                 prefix: Some(PrefixNameSpace::BasePrefix),
@@ -366,13 +430,19 @@ fn graph_shape_test() {
     ];
 
     let shape = Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject,
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
     };
 
     let expected_items = Some(vec![GraphShapes {
-        ident: "BaseGraph".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "BaseGraph".to_string(),
+        },
         shapes: vec![shape],
     }]);
 
@@ -427,7 +497,7 @@ fn shape_condition_if_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "countryOfOrigin".to_string(),
+                local: "countryOfOrigin".to_string(),
             },
             Object {
                 prefix: None,
@@ -452,7 +522,7 @@ fn shape_condition_if_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
                 prefix: None,
@@ -465,7 +535,7 @@ fn shape_condition_if_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
                 prefix: Some(PrefixNameSpace::BasePrefix),
@@ -478,7 +548,10 @@ fn shape_condition_if_test() {
     ];
 
     let expected_items = Some(vec![Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject,
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
     }]);
@@ -514,7 +587,7 @@ fn shape_function_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "bigName".to_string(),
+                local: "bigName".to_string(),
             },
             Object {
                 prefix: Some(PrefixNameSpace::NamedPrefix("dbr".to_string())),
@@ -533,7 +606,7 @@ fn shape_function_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
                 prefix: None,
@@ -546,7 +619,7 @@ fn shape_function_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
                 prefix: Some(PrefixNameSpace::BasePrefix),
@@ -559,7 +632,10 @@ fn shape_function_test() {
     ];
 
     let expected_items = Some(vec![Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject: Subject {
             prefix: PrefixNameSpace::BasePrefix,
             expression: ShapeExpression::Reference(ShapeReference {
@@ -600,7 +676,7 @@ fn shape_simple_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
                 prefix: None,
@@ -613,7 +689,7 @@ fn shape_simple_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name: "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
                 prefix: Some(PrefixNameSpace::BasePrefix),
@@ -626,7 +702,10 @@ fn shape_simple_test() {
     ];
 
     let expected_items = Some(vec![Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject: Subject {
             prefix: PrefixNameSpace::BasePrefix,
             expression: ShapeExpression::Reference(ShapeReference {
@@ -657,11 +736,14 @@ fn function_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expected_items = Some(vec![Function {
+    let expected_items = Some(vec![
+
+                              ExpressionEnum::FunctionExp(
+                              Function {
         ident:     "helper".to_string(),
         lang_type: "scala:".to_string(),
         uri:       "https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string(),
-    }]);
+    })]);
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -684,14 +766,15 @@ fn auto_inc_only_start_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expected_items = Some(vec![AutoIncrement {
-        ident: "myId".to_string(),
-        start: 2,
-        prefix: None,
-        suffix: None,
-        end: None,
-        step: None,
-    }]);
+    let expected_items =
+        Some(vec![ExpressionEnum::AutoIncrementExp(AutoIncrement {
+            ident: "myId".to_string(),
+            start: 2,
+            prefix: None,
+            suffix: None,
+            end: None,
+            step: None,
+        })]);
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -714,14 +797,15 @@ fn auto_inc_start_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expected_items = Some(vec![AutoIncrement {
-        ident: "myId".to_string(),
-        start: 0,
-        prefix: Some("my".to_string()),
-        suffix: None,
-        end: None,
-        step: None,
-    }]);
+    let expected_items =
+        Some(vec![ExpressionEnum::AutoIncrementExp(AutoIncrement {
+            ident: "myId".to_string(),
+            start: 0,
+            prefix: Some("my".to_string()),
+            suffix: None,
+            end: None,
+            step: None,
+        })]);
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -744,14 +828,15 @@ fn auto_inc_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expected_items = Some(vec![AutoIncrement {
-        ident: "myId".to_string(),
-        start: 0,
-        prefix: Some("my".to_string()),
-        suffix: Some("Id".to_string()),
-        end: Some(10),
-        step: Some(2),
-    }]);
+    let expected_items =
+        Some(vec![ExpressionEnum::AutoIncrementExp(AutoIncrement {
+            ident: "myId".to_string(),
+            start: 0,
+            prefix: Some("my".to_string()),
+            suffix: Some("Id".to_string()),
+            end: Some(10),
+            step: Some(2),
+        })]);
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -785,7 +870,7 @@ fn matcher_multiple_test() {
         "España".to_string(),
     ]);
 
-    let expected_items = Some(vec![Matcher {
+    let expected_items = Some(vec![ExpressionEnum::MatcherExp(Matcher {
         ident: "regions".to_string(),
         rename_map: vec![
             ("Asturias".to_string(), asturias_set),
@@ -793,7 +878,7 @@ fn matcher_multiple_test() {
         ]
         .into_iter()
         .collect(),
-    }]);
+    })]);
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -820,12 +905,12 @@ fn matcher_single_test() {
         "Asturies".to_string(),
     ]);
 
-    let expected_items = Some(vec![Matcher {
+    let expected_items = Some(vec![ExpressionEnum::MatcherExp(Matcher {
         ident: "ast".to_string(),
         rename_map: vec![("Asturias".to_string(), values_set)]
             .into_iter()
             .collect(),
-    }]);
+    })]);
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -847,25 +932,26 @@ fn expression_join_union_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let union_exp = Box::new(Expression::Union(
-        Box::new(Expression::Basic {
+    let union_exp = Box::new(ExpressionStmtEnum::Union(
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it2.name".to_string(),
         }),
-        Box::new(Expression::Basic {
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it3.name".to_string(),
         }),
     ));
-    let expression = Expression::Join(
-        Box::new(Expression::Basic {
+    let expr_enum = ExpressionStmtEnum::Join(
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it1.name".to_string(),
         }),
         union_exp,
     );
 
-    let expected_items = Some(vec![ExpressionStatement {
-        ident: "exp".to_string(),
-        expression,
-    }]);
+    let expected_items =
+        Some(vec![ExpressionEnum::ExpressionStmt(ExpressionStmt {
+            ident: "exp".to_string(),
+            expr_enum,
+        })]);
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -887,19 +973,20 @@ fn expression_join_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expression = Expression::Join(
-        Box::new(Expression::Basic {
+    let expr_enum = ExpressionStmtEnum::Join(
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it1.name".to_string(),
         }),
-        Box::new(Expression::Basic {
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it2.name".to_string(),
         }),
     );
 
-    let expected_items = Some(vec![ExpressionStatement {
-        ident: "exp".to_string(),
-        expression,
-    }]);
+    let expected_items =
+        Some(vec![ExpressionEnum::ExpressionStmt(ExpressionStmt {
+            ident: "exp".to_string(),
+            expr_enum,
+        })]);
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -920,16 +1007,17 @@ fn expression_string_op_test() {
         parser::expressions().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
-
-    let expression = Expression::ConcateString {
+    let expr_enum = ExpressionStmtEnum::ConcatenateString {
         left_path: "file.it1.id".to_string(),
         concate_string: "-seper-".to_string(),
         right_path: "file.it2.name".to_string(),
     };
-    let expected_items = Some(vec![ExpressionStatement {
+    let stmt = ExpressionStmt {
         ident: "exp".to_string(),
-        expression,
-    }]);
+        expr_enum,
+    };
+
+    let expected_items = Some(vec![ExpressionEnum::ExpressionStmt(stmt)]);
 
     assert_parse_expected(parsed_items, expected_items);
 }

@@ -2,6 +2,7 @@ mod tests;
 pub mod r#type;
 use std::collections::HashMap;
 
+use chumsky::chain::Chain;
 use chumsky::prelude::*;
 use chumsky::Parser;
 
@@ -40,25 +41,40 @@ fn shexml() -> t!(ShExMLDocument) {
         .then(sources())
         .then(iterators())
         .map(|((prefixes, sources), iters)| (prefixes, sources, iters))
-        .then(expressions())
-        .then(matchers())
-        .then(auto_increments())
-        .then(functions())
+        .then(
+            expressions()
+                .or(matchers())
+                .or(auto_increments())
+                .or(functions())
+                .repeated()
+                .at_least(1)
+                .flatten(),
+        )
         .then(graph_shapes())
         .map(
-            |(
-                (
-                    (
-                        (
-                            ((prefixes, sources, iterators), expression_stmts),
-                            matchers,
-                        ),
-                        auto_increments,
-                    ),
-                    functions,
-                ),
-                graph_shapes,
-            )| {
+            |(((prefixes, sources, iterators), expressions), graph_shapes)| {
+                let mut matchers = Vec::new();
+                let mut auto_increments = Vec::new();
+                let mut expression_stmts = Vec::new();
+                let mut functions = Vec::new();
+
+                for expr in expressions {
+                    match expr {
+                        ExpressionEnum::ExpressionStmt(stmt) => {
+                            expression_stmts.push(stmt)
+                        }
+                        ExpressionEnum::MatcherExp(matcher) => {
+                            matchers.push(matcher)
+                        }
+                        ExpressionEnum::AutoIncrementExp(auto_increment) => {
+                            auto_increments.push(auto_increment)
+                        }
+                        ExpressionEnum::FunctionExp(function) => {
+                            functions.push(function)
+                        }
+                    }
+                }
+
                 ShExMLDocument {
                     prefixes,
                     sources,
@@ -73,11 +89,24 @@ fn shexml() -> t!(ShExMLDocument) {
         )
 }
 
-fn graph_shapes() -> t!(Vec<GraphShapes>) {
-    let graph_ident = select! {
-        ShExMLToken::ShapeNode{prefix, local} => prefix + &local
+fn shape_ident() -> t!(ShapeIdent) {
+    let pn_ln = select! {
+        ShExMLToken::ShapeNode{prefix, local} => (prefix, local)
     };
 
+    pn_ln.map(|(prefix, local)| {
+        let prefix = if prefix.is_empty() {
+            PrefixNameSpace::BasePrefix
+        } else {
+            PrefixNameSpace::NamedPrefix(prefix)
+        };
+
+        ShapeIdent { prefix, local }
+    })
+}
+
+fn graph_shapes() -> t!(Vec<GraphShapes>) {
+    let graph_ident = shape_ident();
     let graph = graph_ident
         .then_ignore(
             just(ShExMLToken::SqBrackStart)
@@ -96,7 +125,7 @@ fn graph_shapes() -> t!(Vec<GraphShapes>) {
 
     graph
         .or(shapes().map(|shapes| GraphShapes {
-            ident: "".to_string(),
+            ident: ShapeIdent::base(),
             shapes,
         }))
         .repeated()
@@ -120,10 +149,7 @@ fn shapes() -> t!(Vec<Shape>) {
 
     let obj_prefix = prefix_shape_pair.or_not().then(shape_expr);
 
-    let shape_ident = select! {
-        ShExMLToken::ShapeNode{prefix, local} => prefix + &local
-    };
-
+    let shape_ident = shape_ident();
     let predicate = select! {
         ShExMLToken::ShapeTerm{prefix, local} =>{
             let mut p_ns = PrefixNameSpace::BasePrefix;
@@ -131,7 +157,7 @@ fn shapes() -> t!(Vec<Shape>) {
 
                 p_ns = PrefixNameSpace::NamedPrefix(prefix);
             }
-        Predicate{ prefix: p_ns, name: local}
+        Predicate{ prefix: p_ns, local: local}
         }
     };
     shape_ident
@@ -210,7 +236,7 @@ fn shape_expression() -> t!(ShapeExpression) {
     ))
 }
 
-fn functions() -> t!(Vec<Function>) {
+fn functions() -> t!(Vec<ExpressionEnum>) {
     shex_just!(ShExMLToken::Function)
         .ignore_then(unfold_token_value!(Ident))
         .then(
@@ -221,15 +247,18 @@ fn functions() -> t!(Vec<Function>) {
                     just(ShExMLToken::AngleEnd),
                 ),
         )
-        .map(|(ident, (lang_type, uri))| Function {
-            ident,
-            lang_type,
-            uri,
+        .map(|(ident, (lang_type, uri))| {
+            let function = Function {
+                ident: ident.clone(),
+                lang_type,
+                uri,
+            };
+            ExpressionEnum::FunctionExp(function)
         })
         .repeated()
 }
 
-fn auto_increments() -> t!(Vec<AutoIncrement>) {
+fn auto_increments() -> t!(Vec<ExpressionEnum>) {
     let auto_inc_ident_exp = unfold_token_value!(Ident)
         .then_ignore(just(ShExMLToken::AngleStart))
         .then(
@@ -242,14 +271,15 @@ fn auto_increments() -> t!(Vec<AutoIncrement>) {
         )
         .then_ignore(just(ShExMLToken::AngleEnd))
         .map(|(ident, ((((prefix, start), end), step), suffix))| {
-            AutoIncrement {
-                ident,
+            let auto_increment = AutoIncrement {
+                ident: ident.clone(),
                 start,
                 prefix,
                 suffix,
                 end,
                 step,
-            }
+            };
+            ExpressionEnum::AutoIncrementExp(auto_increment)
         });
 
     just(ShExMLToken::AutoIncrement)
@@ -258,7 +288,7 @@ fn auto_increments() -> t!(Vec<AutoIncrement>) {
         .at_least(1)
 }
 
-fn matchers() -> t!(Vec<Matcher>) {
+fn matchers() -> t!(Vec<ExpressionEnum>) {
     let field_values = unfold_token_value!(Value)
         .chain::<String, _, _>(
             shex_just!(ShExMLToken::Comma)
@@ -287,8 +317,12 @@ fn matchers() -> t!(Vec<Matcher>) {
             for (key, values) in key_values_vec {
                 rename_map.insert(key, values.into_iter().collect());
             }
+            let matcher = Matcher {
+                ident: ident.clone(),
+                rename_map,
+            };
 
-            Matcher { ident, rename_map }
+            ExpressionEnum::MatcherExp(matcher)
         })
         .repeated()
 }
@@ -304,41 +338,45 @@ fn exp_ident() -> t!(String) {
         .map(|strings: Vec<String>| strings.join("."))
 }
 
-fn expressions() -> t!(Vec<ExpressionStatement>) {
+fn expressions() -> t!(Vec<ExpressionEnum>) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
         .then_ignore(just(ShExMLToken::AngleStart))
         .then(exp_string_op().or(exp_join_union()))
         .then_ignore(just(ShExMLToken::AngleEnd))
-        .map(|(name, expression)| ExpressionStatement {
-            ident: name,
-            expression,
+        .map(|(ident, expression)| {
+            let stmt = ExpressionStmt {
+                ident,
+                expr_enum: expression,
+            };
+            ExpressionEnum::ExpressionStmt(stmt)
         })
         .repeated()
         .at_least(1)
 }
 
-fn exp_join_union() -> t!(Expression) {
-    let basic_expression = exp_ident().map(|path| Expression::Basic { path });
+fn exp_join_union() -> t!(ExpressionStmtEnum) {
+    let basic_expression =
+        exp_ident().map(|path| ExpressionStmtEnum::Basic { path });
     basic_expression
         .clone()
         .then(
             just(ShExMLToken::Union)
-                .to(Expression::Union as fn(_, _) -> _)
+                .to(ExpressionStmtEnum::Union as fn(_, _) -> _)
                 .or(just(ShExMLToken::Join)
-                    .to(Expression::Join as fn(_, _) -> _)),
+                    .to(ExpressionStmtEnum::Join as fn(_, _) -> _)),
         )
         .repeated()
         .then(basic_expression)
         .foldr(|(lhs, op), rhs| op(Box::new(lhs), Box::new(rhs)))
 }
 
-fn exp_string_op() -> t!(Expression) {
+fn exp_string_op() -> t!(ExpressionStmtEnum) {
     exp_ident()
         .then(unfold_token_value!(StringSep))
         .then(exp_ident())
         .map(|((left_path, concate_string), right_path)| {
-            Expression::ConcateString {
+            ExpressionStmtEnum::ConcatenateString {
                 left_path,
                 concate_string,
                 right_path,
