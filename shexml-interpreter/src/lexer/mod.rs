@@ -99,7 +99,7 @@ pub fn shapes() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
-        .labelled("shapes")
+        .labelled("lexer:shapes")
 }
 
 fn shape_object() -> t!(Vec<ShExMLToken>) {
@@ -136,7 +136,7 @@ fn shape_object() -> t!(Vec<ShExMLToken>) {
         .padded()
         .chain::<ShExMLToken, _, _>(language_tag.or(data_type).or_not())
         .padded()
-        .labelled("shape_object")
+        .labelled("lexer:shape_object")
 }
 
 fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
@@ -158,7 +158,7 @@ fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
             shape_sub_ident(),
         )))
         .chain(token("]", ShExMLToken::SqBrackEnd))
-        .labelled("shape_node_expression")
+        .labelled("lexer:shape_node_expression")
 }
 
 fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
@@ -169,7 +169,7 @@ fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
                 .repeated()
                 .flatten(),
         )
-        .labelled("shape_sub_ident")
+        .labelled("lexer:shape_sub_ident")
 }
 
 fn shape_function_application() -> t!(Vec<ShExMLToken>) {
@@ -184,7 +184,7 @@ fn shape_function_application() -> t!(Vec<ShExMLToken>) {
                 .flatten(),
         )
         .chain(token(")", ShExMLToken::BrackEnd))
-        .labelled("shape_function_application")
+        .labelled("lexer:shape_function_application")
 }
 
 pub fn expressions() -> t!(Vec<ShExMLToken>) {
@@ -210,7 +210,7 @@ pub fn function() -> t!(Vec<ShExMLToken>) {
 
     (function_tag.chain(function_ident).chain(function_exp))
         .padded()
-        .labelled("function")
+        .labelled("lexer:function")
 }
 
 pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
@@ -254,7 +254,7 @@ pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
 
     (aut_inc_tag.chain(ident).chain(auto_inc_exp_delim))
         .padded()
-        .labelled("autoincrement")
+        .labelled("lexer:autoincrement")
 }
 
 pub fn matcher() -> t!(Vec<ShExMLToken>) {
@@ -313,7 +313,7 @@ pub fn matcher() -> t!(Vec<ShExMLToken>) {
             .chain(token(">", ShExMLToken::AngleEnd)),
     ))
     .padded()
-    .labelled("matcher")
+    .labelled("lexer:matcher")
 }
 
 pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
@@ -375,7 +375,7 @@ pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
         .chain(token(">", ShExMLToken::AngleEnd));
     (expressiont_tag.chain(exp_ident).chain(exp_inner))
         .padded()
-        .labelled("expression_stmt")
+        .labelled("lexer:expression_stmt")
 }
 
 pub fn iterators() -> t!(Vec<ShExMLToken>) {
@@ -403,7 +403,7 @@ pub fn iterators() -> t!(Vec<ShExMLToken>) {
     .repeated()
     .at_least(1)
     .flatten()
-    .labelled("iterators")
+    .labelled("lexer:iterators")
 }
 
 pub fn field() -> t!(Vec<ShExMLToken>) {
@@ -419,7 +419,7 @@ pub fn field() -> t!(Vec<ShExMLToken>) {
     choice((field_tag, push_field_tag, pop_field_tag))
         .chain(field_name)
         .chain(field_query)
-        .labelled("field")
+        .labelled("lexer:field")
 }
 
 pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
@@ -440,7 +440,7 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
-        .labelled("iterator_header")
+        .labelled("lexer:iterator_header")
 }
 
 pub fn sources() -> t!(Vec<ShExMLToken>) {
@@ -456,7 +456,7 @@ pub fn sources() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
-        .labelled("sources")
+        .labelled("lexer:sources")
 }
 
 pub fn ident() -> t!(ShExMLToken) {
@@ -464,7 +464,7 @@ pub fn ident() -> t!(ShExMLToken) {
         .repeated()
         .at_least(1)
         .map(|v| ShExMLToken::Ident(v.into_iter().collect()))
-        .labelled("ident")
+        .labelled("lexer:ident")
 }
 
 pub fn prefixes() -> t!(Vec<ShExMLToken>) {
@@ -482,7 +482,7 @@ pub fn prefixes() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
-        .labelled("prefixes")
+        .labelled("lexer:prefixes")
 }
 
 fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
@@ -499,7 +499,7 @@ fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
                 vec![ShExMLToken::PrefixNS(prefix), ShExMLToken::PrefixSep]
             }
         })
-        .labelled("prefix_namespace")
+        .labelled("lexer:prefix_namespace")
 }
 
 fn protocol() -> t!(String) {
@@ -508,7 +508,7 @@ fn protocol() -> t!(String) {
         .at_least(1)
         .chain(just(':'))
         .map(|c| c.into_iter().collect())
-        .labelled("protocol")
+        .labelled("lexer:protocol")
 }
 
 fn path() -> t!(String) {
