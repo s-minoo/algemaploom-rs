@@ -5,8 +5,8 @@ use super::*;
 use crate::{lexer, parser};
 
 fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
-    parsed_items: Option<Vec<T>>,
-    expected_items: Option<Vec<T>>,
+    parsed_items: Option<T>,
+    expected_items: Option<T>,
 ) {
     assert!(
         parsed_items == expected_items,
@@ -53,7 +53,7 @@ EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
     assert!(errors.len() == 0, "{:?}", errors);
 
     let (parsed_items, errors) =
-        parser::shexml().parse_recovery(tokens_opt.unwrap());
+        parser::shexml().parse_recovery_verbose(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
@@ -720,11 +720,102 @@ fn shape_simple_test() {
 }
 
 #[test]
+fn expressions_test() {
+    let expressions_str = " 
+        MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
+
+        AUTOINCREMENT myId <2>   
+
+        FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
+
+        EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
+        ";
+
+    let expressions_lexer = lexer::expressions();
+
+    let (tokens_opt, errors) = expressions_lexer
+        .then_ignore(end())
+        .parse_recovery(expressions_str);
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (expressions, errors) =
+        parser::expressions().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    let union_exp = Box::new(ExpressionStmtEnum::Union(
+        Box::new(ExpressionStmtEnum::Basic {
+            path: "file.it2.name".to_string(),
+        }),
+        Box::new(ExpressionStmtEnum::Basic {
+            path: "file.it3.name".to_string(),
+        }),
+    ));
+    let expr_enum = ExpressionStmtEnum::Join(
+        Box::new(ExpressionStmtEnum::Basic {
+            path: "file.it1.name".to_string(),
+        }),
+        union_exp,
+    );
+
+    let expected_stmt = ExpressionStmt {
+        ident: "exp".to_string(),
+        expr_enum,
+    };
+
+    let values_set = HashSet::from_iter(vec![
+        "Principality of Asturias".to_string(),
+        "Principado de Asturias".to_string(),
+        "Principáu d'Asturies".to_string(),
+        "Asturies".to_string(),
+    ]);
+
+    let expected_matcher = Matcher {
+        ident: "ast".to_string(),
+        rename_map: vec![("Asturias".to_string(), values_set)]
+            .into_iter()
+            .collect(),
+    };
+
+    let expected_function = Function {
+        ident:     "helper".to_string(),
+        lang_type: "scala:".to_string(),
+        uri:       "https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string(),
+    };
+
+    let expected_autoinc = AutoIncrement {
+        ident: "myId".to_string(),
+        start: 2,
+        prefix: None,
+        suffix: None,
+        end: None,
+        step: None,
+    };
+
+    for exp in expressions.unwrap() {
+        match exp {
+            ExpressionEnum::ExpressionStmt(stmt) => {
+                assert!(stmt == expected_stmt, "{:?}", stmt)
+            }
+            ExpressionEnum::MatcherExp(matcher) => {
+                assert!(matcher == expected_matcher, "{:?}", matcher)
+            }
+            ExpressionEnum::AutoIncrementExp(autoinc) => {
+                assert!(autoinc == expected_autoinc, "{:?}", autoinc)
+            }
+            ExpressionEnum::FunctionExp(function) => {
+                assert!(function == expected_function, "{:?}", function)
+            }
+        }
+    }
+}
+
+#[test]
 fn function_test() {
     let function_str = "
         FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
         ";
-    let (tokens_opt, errors) = lexer::functions()
+    let (tokens_opt, errors) = lexer::function()
         .padded()
         .then_ignore(end())
         .parse_recovery(function_str);
@@ -732,18 +823,18 @@ fn function_test() {
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::functions().parse_recovery(tokens_opt.unwrap());
+        parser::function().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expected_items = Some(vec![
+    let expected_items = Some(
 
                               ExpressionEnum::FunctionExp(
                               Function {
         ident:     "helper".to_string(),
         lang_type: "scala:".to_string(),
         uri:       "https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string(),
-    })]);
+    }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -754,7 +845,7 @@ fn auto_inc_only_start_test() {
      AUTOINCREMENT myId <2>   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrements()
+    let (tokens_opt, errors) = lexer::autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -762,19 +853,19 @@ fn auto_inc_only_start_test() {
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+        parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
     let expected_items =
-        Some(vec![ExpressionEnum::AutoIncrementExp(AutoIncrement {
+        Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
             ident: "myId".to_string(),
             start: 2,
             prefix: None,
             suffix: None,
             end: None,
             step: None,
-        })]);
+        }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -785,7 +876,7 @@ fn auto_inc_start_test() {
      AUTOINCREMENT myId <\"my\" + 0 >   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrements()
+    let (tokens_opt, errors) = lexer::autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -793,19 +884,19 @@ fn auto_inc_start_test() {
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+        parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
     let expected_items =
-        Some(vec![ExpressionEnum::AutoIncrementExp(AutoIncrement {
+        Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
             ident: "myId".to_string(),
             start: 0,
             prefix: Some("my".to_string()),
             suffix: None,
             end: None,
             step: None,
-        })]);
+        }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -816,7 +907,7 @@ fn auto_inc_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrements()
+    let (tokens_opt, errors) = lexer::autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -824,19 +915,19 @@ fn auto_inc_test() {
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+        parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
     let expected_items =
-        Some(vec![ExpressionEnum::AutoIncrementExp(AutoIncrement {
+        Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
             ident: "myId".to_string(),
             start: 0,
             prefix: Some("my".to_string()),
             suffix: Some("Id".to_string()),
             end: Some(10),
             step: Some(2),
-        })]);
+        }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -848,12 +939,12 @@ fn matcher_multiple_test() {
                 Spain, España, Espagne AS Spain>
         ";
 
-    let (tokens_opt, errors) = lexer::matchers()
+    let (tokens_opt, errors) = lexer::matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
     let (parsed_items, errors) =
-        parser::matchers().parse_recovery(tokens_opt.unwrap());
+        parser::matcher().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
@@ -870,7 +961,7 @@ fn matcher_multiple_test() {
         "España".to_string(),
     ]);
 
-    let expected_items = Some(vec![ExpressionEnum::MatcherExp(Matcher {
+    let expected_items = Some(ExpressionEnum::MatcherExp(Matcher {
         ident: "regions".to_string(),
         rename_map: vec![
             ("Asturias".to_string(), asturias_set),
@@ -878,7 +969,7 @@ fn matcher_multiple_test() {
         ]
         .into_iter()
         .collect(),
-    })]);
+    }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -889,13 +980,13 @@ fn matcher_single_test() {
         MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
         ";
 
-    let (tokens_opt, errors) = lexer::matchers()
+    let (tokens_opt, errors) = lexer::matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
 
     let (parsed_items, errors) =
-        parser::matchers().parse_recovery(tokens_opt.unwrap());
+        parser::matcher().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
     let values_set = HashSet::from_iter(vec![
@@ -905,12 +996,12 @@ fn matcher_single_test() {
         "Asturies".to_string(),
     ]);
 
-    let expected_items = Some(vec![ExpressionEnum::MatcherExp(Matcher {
+    let expected_items = Some(ExpressionEnum::MatcherExp(Matcher {
         ident: "ast".to_string(),
         rename_map: vec![("Asturias".to_string(), values_set)]
             .into_iter()
             .collect(),
-    })]);
+    }));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -921,14 +1012,14 @@ fn expression_join_union_test() {
         EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expressions()
+    let (tokens_opt, errors) = lexer::expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
 
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
-        parser::expressions().parse_recovery(tokens_opt.unwrap());
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
@@ -947,11 +1038,10 @@ fn expression_join_union_test() {
         union_exp,
     );
 
-    let expected_items =
-        Some(vec![ExpressionEnum::ExpressionStmt(ExpressionStmt {
-            ident: "exp".to_string(),
-            expr_enum,
-        })]);
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
+        ident: "exp".to_string(),
+        expr_enum,
+    }));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -962,14 +1052,14 @@ fn expression_join_test() {
         EXPRESSION exp <file.it1.name JOIN file.it2.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expressions()
+    let (tokens_opt, errors) = lexer::expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
 
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
-        parser::expressions().parse_recovery(tokens_opt.unwrap());
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
@@ -982,11 +1072,10 @@ fn expression_join_test() {
         }),
     );
 
-    let expected_items =
-        Some(vec![ExpressionEnum::ExpressionStmt(ExpressionStmt {
-            ident: "exp".to_string(),
-            expr_enum,
-        })]);
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
+        ident: "exp".to_string(),
+        expr_enum,
+    }));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -997,14 +1086,14 @@ fn expression_string_op_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expressions()
+    let (tokens_opt, errors) = lexer::expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
 
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
-        parser::expressions().parse_recovery(tokens_opt.unwrap());
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
     let expr_enum = ExpressionStmtEnum::ConcatenateString {
@@ -1017,7 +1106,7 @@ fn expression_string_op_test() {
         expr_enum,
     };
 
-    let expected_items = Some(vec![ExpressionEnum::ExpressionStmt(stmt)]);
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(stmt));
 
     assert_parse_expected(parsed_items, expected_items);
 }

@@ -41,15 +41,7 @@ fn shexml() -> t!(ShExMLDocument) {
         .then(sources())
         .then(iterators())
         .map(|((prefixes, sources), iters)| (prefixes, sources, iters))
-        .then(
-            expressions()
-                .or(matchers())
-                .or(auto_increments())
-                .or(functions())
-                .repeated()
-                .at_least(1)
-                .flatten(),
-        )
+        .then(expressions())
         .then(graph_shapes())
         .map(
             |(((prefixes, sources, iterators), expressions), graph_shapes)| {
@@ -236,7 +228,16 @@ fn shape_expression() -> t!(ShapeExpression) {
     ))
 }
 
-fn functions() -> t!(Vec<ExpressionEnum>) {
+fn expressions() -> t!(Vec<ExpressionEnum>) {
+    (expression_stmt()
+        .or(matcher())
+        .or(function())
+        .or(auto_increment()))
+    .repeated()
+    .at_least(1)
+}
+
+fn function() -> t!(ExpressionEnum) {
     shex_just!(ShExMLToken::Function)
         .ignore_then(unfold_token_value!(Ident))
         .then(
@@ -255,10 +256,9 @@ fn functions() -> t!(Vec<ExpressionEnum>) {
             };
             ExpressionEnum::FunctionExp(function)
         })
-        .repeated()
 }
 
-fn auto_increments() -> t!(Vec<ExpressionEnum>) {
+fn auto_increment() -> t!(ExpressionEnum) {
     let auto_inc_ident_exp = unfold_token_value!(Ident)
         .then_ignore(just(ShExMLToken::AngleStart))
         .then(
@@ -284,11 +284,9 @@ fn auto_increments() -> t!(Vec<ExpressionEnum>) {
 
     just(ShExMLToken::AutoIncrement)
         .ignore_then(auto_inc_ident_exp)
-        .repeated()
-        .at_least(1)
 }
 
-fn matchers() -> t!(Vec<ExpressionEnum>) {
+fn matcher() -> t!(ExpressionEnum) {
     let field_values = unfold_token_value!(Value)
         .chain::<String, _, _>(
             shex_just!(ShExMLToken::Comma)
@@ -324,7 +322,6 @@ fn matchers() -> t!(Vec<ExpressionEnum>) {
 
             ExpressionEnum::MatcherExp(matcher)
         })
-        .repeated()
 }
 
 fn exp_ident() -> t!(String) {
@@ -338,7 +335,7 @@ fn exp_ident() -> t!(String) {
         .map(|strings: Vec<String>| strings.join("."))
 }
 
-fn expressions() -> t!(Vec<ExpressionEnum>) {
+fn expression_stmt() -> t!(ExpressionEnum) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
         .then_ignore(just(ShExMLToken::AngleStart))
@@ -351,8 +348,6 @@ fn expressions() -> t!(Vec<ExpressionEnum>) {
             };
             ExpressionEnum::ExpressionStmt(stmt)
         })
-        .repeated()
-        .at_least(1)
 }
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
