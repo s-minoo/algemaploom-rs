@@ -94,7 +94,7 @@ fn shape_ident() -> t!(ShapeIdent) {
         };
 
         ShapeIdent { prefix, local }
-    })
+    }).labelled("parser:shape_ident")
 }
 
 fn graph_shapes() -> t!(Vec<GraphShapes>) {
@@ -122,6 +122,7 @@ fn graph_shapes() -> t!(Vec<GraphShapes>) {
         }))
         .repeated()
         .at_least(1)
+        .labelled("parser:graph_shapes")
 }
 
 fn shapes() -> t!(Vec<Shape>) {
@@ -185,6 +186,7 @@ fn shapes() -> t!(Vec<Shape>) {
         })
         .repeated()
         .at_least(1)
+        .labelled("parser:shapes")
 }
 
 fn shape_expression() -> t!(ShapeExpression) {
@@ -225,7 +227,7 @@ fn shape_expression() -> t!(ShapeExpression) {
         conditional_expr,
         func_expr,
         reference_expr.map(ShapeExpression::Reference),
-    ))
+    )).labelled("parser:shape_expression")
 }
 
 fn expressions() -> t!(Vec<ExpressionEnum>) {
@@ -235,6 +237,7 @@ fn expressions() -> t!(Vec<ExpressionEnum>) {
         .or(auto_increment()))
     .repeated()
     .at_least(1)
+    .labelled("parser:expressions")
 }
 
 fn function() -> t!(ExpressionEnum) {
@@ -255,7 +258,7 @@ fn function() -> t!(ExpressionEnum) {
                 uri,
             };
             ExpressionEnum::FunctionExp(function)
-        })
+        }).labelled("parser:function")
 }
 
 fn auto_increment() -> t!(ExpressionEnum) {
@@ -283,7 +286,7 @@ fn auto_increment() -> t!(ExpressionEnum) {
         });
 
     just(ShExMLToken::AutoIncrement)
-        .ignore_then(auto_inc_ident_exp)
+        .ignore_then(auto_inc_ident_exp).labelled("parser:auto_increment")
 }
 
 fn matcher() -> t!(ExpressionEnum) {
@@ -321,7 +324,7 @@ fn matcher() -> t!(ExpressionEnum) {
             };
 
             ExpressionEnum::MatcherExp(matcher)
-        })
+        }).labelled("parser:matcher")
 }
 
 fn exp_ident() -> t!(String) {
@@ -333,6 +336,7 @@ fn exp_ident() -> t!(String) {
                 .at_least(1),
         )
         .map(|strings: Vec<String>| strings.join("."))
+        .labelled("parser:exp_ident")
 }
 
 fn expression_stmt() -> t!(ExpressionEnum) {
@@ -348,6 +352,7 @@ fn expression_stmt() -> t!(ExpressionEnum) {
             };
             ExpressionEnum::ExpressionStmt(stmt)
         })
+    .labelled("parser:expression_stmt")
 }
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
@@ -364,6 +369,7 @@ fn exp_join_union() -> t!(ExpressionStmtEnum) {
         .repeated()
         .then(basic_expression)
         .foldr(|(lhs, op), rhs| op(Box::new(lhs), Box::new(rhs)))
+        .labelled("parser:exp_join_union")
 }
 
 fn exp_string_op() -> t!(ExpressionStmtEnum) {
@@ -377,6 +383,7 @@ fn exp_string_op() -> t!(ExpressionStmtEnum) {
                 right_path,
             }
         })
+    .labelled("parser:exp_string_op")
 }
 
 fn sources() -> t!(Vec<Source>) {
@@ -389,6 +396,7 @@ fn sources() -> t!(Vec<Source>) {
         .map(|(ident, uri)| Source { ident, uri })
         .repeated()
         .at_least(1)
+        .labelled("parser:sources")
 }
 
 fn iterators() -> t!(Vec<Box<Iterator>>) {
@@ -441,6 +449,7 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
     .repeated()
     .at_least(1)
     .flatten()
+    .labelled("parser:iterators")
 }
 
 fn fields(field_type_token: ShExMLToken) -> t!(Field) {
@@ -459,6 +468,7 @@ fn fields(field_type_token: ShExMLToken) -> t!(Field) {
             query,
             field_type,
         })
+    .labelled("parser:field_type")
 }
 
 fn prefixes() -> t!(Vec<Prefix>) {
@@ -478,4 +488,5 @@ fn prefixes() -> t!(Vec<Prefix>) {
         .map(|(prefix, uri)| Prefix { prefix, uri })
         .repeated()
         .at_least(1)
+        .labelled("parser:prefixes")
 }
