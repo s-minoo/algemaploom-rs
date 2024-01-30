@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-#[derive(Debug, Clone, Default)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ShExMLDocument {
     pub prefixes: Vec<Prefix>,
     pub sources: Vec<Source>,
@@ -12,33 +14,33 @@ pub struct ShExMLDocument {
     pub graph_shapes: Vec<GraphShapes>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Prefix {
     pub prefix: String,
     pub uri: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FieldType {
     Normal,
     Push,
     Pop,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Field {
     pub field_type: FieldType,
     pub ident: String,
     pub query: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     pub ident: String,
     pub uri: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Iterator {
     pub ident: String,
     pub query: String,
@@ -47,7 +49,7 @@ pub struct Iterator {
     pub nested_iterator: Option<Box<Iterator>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ExpressionEnum {
     ExpressionStmt(ExpressionStmt),
     MatcherExp(Matcher),
@@ -55,7 +57,7 @@ pub enum ExpressionEnum {
     FunctionExp(Function),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ExpressionStmtEnum {
     ConcatenateString {
         left_path: String,
@@ -69,19 +71,19 @@ pub enum ExpressionStmtEnum {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExpressionStmt {
     pub ident: String,
     pub expr_enum: ExpressionStmtEnum,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Matcher {
     pub ident: String,
     pub rename_map: HashMap<String, HashSet<String>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AutoIncrement {
     pub ident: String,
     pub start: u32,
@@ -91,14 +93,14 @@ pub struct AutoIncrement {
     pub step: Option<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Function {
     pub ident: String,
     pub lang_type: String,
     pub uri: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShapeIdent {
     pub prefix: PrefixNameSpace,
     pub local: String,
@@ -113,26 +115,26 @@ impl ShapeIdent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GraphShapes {
     pub ident: ShapeIdent,
     pub shapes: Vec<Shape>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Shape {
     pub ident: ShapeIdent,
     pub subject: Subject,
     pub pred_obj_pairs: HashMap<Predicate, Object>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShapeReference {
     pub expr_ident: String,
     pub field: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ShapeExpression {
     Reference(ShapeReference),
 
@@ -152,25 +154,25 @@ pub enum ShapeExpression {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Object {
     pub prefix: Option<PrefixNameSpace>,
     pub expression: ShapeExpression,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Predicate {
     pub prefix: PrefixNameSpace,
     pub local: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Subject {
     pub prefix: PrefixNameSpace,
     pub expression: ShapeExpression,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PrefixNameSpace {
     NamedPrefix(String),
     BasePrefix,

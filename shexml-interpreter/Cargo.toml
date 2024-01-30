@@ -5,8 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+
 [dependencies]
 vocab  = {path= "../vocab/"}
 anyhow.workspace = true
 lazy_static.workspace = true
+serde_json.workspace = true
+serde.workspace = true
 chumsky = "0.9.3"

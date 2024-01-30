@@ -694,6 +694,8 @@ dependencies = [
  "anyhow",
  "chumsky",
  "lazy_static",
+ "serde",
+ "serde_json",
  "vocab",
 ]
 
