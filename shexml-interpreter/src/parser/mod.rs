@@ -36,7 +36,7 @@ fn token_string<T: AsRef<str> + Clone>(
     just(tok).map(move |_| target.as_ref().to_string())
 }
 
-fn shexml() -> t!(ShExMLDocument) {
+pub fn shexml() -> t!(ShExMLDocument) {
     prefixes()
         .then(sources())
         .then(iterators())
