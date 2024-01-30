@@ -466,7 +466,7 @@ fn function_test() {
     let function_str = "
         FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
         ";
-    let (tokens_opt, errors) = functions()
+    let (tokens_opt, errors) = function()
         .padded()
         .then_ignore(end())
         .parse_recovery(function_str);
@@ -496,7 +496,7 @@ fn auto_inc_only_start_test() {
      AUTOINCREMENT myId <2>   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -525,7 +525,7 @@ fn auto_inc_end_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 20>   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -556,7 +556,7 @@ fn auto_inc_start_test() {
      AUTOINCREMENT myId <\"my\" + 0 >   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -586,7 +586,7 @@ fn auto_inc_complete_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -620,7 +620,7 @@ fn multiple_matching_matcher_test() {
                 Spain, España, Espagne AS Spain>
         ";
 
-    let (tokens_opt, errors) = matchers()
+    let (tokens_opt, errors) = matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -635,7 +635,7 @@ fn single_matcher_test() {
         MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
         ";
 
-    let (tokens_opt, errors) = matchers()
+    let (tokens_opt, errors) = matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -673,7 +673,7 @@ fn string_op_expression_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) = expressions()
+    let (tokens_opt, errors) = expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -688,7 +688,7 @@ fn join_union_expression_test() {
         EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>
         ";
 
-    let (tokens_opt, errors) = expressions()
+    let (tokens_opt, errors) = expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
