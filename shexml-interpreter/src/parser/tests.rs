@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 
 #[cfg(test)]
 use super::*;
+use std::collections::HashSet;
 use crate::{lexer, parser};
 
 fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(

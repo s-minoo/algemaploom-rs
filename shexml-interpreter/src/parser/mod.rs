@@ -2,7 +2,6 @@ mod tests;
 pub mod r#type;
 use std::collections::HashMap;
 
-use chumsky::chain::Chain;
 use chumsky::prelude::*;
 use chumsky::Parser;
 
@@ -86,15 +85,17 @@ fn shape_ident() -> t!(ShapeIdent) {
         ShExMLToken::ShapeNode{prefix, local} => (prefix, local)
     };
 
-    pn_ln.map(|(prefix, local)| {
-        let prefix = if prefix.is_empty() {
-            PrefixNameSpace::BasePrefix
-        } else {
-            PrefixNameSpace::NamedPrefix(prefix)
-        };
+    pn_ln
+        .map(|(prefix, local)| {
+            let prefix = if prefix.is_empty() {
+                PrefixNameSpace::BasePrefix
+            } else {
+                PrefixNameSpace::NamedPrefix(prefix)
+            };
 
-        ShapeIdent { prefix, local }
-    }).labelled("parser:shape_ident")
+            ShapeIdent { prefix, local }
+        })
+        .labelled("parser:shape_ident")
 }
 
 fn graph_shapes() -> t!(Vec<GraphShapes>) {
@@ -227,7 +228,8 @@ fn shape_expression() -> t!(ShapeExpression) {
         conditional_expr,
         func_expr,
         reference_expr.map(ShapeExpression::Reference),
-    )).labelled("parser:shape_expression")
+    ))
+    .labelled("parser:shape_expression")
 }
 
 fn expressions() -> t!(Vec<ExpressionEnum>) {
@@ -258,7 +260,8 @@ fn function() -> t!(ExpressionEnum) {
                 uri,
             };
             ExpressionEnum::FunctionExp(function)
-        }).labelled("parser:function")
+        })
+        .labelled("parser:function")
 }
 
 fn auto_increment() -> t!(ExpressionEnum) {
@@ -286,7 +289,8 @@ fn auto_increment() -> t!(ExpressionEnum) {
         });
 
     just(ShExMLToken::AutoIncrement)
-        .ignore_then(auto_inc_ident_exp).labelled("parser:auto_increment")
+        .ignore_then(auto_inc_ident_exp)
+        .labelled("parser:auto_increment")
 }
 
 fn matcher() -> t!(ExpressionEnum) {
@@ -324,7 +328,8 @@ fn matcher() -> t!(ExpressionEnum) {
             };
 
             ExpressionEnum::MatcherExp(matcher)
-        }).labelled("parser:matcher")
+        })
+        .labelled("parser:matcher")
 }
 
 fn exp_ident() -> t!(String) {
@@ -352,7 +357,7 @@ fn expression_stmt() -> t!(ExpressionEnum) {
             };
             ExpressionEnum::ExpressionStmt(stmt)
         })
-    .labelled("parser:expression_stmt")
+        .labelled("parser:expression_stmt")
 }
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
@@ -383,7 +388,7 @@ fn exp_string_op() -> t!(ExpressionStmtEnum) {
                 right_path,
             }
         })
-    .labelled("parser:exp_string_op")
+        .labelled("parser:exp_string_op")
 }
 
 fn sources() -> t!(Vec<Source>) {
@@ -400,15 +405,7 @@ fn sources() -> t!(Vec<Source>) {
 }
 
 fn iterators() -> t!(Vec<Box<Iterator>>) {
-    let normal_fields = fields(ShExMLToken::Field);
-    let popped_fields = fields(ShExMLToken::PopField);
-    let pushed_fields = fields(ShExMLToken::PushField);
-
-    let fields = normal_fields
-        .or(popped_fields)
-        .or(pushed_fields)
-        .repeated()
-        .at_least(1);
+    let fields = field().repeated().at_least(1);
 
     recursive(|iter| {
         just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Iterator)
@@ -452,7 +449,7 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
     .labelled("parser:iterators")
 }
 
-fn fields(field_type_token: ShExMLToken) -> t!(Field) {
+fn field() -> t!(Field) {
     let field_type = select! {
         ShExMLToken::PushField => FieldType::Push,
         ShExMLToken::Field => FieldType::Normal,
@@ -468,7 +465,7 @@ fn fields(field_type_token: ShExMLToken) -> t!(Field) {
             query,
             field_type,
         })
-    .labelled("parser:field_type")
+        .labelled("parser:field_type")
 }
 
 fn prefixes() -> t!(Vec<Prefix>) {
