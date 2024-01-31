@@ -7,9 +7,12 @@ edition = "2021"
 
 
 [dependencies]
-vocab  = {path= "../vocab/"}
+vocab = { path = "../vocab/" }
 anyhow.workspace = true
 lazy_static.workspace = true
 serde_json.workspace = true
 serde.workspace = true
+clap.workspace = true
+log4rs.workspace = true
+
 chumsky = "0.9.3"

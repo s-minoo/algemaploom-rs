@@ -693,6 +693,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chumsky",
+ "clap",
  "lazy_static",
  "serde",
  "serde_json",
