@@ -820,12 +820,13 @@ fn function_test() {
         .then_ignore(end())
         .parse_recovery(function_str);
 
+    assert!(errors.is_empty(), "{:?}", errors); 
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
         parser::function().parse_recovery(tokens_opt.unwrap());
 
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors); 
 
     let expected_items = Some(
 
@@ -850,12 +851,14 @@ fn auto_inc_only_start_test() {
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    assert!(errors.is_empty(), "{:?}", errors); 
+
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
         parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors);
 
     let expected_items =
         Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
@@ -880,13 +883,14 @@ fn auto_inc_start_test() {
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
+    assert!(errors.is_empty(), "{:?}", errors); 
 
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
         parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors);
 
     let expected_items =
         Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
@@ -912,6 +916,7 @@ fn auto_inc_test() {
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    assert!(errors.is_empty(), "{:?}", errors); 
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
@@ -943,6 +948,7 @@ fn matcher_multiple_test() {
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
+    assert!(errors.len() == 0, "{:?}", errors); 
     let (parsed_items, errors) =
         parser::matcher().parse_recovery(tokens_opt.unwrap());
 
@@ -985,6 +991,7 @@ fn matcher_single_test() {
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    assert!(errors.len() == 0, "{:?}", errors);
     let (parsed_items, errors) =
         parser::matcher().parse_recovery(tokens_opt.unwrap());
 
@@ -1017,6 +1024,7 @@ fn expression_join_union_test() {
         .then_ignore(end())
         .parse_recovery(exp_str);
 
+    assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
         parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
@@ -1056,6 +1064,7 @@ fn expression_join_test() {
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
+    assert!(errors.len() == 0, "{:?}", errors);
 
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
@@ -1091,6 +1100,7 @@ fn expression_string_op_test() {
         .then_ignore(end())
         .parse_recovery(exp_str);
 
+    assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
         parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
@@ -1128,6 +1138,7 @@ fn iterator_nested_test() {
 
     let (tokens_opt, errors) =
         lexer::iterators().then(end()).parse_recovery(iter_str);
+    assert!(errors.len() == 0, "{:?}", errors);
 
     let inner_fields = vec![
         Field {
