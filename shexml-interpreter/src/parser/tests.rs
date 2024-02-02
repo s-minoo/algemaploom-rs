@@ -1247,11 +1247,11 @@ fn prefix_multiple_test() {
     assert!(error.len() == 0, "{:#?}", error);
     let expected_items = Some(vec![
         Prefix {
-            prefix: "ex".to_string(),
+            prefix: PrefixNameSpace::NamedPrefix("ex".to_string()),
             uri: "https://example.com/".to_string(),
         },
         Prefix {
-            prefix: "ex23".to_string(),
+            prefix: PrefixNameSpace::NamedPrefix("ex23".to_string()),
             uri: "https://example23.com/".to_string(),
         },
     ]);
@@ -1269,7 +1269,7 @@ fn prefix_test() {
 
     assert!(error.len() == 0, "{:#?}", error);
     let expected_items = Some(vec![Prefix {
-        prefix: "ex".to_string(),
+        prefix: PrefixNameSpace::NamedPrefix("ex".to_string()),
         uri: "https://example.com/".to_string(),
     }]);
 

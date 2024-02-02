@@ -1,4 +1,7 @@
-use std::{fmt::Display, io};
+use std::{
+    fmt::{Debug, Display},
+    io,
+};
 
 pub type ShExMLResult<T> = Result<T, ShExMLError>;
 
@@ -8,6 +11,14 @@ pub struct ShExMLError {
     pub msg: String,
     pub err: ShExMLErrorType,
 }
+
+impl Display for ShExMLError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Error Type: {:?}", self.err)?;
+        writeln!(f, "Message: {}", self.msg)
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub enum ShExMLErrorType {
