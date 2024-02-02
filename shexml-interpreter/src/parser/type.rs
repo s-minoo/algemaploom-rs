@@ -60,18 +60,75 @@ pub enum ExpressionEnum {
     FunctionExp(Function),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub enum ExpressionStmtEnum {
+    Join(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
+
+    Union(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
     ConcatenateString {
         left_path: String,
         concate_string: String,
         right_path: String,
     },
-    Join(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
-    Union(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
+
     Basic {
         path: String,
     },
+}
+
+impl Serialize for ExpressionStmtEnum {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            ExpressionStmtEnum::Join(left, right) => {
+                let mut struct_serde =
+                    serializer.serialize_struct("Join", 3)?;
+
+                struct_serde.serialize_field("type", "Join")?;
+                struct_serde.serialize_field("left", left)?;
+                struct_serde.serialize_field("right", right)?;
+
+                struct_serde.end()
+            }
+            ExpressionStmtEnum::Union(left, right) => {
+                let mut struct_serde =
+                    serializer.serialize_struct("Union", 3)?;
+
+                struct_serde.serialize_field("type", "Union")?;
+                struct_serde.serialize_field("left", left)?;
+                struct_serde.serialize_field("right", right)?;
+
+                struct_serde.end()
+            }
+            ExpressionStmtEnum::ConcatenateString {
+                left_path,
+                concate_string,
+                right_path,
+            } => {
+                let mut struct_serde =
+                    serializer.serialize_struct("ConcatenateString", 4)?;
+
+                struct_serde.serialize_field("type", "ConcatenateString")?;
+                struct_serde.serialize_field("left_path", left_path)?;
+                struct_serde
+                    .serialize_field("concate_string", concate_string)?;
+                struct_serde.serialize_field("right_path", right_path)?;
+
+                struct_serde.end()
+            }
+            ExpressionStmtEnum::Basic { path } => {
+                let mut struct_serde =
+                    serializer.serialize_struct("Basic", 2)?;
+
+                struct_serde.serialize_field("type", "Basic")?;
+                struct_serde.serialize_field("path", path)?;
+
+                struct_serde.end()
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -158,7 +215,9 @@ pub struct ShapeReference {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum ShapeExpression {
+    #[serde(serialize_with = "shape_expr_ref_serialize")]
     Reference(ShapeReference),
 
     Matching {
@@ -175,6 +234,19 @@ pub enum ShapeExpression {
         fun_method_ident: ShapeReference,
         params_idents: Vec<ShapeReference>,
     },
+}
+
+fn shape_expr_ref_serialize<S>(
+    shape_ref: &ShapeReference,
+    s: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut struct_serde = s.serialize_struct("Reference", 1)?;
+
+    struct_serde.serialize_field("shape_reference", shape_ref)?;
+    struct_serde.end()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
