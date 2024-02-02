@@ -1,6 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use serde::{ser::SerializeSeq, Deserialize, Serialize, Serializer};
+use serde::{
+    ser::{SerializeSeq, SerializeStruct},
+    Deserialize, Serialize, Serializer,
+};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ShExMLDocument {
@@ -16,7 +19,7 @@ pub struct ShExMLDocument {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Prefix {
-    pub prefix: String,
+    pub prefix: PrefixNameSpace,
     pub uri: String,
 }
 
@@ -125,27 +128,28 @@ pub struct GraphShapes {
 pub struct Shape {
     pub ident: ShapeIdent,
     pub subject: Subject,
-    
-    #[serde(serialize_with="pred_obj_ser")]
+
+    #[serde(serialize_with = "pred_obj_ser")]
     pub pred_obj_pairs: HashMap<Predicate, Object>,
 }
 
+fn pred_obj_ser<S>(
+    pred_obj_pairs: &HashMap<Predicate, Object>,
+    s: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let tuples: Vec<(&Predicate, &Object)> = pred_obj_pairs.iter().collect();
 
-
-fn pred_obj_ser<S>(pred_obj_pairs: &HashMap<Predicate, Object>, s:S) -> Result<S::Ok, S::Error> where 
-S:Serializer {
-    let tuples: Vec<(&Predicate, &Object)> =  pred_obj_pairs.iter().collect(); 
-    
     let mut seq = s.serialize_seq(Some(tuples.len()))?;
 
-    for tup in tuples{
+    for tup in tuples {
         seq.serialize_element(&tup)?;
     }
 
     seq.end()
-    
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShapeReference {
@@ -192,7 +196,19 @@ pub struct Subject {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum PrefixNameSpace {
+    #[serde(serialize_with = "ns_serialize")]
     NamedPrefix(String),
     BasePrefix,
+}
+
+fn ns_serialize<S>(ns: &String, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut serde_struct = s.serialize_struct("NamedPrefix", 1)?;
+
+    serde_struct.serialize_field("namespace", ns)?;
+    serde_struct.end()
 }

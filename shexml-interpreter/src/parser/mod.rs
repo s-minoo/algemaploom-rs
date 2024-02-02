@@ -470,8 +470,8 @@ fn field() -> t!(Field) {
 
 fn prefixes() -> t!(Vec<Prefix>) {
     let prefix_ns = select! {
-        ShExMLToken::PrefixNS(ns) => ns,
-        ShExMLToken::BasePrefix => "".to_string(),
+        ShExMLToken::PrefixNS(ns) => PrefixNameSpace::NamedPrefix(ns),
+        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
 
     };
 
