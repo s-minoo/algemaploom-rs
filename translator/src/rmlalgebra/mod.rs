@@ -6,15 +6,11 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-
-use rml_interpreter::rml_model::term_map::{SubjectMap};
-use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
-use operator::{
-    Extend, Operator, Projection, Source,
-};
+use operator::{Extend, Operator, Projection, Source};
 use plangenerator::error::PlanError;
-use plangenerator::plan::{join, Init, Plan, Processed, RcRefCellPlan};
-
+use plangenerator::plan::{join, Plan, Processed, RcRefCellPlan};
+use rml_interpreter::rml_model::term_map::SubjectMap;
+use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 
 use self::operators::extend::*;
 use self::operators::fragment::FragmentTranslator;
@@ -28,6 +24,96 @@ use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_quads_from_doc, generate_variable_map,
 };
+use crate::Translator;
+
+pub struct RMLDocumentTranslator;
+
+impl Translator<Document> for RMLDocumentTranslator {
+    fn translate_to_plan(doc: Document) -> crate::TranslateResult {
+        let mut plan = Plan::<()>::new();
+
+        let tm_projected_pairs_res: Result<Vec<_>, PlanError> = doc
+            .triples_maps
+            .iter()
+            .map(|tm| {
+                let source_op = translate_source_op(&tm);
+                let projection_op = translate_projection_op(&tm);
+                let result = (
+                    tm,
+                    Rc::new(RefCell::new(
+                        plan.source(source_op)
+                            .apply(&projection_op, "Projection")?,
+                    )),
+                );
+
+                Ok(result)
+            })
+            .collect();
+
+        // Search dictionaries instantiations
+        let variable_map = generate_variable_map(&doc);
+        let target_map = generate_logtarget_map(&doc);
+        let lt_id_tm_group_map = generate_lt_quads_from_doc(&doc);
+        let tm_projected_pairs = tm_projected_pairs_res?;
+        let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
+            .clone()
+            .into_iter()
+            .map(|(tm, rccellplan)| (tm.identifier.clone(), (tm, rccellplan)))
+            .collect();
+
+        let search_map = SearchMap {
+            tm_rccellplan_map,
+            variable_map,
+            target_map,
+            lt_id_tm_group_map,
+        };
+        // Finish search dictionaries instantiations
+
+        let (ptm_tm_plan_pairs, noptm_tm_plan_pairs): (Vec<_>, Vec<_>) =
+            tm_projected_pairs
+                .into_iter()
+                .partition(|(tm, _)| tm.contains_ptm());
+
+        ptm_tm_plan_pairs.iter().try_for_each(|(tm, plan)| {
+            let sm_ref = &tm.subject_map;
+            let poms = tm.po_maps.clone();
+
+            let (joined_poms, no_join_poms): (Vec<_>, Vec<_>) =
+                partition_pom_join_nonjoin(poms);
+
+            if !joined_poms.is_empty() {
+                add_join_related_ops(
+                    tm,
+                    &joined_poms,
+                    sm_ref,
+                    &search_map,
+                    plan,
+                )?;
+            }
+
+            if !no_join_poms.is_empty() {
+                add_non_join_related_ops(
+                    &no_join_poms,
+                    sm_ref,
+                    &search_map,
+                    plan,
+                )?;
+            }
+            Ok::<(), PlanError>(())
+        })?;
+
+        noptm_tm_plan_pairs.iter().try_for_each(|(tm, plan)| {
+            let sm_ref = &tm.subject_map;
+            let poms = tm.po_maps.clone();
+
+            add_non_join_related_ops(&poms, sm_ref, &search_map, plan)?;
+
+            Ok::<(), PlanError>(())
+        })?;
+
+        Ok(plan)
+    }
+}
 
 fn partition_pom_join_nonjoin(
     poms: Vec<PredicateObjectMap>,
@@ -54,80 +140,6 @@ fn partition_pom_join_nonjoin(
     }
 
     (ptm_poms, no_ptm_poms)
-}
-
-pub fn translate_to_algebra(doc: Document) -> Result<Plan<Init>, PlanError> {
-    let mut plan = Plan::<()>::new();
-
-    let tm_projected_pairs_res: Result<Vec<_>, PlanError> = doc
-        .triples_maps
-        .iter()
-        .map(|tm| {
-            let source_op = translate_source_op(&tm);
-            let projection_op = translate_projection_op(&tm);
-            let result = (
-                tm,
-                Rc::new(RefCell::new(
-                    plan.source(source_op)
-                        .apply(&projection_op, "Projection")?,
-                )),
-            );
-
-            Ok(result)
-        })
-        .collect();
-
-    // Search dictionaries instantiations
-    let variable_map = generate_variable_map(&doc);
-    let target_map = generate_logtarget_map(&doc);
-    let lt_id_tm_group_map = generate_lt_quads_from_doc(&doc);
-    let tm_projected_pairs = tm_projected_pairs_res?;
-    let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
-        .clone()
-        .into_iter()
-        .map(|(tm, rccellplan)| (tm.identifier.clone(), (tm, rccellplan)))
-        .collect();
-
-    let search_map = SearchMap {
-        tm_rccellplan_map,
-        variable_map,
-        target_map,
-        lt_id_tm_group_map,
-    };
-    // Finish search dictionaries instantiations
-
-    let (ptm_tm_plan_pairs, noptm_tm_plan_pairs): (Vec<_>, Vec<_>) =
-        tm_projected_pairs
-            .into_iter()
-            .partition(|(tm, _)| tm.contains_ptm());
-
-    ptm_tm_plan_pairs.iter().try_for_each(|(tm, plan)| {
-        let sm_ref = &tm.subject_map;
-        let poms = tm.po_maps.clone();
-
-        let (joined_poms, no_join_poms): (Vec<_>, Vec<_>) =
-            partition_pom_join_nonjoin(poms);
-
-        if !joined_poms.is_empty() {
-            add_join_related_ops(tm, &joined_poms, sm_ref, &search_map, plan)?;
-        }
-
-        if !no_join_poms.is_empty() {
-            add_non_join_related_ops(&no_join_poms, sm_ref, &search_map, plan)?;
-        }
-        Ok::<(), PlanError>(())
-    })?;
-
-    noptm_tm_plan_pairs.iter().try_for_each(|(tm, plan)| {
-        let sm_ref = &tm.subject_map;
-        let poms = tm.po_maps.clone();
-
-        add_non_join_related_ops(&poms, sm_ref, &search_map, plan)?;
-
-        Ok::<(), PlanError>(())
-    })?;
-
-    Ok(plan)
 }
 
 fn add_non_join_related_ops(
@@ -259,8 +271,8 @@ fn add_join_related_ops(
 
             let pom_with_joined_ptm = vec![PredicateObjectMap {
                 predicate_maps: pms.clone(),
-                object_maps:    [om.clone()].to_vec(),
-                graph_maps:     pom.graph_maps.clone(),
+                object_maps: [om.clone()].to_vec(),
+                graph_maps: pom.graph_maps.clone(),
             }];
 
             let mut extend_pairs =
