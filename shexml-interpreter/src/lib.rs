@@ -2,15 +2,14 @@ pub mod errors;
 mod lexer;
 mod parser;
 
+pub use parser::r#type::ShExMLDocument;
+
 use std::{fs::File, io::Read, path::Path};
 
-use chumsky::{chain::Chain, Parser};
+use chumsky::Parser;
 use errors::ShExMLResult;
 
-use crate::{
-    errors::{ShExMLError, ShExMLErrorType},
-    parser::r#type::ShExMLDocument,
-};
+use crate::errors::{ShExMLError, ShExMLErrorType};
 
 pub fn parse_file<P: AsRef<Path>>(
     file_path: P,

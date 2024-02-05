@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use colored::Colorize;
 use plangenerator::error::PlanError;
 use rml_interpreter::extractors::io::parse_file;
-use translator::{rmlalgebra::RMLDocumentTranslator, Translator};
+use translator::{rmlalgebra::RMLDocumentTranslator, LanguageTranslator};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_rml_file(entry: &DirEntry) -> bool {

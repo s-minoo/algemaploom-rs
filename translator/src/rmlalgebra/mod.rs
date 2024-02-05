@@ -15,7 +15,7 @@ use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use self::operators::extend::*;
 use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
-use self::operators::RMLTranslator;
+use crate::OperatorTranslator;
 
 use self::util::{
     extract_gm_tm_infos, extract_tm_infos_from_poms, generate_lt_quads_from_spo,
@@ -24,12 +24,12 @@ use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_quads_from_doc, generate_variable_map,
 };
-use crate::Translator;
+use crate::LanguageTranslator;
 
 pub struct RMLDocumentTranslator;
 
-impl Translator<Document> for RMLDocumentTranslator {
-    fn translate_to_plan(doc: Document) -> crate::TranslateResult {
+impl LanguageTranslator<Document> for RMLDocumentTranslator {
+    fn translate_to_plan(doc: Document) -> crate::LanguageTranslateResult {
         let mut plan = Plan::<()>::new();
 
         let tm_projected_pairs_res: Result<Vec<_>, PlanError> = doc
@@ -463,7 +463,7 @@ mod tests {
     #[test]
     fn test_operator_translation() -> ExtractorResult<()> {
         let document = parse_file(test_case!("sample_mapping.ttl").into())?;
-        let operators = translate_to_algebra(document);
+        let operators = RMLDocumentTranslator::translate_to_plan(document);
 
         let _output = File::create("op_trans_output.json")?;
         println!("{:#?}", operators);
@@ -473,7 +473,7 @@ mod tests {
     #[test]
     fn test_operator_translation_complex() -> ExtractorResult<()> {
         let document = parse_file(test_case!("multiple_tm.ttl").into())?;
-        let operators = translate_to_algebra(document);
+        let operators = RMLDocumentTranslator::translate_to_plan(document);
 
         let _output = File::create("op_trans_complex_output.json")?;
         println!("{:#?}", operators);
