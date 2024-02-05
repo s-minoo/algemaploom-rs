@@ -2,7 +2,7 @@ pub mod errors;
 mod lexer;
 mod parser;
 
-pub use parser::r#type::ShExMLDocument;
+pub use parser::r#type::*;
 
 use std::{fs::File, io::Read, path::Path};
 
