@@ -447,9 +447,13 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
 pub fn sources() -> t!(Vec<ShExMLToken>) {
     let source_tag = token("SOURCE", ShExMLToken::Source);
     let source_name = ident().padded();
-    let source_iri = token("<", ShExMLToken::AngleStart)
-        .chain(protocol_iri_ref().or(path().map(|st| ShExMLToken::URI(st))))
-        .chain(token(">", ShExMLToken::AngleEnd));
+
+    let source_iri =
+        token("<", ShExMLToken::AngleStart)
+            .chain(protocol_iri_tokenize().or(
+                path().map(|c| vec![ShExMLToken::File, ShExMLToken::URI(c)]),
+            ))
+            .chain(token(">", ShExMLToken::AngleEnd));
     source_tag
         .chain(source_name)
         .chain(source_iri)
@@ -537,22 +541,26 @@ fn protocol_iri_tokenize() -> t!(Vec<ShExMLToken>) {
         } else {
             let mut result = Vec::new();
             let mut iter = vec_string.into_iter();
+            let mut uri_string = String::new();
 
             while let Some(iri_part) = iter.next() {
+                uri_string += &iri_part;
                 let token = match iri_part.as_str() {
                     "http:" => ShExMLToken::HTTP,
                     "https:" => ShExMLToken::HTTPS,
                     "file:" => ShExMLToken::File,
                     "jdbc:" => {
                         let jdbc_type = iter.next().unwrap();
+                        uri_string += &jdbc_type;
                         ShExMLToken::JDBC(jdbc_type)
                     }
-                    "//" => continue,
-                    uri => ShExMLToken::URI(uri.to_string()),
+                    _ => continue,
                 };
 
                 result.push(token)
             }
+
+            result.push(ShExMLToken::URI(uri_string));
 
             result
         }
