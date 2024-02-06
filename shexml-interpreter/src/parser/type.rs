@@ -38,8 +38,17 @@ pub struct Field {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SourceType {
+    File,
+    JDBC(String),
+    HTTP,
+    HTTPS,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     pub ident: String,
+    pub source_type: SourceType,
     pub uri: String,
 }
 

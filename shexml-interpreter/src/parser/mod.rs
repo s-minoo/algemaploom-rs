@@ -392,13 +392,25 @@ fn exp_string_op() -> t!(ExpressionStmtEnum) {
 }
 
 fn sources() -> t!(Vec<Source>) {
+
+    let protocol = select! {
+        ShExMLToken::File => SourceType::File, 
+        ShExMLToken::HTTP => SourceType::HTTP,
+        ShExMLToken::HTTPS => SourceType::HTTPS,
+        ShExMLToken::JDBC(jdbc_type) => SourceType::JDBC(jdbc_type),
+    };
+
+
+    let protocol_uri = protocol.then(unfold_token_value!(URI));
+
+
     just(ShExMLToken::Source)
         .ignore_then(unfold_token_value!(Ident))
-        .then(unfold_token_value!(URI).delimited_by(
+        .then(protocol_uri.delimited_by(
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),
         ))
-        .map(|(ident, uri)| Source { ident, uri })
+        .map(|(ident, (source_type, uri))| Source { ident, uri, source_type  })
         .repeated()
         .at_least(1)
         .labelled("parser:sources")
