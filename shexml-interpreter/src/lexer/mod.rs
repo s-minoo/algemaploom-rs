@@ -1,5 +1,5 @@
 mod tests;
-pub mod token; 
+pub mod token;
 
 use chumsky::chain::Chain;
 use chumsky::prelude::*;
@@ -517,6 +517,46 @@ pub fn path() -> t!(String) {
         .repeated()
         .at_least(1)
         .map(|e| e.into_iter().collect())
+}
+
+fn protocol_iri_ref_new() -> t!(Vec<String>) {
+    protocol()
+        .repeated()
+        .at_most(2)
+        .chain::<String, _, _>(just("//").map(|c| c.to_string()))
+        .chain(path())
+}
+
+fn protocol_iri_tokenize() -> t!(Vec<ShExMLToken>) {
+    protocol_iri_ref_new().map(|vec_string| {
+        if vec_string.len() == 1 {
+            vec_string
+                .into_iter()
+                .map(|path| ShExMLToken::URI(path))
+                .collect()
+        } else {
+            let mut result = Vec::new();
+            let mut iter = vec_string.into_iter();
+
+            while let Some(iri_part) = iter.next() {
+                let token = match iri_part.as_str() {
+                    "http:" => ShExMLToken::HTTP,
+                    "https:" => ShExMLToken::HTTPS,
+                    "file:" => ShExMLToken::File,
+                    "jdbc:" => {
+                        let jdbc_type = iter.next().unwrap();
+                        ShExMLToken::JDBC(jdbc_type)
+                    }
+                    "//" => continue,
+                    uri => ShExMLToken::URI(uri.to_string()),
+                };
+
+                result.push(token)
+            }
+
+            result
+        }
+    })
 }
 
 pub fn protocol_iri_ref() -> t!(ShExMLToken) {
