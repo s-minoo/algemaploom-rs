@@ -1,16 +1,15 @@
 use std::collections::HashMap;
 
-use operator::{Fragmenter};
+use operator::Fragmenter;
 
-use super::RMLTranslator;
-use crate::rmlalgebra::types::{Quads};
+use crate::{rmlalgebra::types::Quads, OperatorTranslator};
 #[derive(Debug, Clone)]
 pub struct FragmentTranslator<'a> {
     pub lt_quads_map: &'a HashMap<String, Vec<Quads<'a>>>,
 }
 
-impl<'a> RMLTranslator<Option<Fragmenter>> for FragmentTranslator<'a> {
-    fn translate(self) -> Option<Fragmenter> {
+impl<'a> OperatorTranslator<Option<Fragmenter>> for FragmentTranslator<'a> {
+    fn translate(&self) -> Option<Fragmenter> {
         translate_fragment_op_from_lts(self.lt_quads_map)
     }
 }

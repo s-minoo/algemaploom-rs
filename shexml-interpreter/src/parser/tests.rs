@@ -1,12 +1,11 @@
-use std::collections::HashSet;
-
 #[cfg(test)]
 use super::*;
 use crate::{lexer, parser};
+use std::collections::HashSet;
 
 fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
-    parsed_items: Option<Vec<T>>,
-    expected_items: Option<Vec<T>>,
+    parsed_items: Option<T>,
+    expected_items: Option<T>,
 ) {
     assert!(
         parsed_items == expected_items,
@@ -16,6 +15,438 @@ fn assert_parse_expected<T: std::fmt::Debug + PartialEq + Eq>(
         parsed_items,
         expected_items
     );
+}
+
+#[test]
+fn shexml_simple_test() {
+    let document_str = "
+PREFIX : <http://example.com/>
+SOURCE films_xml_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.xml>
+SOURCE films_json_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.json>
+ITERATOR film_xml <xpath: //film> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year [films.year] ;
+    :country [films.country] ;
+    :director [films.directors] ;
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shexml().parse_recovery(document_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shexml().parse_recovery_verbose(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(parsed_items.is_some(), "{:?}", parsed_items);
+}
+
+#[test]
+fn multiple_graph_test() {
+    let mutli_graph_str = " 
+:BaseGraph [[ 
+    :Films :[films.id IF helper.isBefore2010(films.year)] {
+        :name [films.name] ;
+        :countryOfOrigin [films.country IF helper.outsideUSA(films.country)] ;
+    }
+
+]]
+
+:AnotherGraph [[ 
+    :Films2 :[films.id IF helper.isBefore2010(films.year)] {
+        :year :[films.year] ;
+    }
+]]
+        ";
+
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(mutli_graph_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::graph_shapes().parse_recovery(tokens_opt.unwrap());
+
+    let subject = Subject {
+        prefix: PrefixNameSpace::BasePrefix,
+        expression: ShapeExpression::Conditional {
+            reference: ShapeReference {
+                expr_ident: "films".to_string(),
+                field: Some("id".to_string()),
+            },
+            conditional_expr: Box::new(ShapeExpression::Function {
+                fun_method_ident: ShapeReference {
+                    expr_ident: "helper".to_string(),
+                    field: Some("isBefore2010".to_string()),
+                },
+                params_idents: vec![ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("year".to_string()),
+                }],
+            }),
+        },
+    };
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "countryOfOrigin".to_string(),
+            },
+            Object {
+                prefix: None,
+                expression: ShapeExpression::Conditional {
+                    reference: ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field: Some("country".to_string()),
+                    },
+                    conditional_expr: Box::new(ShapeExpression::Function {
+                        fun_method_ident: ShapeReference {
+                            expr_ident: "helper".to_string(),
+                            field: Some("outsideUSA".to_string()),
+                        },
+                        params_idents: vec![ShapeReference {
+                            expr_ident: "films".to_string(),
+                            field: Some("country".to_string()),
+                        }],
+                    }),
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "name".to_string(),
+            },
+            Object {
+                prefix: None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("name".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let subject_2 = subject.clone();
+    let pred_obj_pairs_2 = vec![(
+        Predicate {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "year".to_string(),
+        },
+        Object {
+            prefix: Some(PrefixNameSpace::BasePrefix),
+            expression: ShapeExpression::Reference(ShapeReference {
+                expr_ident: "films".to_string(),
+                field: Some("year".to_string()),
+            }),
+        },
+    )];
+
+    let shape = Shape {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
+        subject,
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    };
+
+    let shape_2 = Shape {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films2".to_string(),
+        },
+
+        subject: subject_2,
+        pred_obj_pairs: pred_obj_pairs_2.into_iter().collect(),
+    };
+
+    let expected_items = Some(vec![
+        GraphShapes {
+            ident: ShapeIdent {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "BaseGraph".to_string(),
+            },
+            shapes: vec![shape],
+        },
+        GraphShapes {
+            ident: ShapeIdent {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "AnotherGraph".to_string(),
+            },
+            shapes: vec![shape_2],
+        },
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    assert_parse_expected(parsed_items, expected_items);
+}
+
+#[test]
+fn graph_multiple_shapes_test() {
+    let graph_shape_str = "  
+:BaseGraph [[ 
+    :Films :[films.id IF helper.isBefore2010(films.year)] {
+        :name [films.name] ;
+        :countryOfOrigin [films.country IF helper.outsideUSA(films.country)] ;
+    }
+
+    :Films2 :[films.id IF helper.isBefore2010(films.year)] {
+        :year :[films.year] ;
+    }
+]]
+        ";
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(graph_shape_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::graph_shapes().parse_recovery(tokens_opt.unwrap());
+
+    let subject = Subject {
+        prefix: PrefixNameSpace::BasePrefix,
+        expression: ShapeExpression::Conditional {
+            reference: ShapeReference {
+                expr_ident: "films".to_string(),
+                field: Some("id".to_string()),
+            },
+            conditional_expr: Box::new(ShapeExpression::Function {
+                fun_method_ident: ShapeReference {
+                    expr_ident: "helper".to_string(),
+                    field: Some("isBefore2010".to_string()),
+                },
+                params_idents: vec![ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("year".to_string()),
+                }],
+            }),
+        },
+    };
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "countryOfOrigin".to_string(),
+            },
+            Object {
+                prefix: None,
+                expression: ShapeExpression::Conditional {
+                    reference: ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field: Some("country".to_string()),
+                    },
+                    conditional_expr: Box::new(ShapeExpression::Function {
+                        fun_method_ident: ShapeReference {
+                            expr_ident: "helper".to_string(),
+                            field: Some("outsideUSA".to_string()),
+                        },
+                        params_idents: vec![ShapeReference {
+                            expr_ident: "films".to_string(),
+                            field: Some("country".to_string()),
+                        }],
+                    }),
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "name".to_string(),
+            },
+            Object {
+                prefix: None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("name".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let subject_2 = subject.clone();
+    let pred_obj_pairs_2 = vec![(
+        Predicate {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "year".to_string(),
+        },
+        Object {
+            prefix: Some(PrefixNameSpace::BasePrefix),
+            expression: ShapeExpression::Reference(ShapeReference {
+                expr_ident: "films".to_string(),
+                field: Some("year".to_string()),
+            }),
+        },
+    )];
+
+    let shape = Shape {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
+        subject,
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    };
+
+    let shape_2 = Shape {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films2".to_string(),
+        },
+        subject: subject_2,
+        pred_obj_pairs: pred_obj_pairs_2.into_iter().collect(),
+    };
+
+    let expected_items = Some(vec![GraphShapes {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "BaseGraph".to_string(),
+        },
+        shapes: vec![shape, shape_2],
+    }]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    assert_parse_expected(parsed_items, expected_items);
+}
+
+#[test]
+fn graph_shape_test() {
+    let graph_shape_str = "  
+:BaseGraph [[ 
+    :Films :[films.id IF helper.isBefore2010(films.year)] {
+        :name [films.name] ;
+        :year :[films.year] ;
+        :countryOfOrigin [films.country IF helper.outsideUSA(films.country)] ;
+    }
+]]
+        ";
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(graph_shape_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::graph_shapes().parse_recovery(tokens_opt.unwrap());
+
+    let subject = Subject {
+        prefix: PrefixNameSpace::BasePrefix,
+        expression: ShapeExpression::Conditional {
+            reference: ShapeReference {
+                expr_ident: "films".to_string(),
+                field: Some("id".to_string()),
+            },
+            conditional_expr: Box::new(ShapeExpression::Function {
+                fun_method_ident: ShapeReference {
+                    expr_ident: "helper".to_string(),
+                    field: Some("isBefore2010".to_string()),
+                },
+                params_idents: vec![ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("year".to_string()),
+                }],
+            }),
+        },
+    };
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "countryOfOrigin".to_string(),
+            },
+            Object {
+                prefix: None,
+                expression: ShapeExpression::Conditional {
+                    reference: ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field: Some("country".to_string()),
+                    },
+                    conditional_expr: Box::new(ShapeExpression::Function {
+                        fun_method_ident: ShapeReference {
+                            expr_ident: "helper".to_string(),
+                            field: Some("outsideUSA".to_string()),
+                        },
+                        params_idents: vec![ShapeReference {
+                            expr_ident: "films".to_string(),
+                            field: Some("country".to_string()),
+                        }],
+                    }),
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "name".to_string(),
+            },
+            Object {
+                prefix: None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("name".to_string()),
+                }),
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local: "year".to_string(),
+            },
+            Object {
+                prefix: Some(PrefixNameSpace::BasePrefix),
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field: Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let shape = Shape {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
+        subject,
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    };
+
+    let expected_items = Some(vec![GraphShapes {
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "BaseGraph".to_string(),
+        },
+        shapes: vec![shape],
+    }]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    assert_parse_expected(parsed_items, expected_items);
 }
 
 #[test]
@@ -42,20 +473,20 @@ fn shape_condition_if_test() {
     assert!(errors.len() == 0, "{:?}", errors);
 
     let subject = Subject {
-        prefix:     PrefixNameSpace::BasePrefix,
+        prefix: PrefixNameSpace::BasePrefix,
         expression: ShapeExpression::Conditional {
-            reference:        ShapeReference {
+            reference: ShapeReference {
                 expr_ident: "films".to_string(),
-                field:      Some("id".to_string()),
+                field: Some("id".to_string()),
             },
             conditional_expr: Box::new(ShapeExpression::Function {
                 fun_method_ident: ShapeReference {
                     expr_ident: "helper".to_string(),
-                    field:      Some("isBefore2010".to_string()),
+                    field: Some("isBefore2010".to_string()),
                 },
-                params_idents:    vec![ShapeReference {
+                params_idents: vec![ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("year".to_string()),
+                    field: Some("year".to_string()),
                 }],
             }),
         },
@@ -65,23 +496,23 @@ fn shape_condition_if_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "countryOfOrigin".to_string(),
+                local: "countryOfOrigin".to_string(),
             },
             Object {
-                prefix:     None,
+                prefix: None,
                 expression: ShapeExpression::Conditional {
-                    reference:        ShapeReference {
+                    reference: ShapeReference {
                         expr_ident: "films".to_string(),
-                        field:      Some("country".to_string()),
+                        field: Some("country".to_string()),
                     },
                     conditional_expr: Box::new(ShapeExpression::Function {
                         fun_method_ident: ShapeReference {
                             expr_ident: "helper".to_string(),
-                            field:      Some("outsideUSA".to_string()),
+                            field: Some("outsideUSA".to_string()),
                         },
-                        params_idents:    vec![ShapeReference {
+                        params_idents: vec![ShapeReference {
                             expr_ident: "films".to_string(),
-                            field:      Some("country".to_string()),
+                            field: Some("country".to_string()),
                         }],
                     }),
                 },
@@ -90,33 +521,36 @@ fn shape_condition_if_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
-                prefix:     None,
+                prefix: None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("name".to_string()),
+                    field: Some("name".to_string()),
                 }),
             },
         ),
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
-                prefix:     Some(PrefixNameSpace::BasePrefix),
+                prefix: Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("year".to_string()),
+                    field: Some("year".to_string()),
                 }),
             },
         ),
     ];
 
     let expected_items = Some(vec![Shape {
-        ident: "Films".to_string(),
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
         subject,
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
     }]);
@@ -152,20 +586,18 @@ fn shape_function_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "bigName".to_string(),
+                local: "bigName".to_string(),
             },
             Object {
-                prefix:     Some(PrefixNameSpace::NamedPrefix(
-                    "dbr".to_string(),
-                )),
+                prefix: Some(PrefixNameSpace::NamedPrefix("dbr".to_string())),
                 expression: ShapeExpression::Function {
                     fun_method_ident: ShapeReference {
                         expr_ident: "helper".to_string(),
-                        field:      Some("allCapitals".to_string()),
+                        field: Some("allCapitals".to_string()),
                     },
-                    params_idents:    vec![ShapeReference {
+                    params_idents: vec![ShapeReference {
                         expr_ident: "films".to_string(),
-                        field:      Some("name".to_string()),
+                        field: Some("name".to_string()),
                     }],
                 },
             },
@@ -173,38 +605,41 @@ fn shape_function_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
-                prefix:     None,
+                prefix: None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("name".to_string()),
+                    field: Some("name".to_string()),
                 }),
             },
         ),
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
-                prefix:     Some(PrefixNameSpace::BasePrefix),
+                prefix: Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("year".to_string()),
+                    field: Some("year".to_string()),
                 }),
             },
         ),
     ];
 
     let expected_items = Some(vec![Shape {
-        ident:          "Films".to_string(),
-        subject:        Subject {
-            prefix:     PrefixNameSpace::BasePrefix,
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
+        subject: Subject {
+            prefix: PrefixNameSpace::BasePrefix,
             expression: ShapeExpression::Reference(ShapeReference {
                 expr_ident: "films".to_string(),
-                field:      Some("id".to_string()),
+                field: Some("id".to_string()),
             }),
         },
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
@@ -240,38 +675,41 @@ fn shape_simple_test() {
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "name".to_string(),
+                local: "name".to_string(),
             },
             Object {
-                prefix:     None,
+                prefix: None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("name".to_string()),
+                    field: Some("name".to_string()),
                 }),
             },
         ),
         (
             Predicate {
                 prefix: PrefixNameSpace::BasePrefix,
-                name:   "year".to_string(),
+                local: "year".to_string(),
             },
             Object {
-                prefix:     Some(PrefixNameSpace::BasePrefix),
+                prefix: Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
-                    field:      Some("year".to_string()),
+                    field: Some("year".to_string()),
                 }),
             },
         ),
     ];
 
     let expected_items = Some(vec![Shape {
-        ident:          "Films".to_string(),
-        subject:        Subject {
-            prefix:     PrefixNameSpace::BasePrefix,
+        ident: ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local: "Films".to_string(),
+        },
+        subject: Subject {
+            prefix: PrefixNameSpace::BasePrefix,
             expression: ShapeExpression::Reference(ShapeReference {
                 expr_ident: "films".to_string(),
-                field:      Some("id".to_string()),
+                field: Some("id".to_string()),
             }),
         },
         pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
@@ -281,27 +719,122 @@ fn shape_simple_test() {
 }
 
 #[test]
+fn expressions_test() {
+    let expressions_str = " 
+        MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
+
+        AUTOINCREMENT myId <2>   
+
+        FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
+
+        EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
+        ";
+
+    let expressions_lexer = lexer::expressions();
+
+    let (tokens_opt, errors) = expressions_lexer
+        .then_ignore(end())
+        .parse_recovery(expressions_str);
+    println!("{:?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (expressions, errors) =
+        parser::expressions().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    let union_exp = Box::new(ExpressionStmtEnum::Union(
+        Box::new(ExpressionStmtEnum::Basic {
+            path: "file.it2.name".to_string(),
+        }),
+        Box::new(ExpressionStmtEnum::Basic {
+            path: "file.it3.name".to_string(),
+        }),
+    ));
+    let expr_enum = ExpressionStmtEnum::Join(
+        Box::new(ExpressionStmtEnum::Basic {
+            path: "file.it1.name".to_string(),
+        }),
+        union_exp,
+    );
+
+    let expected_stmt = ExpressionStmt {
+        ident: "exp".to_string(),
+        expr_enum,
+    };
+
+    let values_set = HashSet::from_iter(vec![
+        "Principality of Asturias".to_string(),
+        "Principado de Asturias".to_string(),
+        "Principáu d'Asturies".to_string(),
+        "Asturies".to_string(),
+    ]);
+
+    let expected_matcher = Matcher {
+        ident: "ast".to_string(),
+        rename_map: vec![("Asturias".to_string(), values_set)]
+            .into_iter()
+            .collect(),
+    };
+
+    let expected_function = Function {
+        ident:     "helper".to_string(),
+        lang_type: "scala:".to_string(),
+        uri:       "https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string(),
+    };
+
+    let expected_autoinc = AutoIncrement {
+        ident: "myId".to_string(),
+        start: 2,
+        prefix: None,
+        suffix: None,
+        end: None,
+        step: None,
+    };
+
+    for exp in expressions.unwrap() {
+        match exp {
+            ExpressionEnum::ExpressionStmt(stmt) => {
+                assert!(stmt == expected_stmt, "{:?}", stmt)
+            }
+            ExpressionEnum::MatcherExp(matcher) => {
+                assert!(matcher == expected_matcher, "{:?}", matcher)
+            }
+            ExpressionEnum::AutoIncrementExp(autoinc) => {
+                assert!(autoinc == expected_autoinc, "{:?}", autoinc)
+            }
+            ExpressionEnum::FunctionExp(function) => {
+                assert!(function == expected_function, "{:?}", function)
+            }
+        }
+    }
+}
+
+#[test]
 fn function_test() {
     let function_str = "
         FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
         ";
-    let (tokens_opt, errors) = lexer::functions()
+    let (tokens_opt, errors) = lexer::function()
         .padded()
         .then_ignore(end())
         .parse_recovery(function_str);
 
+    assert!(errors.is_empty(), "{:?}", errors);
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::functions().parse_recovery(tokens_opt.unwrap());
+        parser::function().parse_recovery(tokens_opt.unwrap());
 
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors);
 
-    let expected_items = Some(vec![Function {
+    let expected_items = Some(
+
+                              ExpressionEnum::FunctionExp(
+                              Function {
         ident:     "helper".to_string(),
         lang_type: "scala:".to_string(),
         uri:       "https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala".to_string(),
-    }]);
+    }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -312,26 +845,29 @@ fn auto_inc_only_start_test() {
      AUTOINCREMENT myId <2>   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrements()
+    let (tokens_opt, errors) = lexer::autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    assert!(errors.is_empty(), "{:?}", errors);
+
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+        parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors);
 
-    let expected_items = Some(vec![AutoIncrement {
-        ident:  "myId".to_string(),
-        start:  2,
-        prefix: None,
-        suffix: None,
-        end:    None,
-        step:   None,
-    }]);
+    let expected_items =
+        Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
+            ident: "myId".to_string(),
+            start: 2,
+            prefix: None,
+            suffix: None,
+            end: None,
+            step: None,
+        }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -342,26 +878,28 @@ fn auto_inc_start_test() {
      AUTOINCREMENT myId <\"my\" + 0 >   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrements()
+    let (tokens_opt, errors) = lexer::autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
+    assert!(errors.is_empty(), "{:?}", errors);
 
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+        parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors);
 
-    let expected_items = Some(vec![AutoIncrement {
-        ident:  "myId".to_string(),
-        start:  0,
-        prefix: Some("my".to_string()),
-        suffix: None,
-        end:    None,
-        step:   None,
-    }]);
+    let expected_items =
+        Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
+            ident: "myId".to_string(),
+            start: 0,
+            prefix: Some("my".to_string()),
+            suffix: None,
+            end: None,
+            step: None,
+        }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -372,26 +910,28 @@ fn auto_inc_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrements()
+    let (tokens_opt, errors) = lexer::autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    assert!(errors.is_empty(), "{:?}", errors);
     println!("{:?}", tokens_opt);
 
     let (parsed_items, errors) =
-        parser::auto_increments().parse_recovery(tokens_opt.unwrap());
+        parser::auto_increment().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expected_items = Some(vec![AutoIncrement {
-        ident:  "myId".to_string(),
-        start:  0,
-        prefix: Some("my".to_string()),
-        suffix: Some("Id".to_string()),
-        end:    Some(10),
-        step:   Some(2),
-    }]);
+    let expected_items =
+        Some(ExpressionEnum::AutoIncrementExp(AutoIncrement {
+            ident: "myId".to_string(),
+            start: 0,
+            prefix: Some("my".to_string()),
+            suffix: Some("Id".to_string()),
+            end: Some(10),
+            step: Some(2),
+        }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -403,12 +943,13 @@ fn matcher_multiple_test() {
                 Spain, España, Espagne AS Spain>
         ";
 
-    let (tokens_opt, errors) = lexer::matchers()
+    let (tokens_opt, errors) = lexer::matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
+    assert!(errors.len() == 0, "{:?}", errors);
     let (parsed_items, errors) =
-        parser::matchers().parse_recovery(tokens_opt.unwrap());
+        parser::matcher().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
@@ -425,15 +966,15 @@ fn matcher_multiple_test() {
         "España".to_string(),
     ]);
 
-    let expected_items = Some(vec![Matcher {
-        ident:      "regions".to_string(),
+    let expected_items = Some(ExpressionEnum::MatcherExp(Matcher {
+        ident: "regions".to_string(),
         rename_map: vec![
             ("Asturias".to_string(), asturias_set),
             ("Spain".to_string(), spain_set),
         ]
         .into_iter()
         .collect(),
-    }]);
+    }));
 
     assert_parse_expected(parsed_items, expected_items)
 }
@@ -444,13 +985,14 @@ fn matcher_single_test() {
         MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
         ";
 
-    let (tokens_opt, errors) = lexer::matchers()
+    let (tokens_opt, errors) = lexer::matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
 
+    assert!(errors.len() == 0, "{:?}", errors);
     let (parsed_items, errors) =
-        parser::matchers().parse_recovery(tokens_opt.unwrap());
+        parser::matcher().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
     let values_set = HashSet::from_iter(vec![
@@ -460,12 +1002,12 @@ fn matcher_single_test() {
         "Asturies".to_string(),
     ]);
 
-    let expected_items = Some(vec![Matcher {
-        ident:      "ast".to_string(),
+    let expected_items = Some(ExpressionEnum::MatcherExp(Matcher {
+        ident: "ast".to_string(),
         rename_map: vec![("Asturias".to_string(), values_set)]
             .into_iter()
             .collect(),
-    }]);
+    }));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -476,36 +1018,37 @@ fn expression_join_union_test() {
         EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expressions()
+    let (tokens_opt, errors) = lexer::expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
 
+    assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
-        parser::expressions().parse_recovery(tokens_opt.unwrap());
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let union_exp = Box::new(Expression::Union(
-        Box::new(Expression::Basic {
+    let union_exp = Box::new(ExpressionStmtEnum::Union(
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it2.name".to_string(),
         }),
-        Box::new(Expression::Basic {
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it3.name".to_string(),
         }),
     ));
-    let expression = Expression::Join(
-        Box::new(Expression::Basic {
+    let expr_enum = ExpressionStmtEnum::Join(
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it1.name".to_string(),
         }),
         union_exp,
     );
 
-    let expected_items = Some(vec![ExpressionStatement {
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
         ident: "exp".to_string(),
-        expression,
-    }]);
+        expr_enum,
+    }));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -516,30 +1059,31 @@ fn expression_join_test() {
         EXPRESSION exp <file.it1.name JOIN file.it2.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expressions()
+    let (tokens_opt, errors) = lexer::expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
+    assert!(errors.len() == 0, "{:?}", errors);
 
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
-        parser::expressions().parse_recovery(tokens_opt.unwrap());
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
 
-    let expression = Expression::Join(
-        Box::new(Expression::Basic {
+    let expr_enum = ExpressionStmtEnum::Join(
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it1.name".to_string(),
         }),
-        Box::new(Expression::Basic {
+        Box::new(ExpressionStmtEnum::Basic {
             path: "file.it2.name".to_string(),
         }),
     );
 
-    let expected_items = Some(vec![ExpressionStatement {
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
         ident: "exp".to_string(),
-        expression,
-    }]);
+        expr_enum,
+    }));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -550,26 +1094,28 @@ fn expression_string_op_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expressions()
+    let (tokens_opt, errors) = lexer::expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
 
+    assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
-        parser::expressions().parse_recovery(tokens_opt.unwrap());
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
-
-    let expression = Expression::ConcateString {
-        left_path:      "file.it1.id".to_string(),
+    let expr_enum = ExpressionStmtEnum::ConcatenateString {
+        left_path: "file.it1.id".to_string(),
         concate_string: "-seper-".to_string(),
-        right_path:     "file.it2.name".to_string(),
+        right_path: "file.it2.name".to_string(),
     };
-    let expected_items = Some(vec![ExpressionStatement {
+    let stmt = ExpressionStmt {
         ident: "exp".to_string(),
-        expression,
-    }]);
+        expr_enum,
+    };
+
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(stmt));
 
     assert_parse_expected(parsed_items, expected_items);
 }
@@ -591,25 +1137,26 @@ fn iterator_nested_test() {
 
     let (tokens_opt, errors) =
         lexer::iterators().then(end()).parse_recovery(iter_str);
+    assert!(errors.len() == 0, "{:?}", errors);
 
     let inner_fields = vec![
         Field {
             field_type: FieldType::Pop,
-            ident:      "field2".to_string(),
-            query:      "field1".to_string(),
+            ident: "field2".to_string(),
+            query: "field1".to_string(),
         },
         Field {
             field_type: FieldType::Normal,
-            ident:      "field3".to_string(),
-            query:      "field3".to_string(),
+            ident: "field3".to_string(),
+            query: "field3".to_string(),
         },
     ];
 
     let innermost_iter = Iterator {
-        ident:           "nestedIterator".to_string(),
-        query:           "nestedElements[*]".to_string(),
-        iter_type:       "jsonpath:".to_string(),
-        fields:          inner_fields,
+        ident: "nestedIterator".to_string(),
+        query: "nestedElements[*]".to_string(),
+        iter_type: "jsonpath:".to_string(),
+        fields: inner_fields,
         nested_iterator: None,
     };
 
@@ -620,8 +1167,8 @@ fn iterator_nested_test() {
 
     let fields = vec![Field {
         field_type: FieldType::Push,
-        ident:      "field1".to_string(),
-        query:      "id".to_string(),
+        ident: "field1".to_string(),
+        query: "id".to_string(),
     }];
 
     let expected_items = Some(vec![Box::new(Iterator {
@@ -659,18 +1206,18 @@ ITERATOR example <xpath: /path/to/entity> {
     let fields = vec![
         Field {
             field_type: FieldType::Normal,
-            ident:      "field1".to_string(),
-            query:      "@attribute".to_string(),
+            ident: "field1".to_string(),
+            query: "@attribute".to_string(),
         },
         Field {
             field_type: FieldType::Normal,
-            ident:      "field2".to_string(),
-            query:      "field2".to_string(),
+            ident: "field2".to_string(),
+            query: "field2".to_string(),
         },
         Field {
             field_type: FieldType::Normal,
-            ident:      "field3".to_string(),
-            query:      "path/to/field3".to_string(),
+            ident: "field3".to_string(),
+            query: "path/to/field3".to_string(),
         },
     ];
 
@@ -699,12 +1246,12 @@ fn prefix_multiple_test() {
     assert!(error.len() == 0, "{:#?}", error);
     let expected_items = Some(vec![
         Prefix {
-            prefix: "ex".to_string(),
-            uri:    "https://example.com/".to_string(),
+            prefix: PrefixNameSpace::NamedPrefix("ex".to_string()),
+            uri: "https://example.com/".to_string(),
         },
         Prefix {
-            prefix: "ex23".to_string(),
-            uri:    "https://example23.com/".to_string(),
+            prefix: PrefixNameSpace::NamedPrefix("ex23".to_string()),
+            uri: "https://example23.com/".to_string(),
         },
     ]);
     assert_parse_expected(parsed_items, expected_items);
@@ -721,8 +1268,8 @@ fn prefix_test() {
 
     assert!(error.len() == 0, "{:#?}", error);
     let expected_items = Some(vec![Prefix {
-        prefix: "ex".to_string(),
-        uri:    "https://example.com/".to_string(),
+        prefix: PrefixNameSpace::NamedPrefix("ex".to_string()),
+        uri: "https://example.com/".to_string(),
     }]);
 
     assert_parse_expected(parsed_items, expected_items);
@@ -743,11 +1290,13 @@ fn source_multiple_test() {
     let expected_items = Some(vec![
         Source {
             ident: "xml_file".to_string(),
-            uri:   "https://example.com/file.xml".to_string(),
+            uri: "https://example.com/file.xml".to_string(),
+            source_type: SourceType::HTTPS,
         },
         Source {
             ident: "json_file".to_string(),
-            uri:   "local/file.json".to_string(),
+            uri: "local/file.json".to_string(),
+            source_type: SourceType::File,
         },
     ]);
     assert_parse_expected(parsed_items, expected_items)
@@ -763,7 +1312,8 @@ fn source_test() {
     assert!(errors.len() == 0, "{:?}", errors);
     let expected_items = Some(vec![Source {
         ident: "xml_file".to_string(),
-        uri:   "https://example.com/file.xml".to_string(),
+        uri: "https://example.com/file.xml".to_string(),
+        source_type: SourceType::HTTPS,
     }]);
     assert_parse_expected(parsed_items, expected_items)
 }

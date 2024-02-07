@@ -1,28 +1,27 @@
 use std::collections::HashMap;
 
-
+use operator::{Extend, Function, Operator, RcExtendFunction};
 use rml_interpreter::rml_model::term_map::{
     SubjectMap, TermMapInfo, TermMapType,
 };
 use rml_interpreter::rml_model::PredicateObjectMap;
-use operator::{Extend, Function, Operator, RcExtendFunction};
 use sophia_api::term::TTerm;
 
-use super::RMLTranslator;
 use crate::rmlalgebra::util::{
     extract_gm_tm_infos, extract_tm_infos_from_poms,
 };
+use crate::OperatorTranslator;
 
 #[derive(Debug, Clone)]
 pub struct ExtendTranslator<'a> {
-    pub tms:          Vec<&'a TermMapInfo>,
+    pub tms: Vec<&'a TermMapInfo>,
     pub variable_map: &'a HashMap<String, String>,
 }
 
-impl<'a> RMLTranslator<Operator> for ExtendTranslator<'a> {
-    fn translate(self) -> Operator {
+impl<'a> OperatorTranslator<Operator> for ExtendTranslator<'a> {
+    fn translate(&self) -> Operator {
         let mut extend_pairs = HashMap::new();
-        for tm_info in self.tms {
+        for tm_info in &self.tms {
             let (variable, function) = extract_extend_function_from_term_map(
                 self.variable_map,
                 tm_info,
@@ -69,24 +68,18 @@ pub fn extract_extend_function_from_term_map(
     .into();
 
     let func = match tm_info.term_type.unwrap() {
-        sophia_api::term::TermKind::Iri => {
-            Function::Iri {
-                inner_function: Function::UriEncode {
-                    inner_function: value_function,
-                }
-                .into(),
-            }
-        }
-        sophia_api::term::TermKind::Literal => {
-            Function::Literal {
+        sophia_api::term::TermKind::Iri => Function::Iri {
+            inner_function: Function::UriEncode {
                 inner_function: value_function,
             }
-        }
-        sophia_api::term::TermKind::BlankNode => {
-            Function::BlankNode {
-                inner_function: value_function,
-            }
-        }
+            .into(),
+        },
+        sophia_api::term::TermKind::Literal => Function::Literal {
+            inner_function: value_function,
+        },
+        sophia_api::term::TermKind::BlankNode => Function::BlankNode {
+            inner_function: value_function,
+        },
         typ => panic!("Unrecognized term kind {:?}", typ),
     };
 

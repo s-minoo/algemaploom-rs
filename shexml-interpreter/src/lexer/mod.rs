@@ -1,10 +1,11 @@
 mod tests;
+pub mod token;
 
 use chumsky::chain::Chain;
 use chumsky::prelude::*;
 use chumsky::Parser;
 
-use crate::token::{self, ShExMLToken};
+use self::token::ShExMLToken;
 
 macro_rules! t {
     ($t:ty) => {
@@ -29,11 +30,11 @@ macro_rules! shape_node {
     };
 }
 
-fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
+pub fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
     just(st).padded().to(token)
 }
 
-fn within_angled_brackets() -> t!(String) {
+pub fn within_angled_brackets() -> t!(String) {
     none_of("<>")
         .repeated()
         .at_least(1)
@@ -46,9 +47,6 @@ pub fn shexml() -> t!(Vec<ShExMLToken>) {
         .chain::<ShExMLToken, _, _>(sources())
         .chain::<ShExMLToken, _, _>(iterators())
         .chain::<ShExMLToken, _, _>(expressions())
-        .chain::<ShExMLToken, _, _>(
-            matchers().or(autoincrements()).or(functions()).or_not(),
-        )
         .chain::<ShExMLToken, _, _>(shapes())
 }
 
@@ -102,9 +100,10 @@ pub fn shapes() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
+        .labelled("lexer:shapes")
 }
 
-fn shape_object() -> t!(Vec<ShExMLToken>) {
+pub fn shape_object() -> t!(Vec<ShExMLToken>) {
     let language_tag = token("@", ShExMLToken::AtSymb).chain(
         shape_node_expression().or(pn_char().repeated().at_least(1).map(
             |chars| vec![ShExMLToken::LangTag(chars.into_iter().collect())],
@@ -138,9 +137,10 @@ fn shape_object() -> t!(Vec<ShExMLToken>) {
         .padded()
         .chain::<ShExMLToken, _, _>(language_tag.or(data_type).or_not())
         .padded()
+        .labelled("lexer:shape_object")
 }
 
-fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
+pub fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
     let matching = shape_sub_ident()
         .padded()
         .chain(token("MATCHING ", ShExMLToken::Matching))
@@ -159,18 +159,21 @@ fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
             shape_sub_ident(),
         )))
         .chain(token("]", ShExMLToken::SqBrackEnd))
+        .labelled("lexer:shape_node_expression")
 }
 
-fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
-    ident().chain(
-        token(".", ShExMLToken::Dot)
-            .chain(ident())
-            .repeated()
-            .flatten(),
-    )
+pub fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
+    ident()
+        .chain(
+            token(".", ShExMLToken::Dot)
+                .chain(ident())
+                .repeated()
+                .flatten(),
+        )
+        .labelled("lexer:shape_sub_ident")
 }
 
-fn shape_function_application() -> t!(Vec<ShExMLToken>) {
+pub fn shape_function_application() -> t!(Vec<ShExMLToken>) {
     shape_sub_ident()
         .chain(token("(", ShExMLToken::BrackStart))
         .chain::<ShExMLToken, _, _>(shape_sub_ident())
@@ -182,9 +185,20 @@ fn shape_function_application() -> t!(Vec<ShExMLToken>) {
                 .flatten(),
         )
         .chain(token(")", ShExMLToken::BrackEnd))
+        .labelled("lexer:shape_function_application")
 }
 
-pub fn functions() -> t!(Vec<ShExMLToken>) {
+pub fn expressions() -> t!(Vec<ShExMLToken>) {
+    expression_stmt()
+        .or(matcher())
+        .or(autoincrement())
+        .or(function())
+        .padded()
+        .repeated()
+        .flatten()
+}
+
+pub fn function() -> t!(Vec<ShExMLToken>) {
     let function_tag = token("FUNCTIONS", ShExMLToken::Function);
     let function_ident = ident().padded();
 
@@ -194,13 +208,13 @@ pub fn functions() -> t!(Vec<ShExMLToken>) {
     let function_exp = token("<", ShExMLToken::AngleStart)
         .chain(protocol.chain(uri))
         .chain(token(">", ShExMLToken::AngleEnd).padded());
+
     (function_tag.chain(function_ident).chain(function_exp))
         .padded()
-        .repeated()
-        .flatten()
+        .labelled("lexer:function")
 }
 
-pub fn autoincrements() -> t!(Vec<ShExMLToken>) {
+pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
     let aut_inc_tag = token("AUTOINCREMENT", ShExMLToken::AutoIncrement);
     let ident = ident().padded();
     let prefix_str = text::ident::<char, _>()
@@ -241,11 +255,10 @@ pub fn autoincrements() -> t!(Vec<ShExMLToken>) {
 
     (aut_inc_tag.chain(ident).chain(auto_inc_exp_delim))
         .padded()
-        .repeated()
-        .flatten()
+        .labelled("lexer:autoincrement")
 }
 
-pub fn matchers() -> t!(Vec<ShExMLToken>) {
+pub fn matcher() -> t!(Vec<ShExMLToken>) {
     let mat_tag = token("MATCHER", ShExMLToken::Matcher);
     let mat_ident = ident().padded();
     let mats_value = none_of("<>,&")
@@ -301,11 +314,10 @@ pub fn matchers() -> t!(Vec<ShExMLToken>) {
             .chain(token(">", ShExMLToken::AngleEnd)),
     ))
     .padded()
-    .repeated()
-    .flatten()
+    .labelled("lexer:matcher")
 }
 
-pub fn expressions() -> t!(Vec<ShExMLToken>) {
+pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
     let expressiont_tag = token("EXPRESSION", ShExMLToken::Expression);
     let exp_ident = ident().padded();
 
@@ -364,9 +376,7 @@ pub fn expressions() -> t!(Vec<ShExMLToken>) {
         .chain(token(">", ShExMLToken::AngleEnd));
     (expressiont_tag.chain(exp_ident).chain(exp_inner))
         .padded()
-        .repeated()
-        .at_least(1)
-        .flatten()
+        .labelled("lexer:expression_stmt")
 }
 
 pub fn iterators() -> t!(Vec<ShExMLToken>) {
@@ -394,6 +404,7 @@ pub fn iterators() -> t!(Vec<ShExMLToken>) {
     .repeated()
     .at_least(1)
     .flatten()
+    .labelled("lexer:iterators")
 }
 
 pub fn field() -> t!(Vec<ShExMLToken>) {
@@ -409,6 +420,7 @@ pub fn field() -> t!(Vec<ShExMLToken>) {
     choice((field_tag, push_field_tag, pop_field_tag))
         .chain(field_name)
         .chain(field_query)
+        .labelled("lexer:field")
 }
 
 pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
@@ -429,14 +441,19 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
+        .labelled("lexer:iterator_header")
 }
 
 pub fn sources() -> t!(Vec<ShExMLToken>) {
     let source_tag = token("SOURCE", ShExMLToken::Source);
     let source_name = ident().padded();
-    let source_iri = token("<", ShExMLToken::AngleStart)
-        .chain(protocol_iri_ref().or(path().map(|st| ShExMLToken::URI(st))))
-        .chain(token(">", ShExMLToken::AngleEnd));
+
+    let source_iri =
+        token("<", ShExMLToken::AngleStart)
+            .chain(protocol_iri_tokenize().or(
+                path().map(|c| vec![ShExMLToken::File, ShExMLToken::URI(c)]),
+            ))
+            .chain(token(">", ShExMLToken::AngleEnd));
     source_tag
         .chain(source_name)
         .chain(source_iri)
@@ -444,6 +461,7 @@ pub fn sources() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
+        .labelled("lexer:sources")
 }
 
 pub fn ident() -> t!(ShExMLToken) {
@@ -451,6 +469,7 @@ pub fn ident() -> t!(ShExMLToken) {
         .repeated()
         .at_least(1)
         .map(|v| ShExMLToken::Ident(v.into_iter().collect()))
+        .labelled("lexer:ident")
 }
 
 pub fn prefixes() -> t!(Vec<ShExMLToken>) {
@@ -468,9 +487,10 @@ pub fn prefixes() -> t!(Vec<ShExMLToken>) {
         .repeated()
         .at_least(1)
         .flatten()
+        .labelled("lexer:prefixes")
 }
 
-fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
+pub fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
     pn_prefix()
         .or_not()
         .then_ignore(just(":"))
@@ -484,24 +504,70 @@ fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
                 vec![ShExMLToken::PrefixNS(prefix), ShExMLToken::PrefixSep]
             }
         })
+        .labelled("lexer:prefix_namespace")
 }
 
-fn protocol() -> t!(String) {
+pub fn protocol() -> t!(String) {
     filter(|c: &char| c.is_ascii_alphabetic())
         .repeated()
         .at_least(1)
         .chain(just(':'))
         .map(|c| c.into_iter().collect())
+        .labelled("lexer:protocol")
 }
 
-fn path() -> t!(String) {
+pub fn path() -> t!(String) {
     none_of("<>\"{}|^`\\[]")
         .repeated()
         .at_least(1)
         .map(|e| e.into_iter().collect())
 }
 
-fn protocol_iri_ref() -> t!(ShExMLToken) {
+fn protocol_iri_ref_new() -> t!(Vec<String>) {
+    protocol()
+        .repeated()
+        .at_most(2)
+        .chain::<String, _, _>(just("//").map(|c| c.to_string()))
+        .chain(path())
+}
+
+fn protocol_iri_tokenize() -> t!(Vec<ShExMLToken>) {
+    protocol_iri_ref_new().map(|vec_string| {
+        if vec_string.len() == 1 {
+            vec_string
+                .into_iter()
+                .map(|path| ShExMLToken::URI(path))
+                .collect()
+        } else {
+            let mut result = Vec::new();
+            let mut iter = vec_string.into_iter();
+            let mut uri_string = String::new();
+
+            while let Some(iri_part) = iter.next() {
+                uri_string += &iri_part;
+                let token = match iri_part.as_str() {
+                    "http:" => ShExMLToken::HTTP,
+                    "https:" => ShExMLToken::HTTPS,
+                    "file:" => ShExMLToken::File,
+                    "jdbc:" => {
+                        let jdbc_type = iter.next().unwrap();
+                        uri_string += &jdbc_type;
+                        ShExMLToken::JDBC(jdbc_type)
+                    }
+                    _ => continue,
+                };
+
+                result.push(token)
+            }
+
+            result.push(ShExMLToken::URI(uri_string));
+
+            result
+        }
+    })
+}
+
+pub fn protocol_iri_ref() -> t!(ShExMLToken) {
     let uri = protocol()
         .chain::<String, _, _>(just("//").map(|c| c.to_string()))
         .chain(path())
@@ -510,19 +576,19 @@ fn protocol_iri_ref() -> t!(ShExMLToken) {
     uri
 }
 
-fn pn_char_base() -> t!(char) {
+pub fn pn_char_base() -> t!(char) {
     filter(|c: &char| c.is_alphabetic())
 }
 
-fn pn_char_u() -> t!(char) {
+pub fn pn_char_u() -> t!(char) {
     pn_char_base().or(just('_'))
 }
-fn pn_char() -> t!(char) {
+pub fn pn_char() -> t!(char) {
     pn_char_u()
         .or(just('-'))
         .or(filter(|c: &char| c.is_numeric()))
 }
-fn pn_prefix() -> t!(Vec<char>) {
+pub fn pn_prefix() -> t!(Vec<char>) {
     let ne = just('.')
         .repeated()
         .then(pn_char().repeated().at_least(1))

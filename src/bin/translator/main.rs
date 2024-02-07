@@ -3,9 +3,9 @@ mod cli;
 use std::path::PathBuf;
 
 use colored::Colorize;
-use rml_interpreter::extractors::io::parse_file;
 use plangenerator::error::PlanError;
-use translator::rmlalgebra::translate_to_algebra;
+use rml_interpreter::extractors::io::parse_file;
+use translator::{rmlalgebra::RMLDocumentTranslator, LanguageTranslator};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_rml_file(entry: &DirEntry) -> bool {
@@ -86,7 +86,7 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     let output_prefix = output_prefix.as_ref().to_string();
-    let mut mapping_plan = translate_to_algebra(document)?;
+    let mut mapping_plan = RMLDocumentTranslator::translate_to_plan(document)?;
     let full_path = output_prefix.clone() + ".dot";
     let _ = mapping_plan
         .write(full_path.clone().into())

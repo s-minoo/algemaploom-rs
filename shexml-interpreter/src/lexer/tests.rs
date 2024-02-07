@@ -83,7 +83,7 @@ fn function_if_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local:  "Films".to_string(),
+            local: "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -104,7 +104,7 @@ fn function_if_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "name".to_string(),
+            local: "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -114,7 +114,7 @@ fn function_if_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "year".to_string(),
+            local: "year".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -124,7 +124,7 @@ fn function_if_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "countryOfOrigin".to_string(),
+            local: "countryOfOrigin".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -176,7 +176,7 @@ fn function_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local:  "Films".to_string(),
+            local: "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -188,7 +188,7 @@ fn function_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "name".to_string(),
+            local: "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -198,7 +198,7 @@ fn function_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "year".to_string(),
+            local: "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -210,7 +210,7 @@ fn function_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "bigName".to_string(),
+            local: "bigName".to_string(),
         },
         ShExMLToken::PrefixNS("dbr".to_string()),
         ShExMLToken::PrefixSep,
@@ -260,7 +260,7 @@ fn matching_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local:  "Films".to_string(),
+            local: "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -272,7 +272,7 @@ fn matching_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "name".to_string(),
+            local: "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -282,7 +282,7 @@ fn matching_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "year".to_string(),
+            local: "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -294,7 +294,7 @@ fn matching_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "country".to_string(),
+            local: "country".to_string(),
         },
         ShExMLToken::PrefixNS("dbr".to_string()),
         ShExMLToken::PrefixSep,
@@ -342,13 +342,13 @@ fn graphed_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local:  "MyGraph".to_string(),
+            local: "MyGraph".to_string(),
         },
         ShExMLToken::SqBrackStart,
         ShExMLToken::SqBrackStart,
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local:  "Films".to_string(),
+            local: "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -360,7 +360,7 @@ fn graphed_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "name".to_string(),
+            local: "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -370,7 +370,7 @@ fn graphed_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "year".to_string(),
+            local: "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -416,7 +416,7 @@ fn simple_single_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local:  "Films".to_string(),
+            local: "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -428,7 +428,7 @@ fn simple_single_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "name".to_string(),
+            local: "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -438,7 +438,7 @@ fn simple_single_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local:  "year".to_string(),
+            local: "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -466,7 +466,7 @@ fn function_test() {
     let function_str = "
         FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
         ";
-    let (tokens_opt, errors) = functions()
+    let (tokens_opt, errors) = function()
         .padded()
         .then_ignore(end())
         .parse_recovery(function_str);
@@ -496,7 +496,7 @@ fn auto_inc_only_start_test() {
      AUTOINCREMENT myId <2>   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -525,7 +525,7 @@ fn auto_inc_end_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 20>   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -556,7 +556,7 @@ fn auto_inc_start_test() {
      AUTOINCREMENT myId <\"my\" + 0 >   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -586,7 +586,7 @@ fn auto_inc_complete_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
      ";
 
-    let (tokens_opt, errors) = autoincrements()
+    let (tokens_opt, errors) = autoincrement()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -620,7 +620,7 @@ fn multiple_matching_matcher_test() {
                 Spain, España, Espagne AS Spain>
         ";
 
-    let (tokens_opt, errors) = matchers()
+    let (tokens_opt, errors) = matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -635,7 +635,7 @@ fn single_matcher_test() {
         MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
         ";
 
-    let (tokens_opt, errors) = matchers()
+    let (tokens_opt, errors) = matcher()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -673,7 +673,7 @@ fn string_op_expression_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) = expressions()
+    let (tokens_opt, errors) = expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -688,7 +688,7 @@ fn join_union_expression_test() {
         EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>
         ";
 
-    let (tokens_opt, errors) = expressions()
+    let (tokens_opt, errors) = expression_stmt()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -791,6 +791,30 @@ fn iterator_header_test() {
 }
 
 #[test]
+fn source_jdbc_test() {
+    let source_str =
+        "SOURCE sparql_endpoint <jdbc:sparql://localhost:6000/sparql/>";
+    let (tokens_opt, errors) = sources().parse_recovery(source_str);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected_tokens = Some(vec![
+        ShExMLToken::Source,
+        ShExMLToken::Ident("sparql_endpoint".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::JDBC("sparql:".to_string()),
+        ShExMLToken::URI("jdbc:sparql://localhost:6000/sparql/".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+    assert!(
+        tokens_opt == expected_tokens,
+        "{:?} is the parsed tokens
+            {:?} is the expected tokens
+            ",
+        tokens_opt,
+        expected_tokens
+    );
+}
+
+#[test]
 fn source_local_path_test() {
     let source_str = "SOURCE json_file <file.json>";
     let (tokens_opt, errors) = sources().parse_recovery(source_str);
@@ -799,6 +823,7 @@ fn source_local_path_test() {
         ShExMLToken::Source,
         ShExMLToken::Ident("json_file".to_string()),
         ShExMLToken::AngleStart,
+        ShExMLToken::File,
         ShExMLToken::URI("file.json".to_string()),
         ShExMLToken::AngleEnd,
     ]);
@@ -821,6 +846,7 @@ fn source_test() {
         ShExMLToken::Source,
         ShExMLToken::Ident("xml_file".to_string()),
         ShExMLToken::AngleStart,
+        ShExMLToken::HTTPS,
         ShExMLToken::URI("https://example.com/file.xml".to_string()),
         ShExMLToken::AngleEnd,
     ]);
