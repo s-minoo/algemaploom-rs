@@ -25,6 +25,43 @@ fn protocol_test() {
 }
 
 #[test]
+fn shexml_test() {
+    let shexml_doc = r#"
+
+PREFIX : <http://example.com/>
+SOURCE films_xml_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.xml>
+SOURCE films_json_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.json>
+ITERATOR film_xml <xpath: //film> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :[films.id] {
+    :name [films.name] ;
+    :year [films.year] ;
+    :country [films.country] ;
+    :director [films.directors];
+} "#;
+
+    let (tokens_opt, errors) = shexml().parse_recovery(shexml_doc);
+
+    println!("{:#?}", tokens_opt);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+}
+
+#[test]
 fn function_if_shape_test() {
     let shape_str = "
 
@@ -459,7 +496,7 @@ fn auto_inc_only_start_test() {
      AUTOINCREMENT myId <2>   
      ";
 
-    let (tokens_opt, errors) = autoincrement()
+    let (tokens_opt, errors) = autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -488,7 +525,7 @@ fn auto_inc_end_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 20>   
      ";
 
-    let (tokens_opt, errors) = autoincrement()
+    let (tokens_opt, errors) = autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -519,7 +556,7 @@ fn auto_inc_start_test() {
      AUTOINCREMENT myId <\"my\" + 0 >   
      ";
 
-    let (tokens_opt, errors) = autoincrement()
+    let (tokens_opt, errors) = autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -549,7 +586,7 @@ fn auto_inc_complete_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
      ";
 
-    let (tokens_opt, errors) = autoincrement()
+    let (tokens_opt, errors) = autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -583,7 +620,7 @@ fn multiple_matching_matcher_test() {
                 Spain, España, Espagne AS Spain>
         ";
 
-    let (tokens_opt, errors) = matcher()
+    let (tokens_opt, errors) = matchers()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -598,7 +635,7 @@ fn single_matcher_test() {
         MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
         ";
 
-    let (tokens_opt, errors) = matcher()
+    let (tokens_opt, errors) = matchers()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -636,7 +673,7 @@ fn string_op_expression_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) = expression()
+    let (tokens_opt, errors) = expressions()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -651,7 +688,7 @@ fn join_union_expression_test() {
         EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>
         ";
 
-    let (tokens_opt, errors) = expression()
+    let (tokens_opt, errors) = expressions()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -700,7 +737,7 @@ ITERATOR example <xpath: /path/to/entity> {
     FIELD field3 <path/to/field3>
 }";
 
-    let (tokens_opt, errors) = iterator().then(end()).parse_recovery(iter_str);
+    let (tokens_opt, errors) = iterators().then(end()).parse_recovery(iter_str);
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
@@ -721,7 +758,7 @@ fn iterator_nest_test() {
     }
 }";
 
-    let (tokens_opt, errors) = iterator().then(end()).parse_recovery(iter_str);
+    let (tokens_opt, errors) = iterators().then(end()).parse_recovery(iter_str);
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
@@ -756,7 +793,7 @@ fn iterator_header_test() {
 #[test]
 fn source_local_path_test() {
     let source_str = "SOURCE json_file <file.json>";
-    let (tokens_opt, errors) = source().parse_recovery(source_str);
+    let (tokens_opt, errors) = sources().parse_recovery(source_str);
     assert!(errors.len() == 0, "{:?}", errors);
     let expected_tokens = Some(vec![
         ShExMLToken::Source,
@@ -778,7 +815,7 @@ fn source_local_path_test() {
 #[test]
 fn source_test() {
     let source_str = "SOURCE xml_file <https://example.com/file.xml>";
-    let (tokens_opt, errors) = source().parse_recovery(source_str);
+    let (tokens_opt, errors) = sources().parse_recovery(source_str);
     assert!(errors.len() == 0, "{:?}", errors);
     let expected_tokens = Some(vec![
         ShExMLToken::Source,
@@ -801,7 +838,7 @@ fn source_test() {
 fn empty_prefix_name_test() {
     let base_prefix = "PREFIX : <https://base.com/>";
 
-    let (tokens_opt, errors) = prefix().parse_recovery(base_prefix);
+    let (tokens_opt, errors) = prefixes().parse_recovery(base_prefix);
 
     assert!(errors.len() == 0, "{:?}", errors);
     let expected_tokens = Some(vec![
@@ -826,7 +863,7 @@ fn empty_prefix_name_test() {
 fn prefix_test() {
     let prefix_1 = "PREFIX ex: <https://example.com/>";
 
-    let (tokens_opt, errors) = prefix().parse_recovery(prefix_1);
+    let (tokens_opt, errors) = prefixes().parse_recovery(prefix_1);
 
     assert!(errors.len() == 0, "{:?}", errors);
     let expected_tokens = Some(vec![

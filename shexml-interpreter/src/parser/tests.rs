@@ -312,7 +312,7 @@ fn auto_inc_only_start_test() {
      AUTOINCREMENT myId <2>   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrement()
+    let (tokens_opt, errors) = lexer::autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -342,7 +342,7 @@ fn auto_inc_start_test() {
      AUTOINCREMENT myId <\"my\" + 0 >   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrement()
+    let (tokens_opt, errors) = lexer::autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -372,7 +372,7 @@ fn auto_inc_test() {
      AUTOINCREMENT myId <\"my\" + 0 to 10 by 2 + \"Id\">   
      ";
 
-    let (tokens_opt, errors) = lexer::autoincrement()
+    let (tokens_opt, errors) = lexer::autoincrements()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -403,7 +403,7 @@ fn matcher_multiple_test() {
                 Spain, España, Espagne AS Spain>
         ";
 
-    let (tokens_opt, errors) = lexer::matcher()
+    let (tokens_opt, errors) = lexer::matchers()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -444,7 +444,7 @@ fn matcher_single_test() {
         MATCHER ast <Principality of Asturias, Principado de Asturias, Principáu d'Asturies, Asturies AS Asturias>
         ";
 
-    let (tokens_opt, errors) = lexer::matcher()
+    let (tokens_opt, errors) = lexer::matchers()
         .padded()
         .then_ignore(end())
         .parse_recovery(match_str);
@@ -476,7 +476,7 @@ fn expression_join_union_test() {
         EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expression()
+    let (tokens_opt, errors) = lexer::expressions()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -516,7 +516,7 @@ fn expression_join_test() {
         EXPRESSION exp <file.it1.name JOIN file.it2.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expression()
+    let (tokens_opt, errors) = lexer::expressions()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -550,7 +550,7 @@ fn expression_string_op_test() {
         EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name>
         ";
 
-    let (tokens_opt, errors) = lexer::expression()
+    let (tokens_opt, errors) = lexer::expressions()
         .padded()
         .then_ignore(end())
         .parse_recovery(exp_str);
@@ -590,7 +590,7 @@ fn iterator_nested_test() {
 }";
 
     let (tokens_opt, errors) =
-        lexer::iterator().then(end()).parse_recovery(iter_str);
+        lexer::iterators().then(end()).parse_recovery(iter_str);
 
     let inner_fields = vec![
         Field {
@@ -648,7 +648,7 @@ ITERATOR example <xpath: /path/to/entity> {
     FIELD field3 <path/to/field3>
 }";
 
-    let (tokens_opt, errors) = lexer::iterator()
+    let (tokens_opt, errors) = lexer::iterators()
         .then_ignore(end())
         .parse_recovery(iter_str);
 
@@ -691,7 +691,7 @@ fn prefix_multiple_test() {
 
         "#;
 
-    let (tokens_opt, _) = lexer::prefix().parse_recovery(prefix_1);
+    let (tokens_opt, _) = lexer::prefixes().parse_recovery(prefix_1);
     println!("{:?}", tokens_opt);
     let (parsed_items, error) =
         parser::prefixes().parse_recovery(tokens_opt.unwrap());
@@ -714,7 +714,7 @@ fn prefix_multiple_test() {
 fn prefix_test() {
     let prefix_1 = "PREFIX ex: <https://example.com/>";
 
-    let (tokens_opt, _) = lexer::prefix().parse_recovery(prefix_1);
+    let (tokens_opt, _) = lexer::prefixes().parse_recovery(prefix_1);
     println!("{:?}", tokens_opt);
     let (parsed_items, error) =
         parser::prefixes().parse_recovery(tokens_opt.unwrap());
@@ -734,7 +734,7 @@ fn source_multiple_test() {
     SOURCE json_file <local/file.json>
 
         "#;
-    let (tokens_opt, _) = lexer::source().parse_recovery(source_str);
+    let (tokens_opt, _) = lexer::sources().parse_recovery(source_str);
     println!("{:?}", tokens_opt);
     let (parsed_items, errors) =
         parser::sources().parse_recovery(tokens_opt.clone().unwrap());
@@ -756,7 +756,7 @@ fn source_multiple_test() {
 #[test]
 fn source_test() {
     let source_str = "SOURCE xml_file <https://example.com/file.xml>";
-    let (tokens_opt, _) = lexer::source().parse_recovery(source_str);
+    let (tokens_opt, _) = lexer::sources().parse_recovery(source_str);
     let (parsed_items, errors) =
         parser::sources().parse_recovery(tokens_opt.clone().unwrap());
 
