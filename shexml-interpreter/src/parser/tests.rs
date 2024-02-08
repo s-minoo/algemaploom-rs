@@ -742,17 +742,35 @@ fn expressions_test() {
         parser::expressions().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
+    
+    let source_ident = "file".to_string(); 
+    let field_ident = Some("name".to_string()); 
+
+
+
     let union_exp = Box::new(ExpressionStmtEnum::Union(
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it2.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it2".to_string(),
+                field: field_ident.clone(),
+            },
         }),
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it3.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it3".to_string(),
+                field: field_ident.clone(),
+            },
         }),
     ));
     let expr_enum = ExpressionStmtEnum::Join(
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it1.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it1".to_string(),
+                field: field_ident.clone(),
+            },
         }),
         union_exp,
     );
@@ -1029,21 +1047,38 @@ fn expression_join_union_test() {
         parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
+    let source_ident = "file".to_string(); 
+    let field_ident = Some("name".to_string()); 
+
+
 
     let union_exp = Box::new(ExpressionStmtEnum::Union(
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it2.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it2".to_string(),
+                field: field_ident.clone(),
+            },
         }),
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it3.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it3".to_string(),
+                field: field_ident.clone(),
+            },
         }),
     ));
     let expr_enum = ExpressionStmtEnum::Join(
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it1.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it1".to_string(),
+                field: field_ident.clone(),
+            },
         }),
         union_exp,
     );
+
 
     let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
         ident: "exp".to_string(),
@@ -1071,12 +1106,22 @@ fn expression_join_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
 
+    let source_ident = "file".to_string();
+    let field_ident = Some("name".to_string());
     let expr_enum = ExpressionStmtEnum::Join(
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it1.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it1".to_string(),
+                field: field_ident.clone(),
+            } ,
         }),
         Box::new(ExpressionStmtEnum::Basic {
-            path: "file.it2.name".to_string(),
+            reference: ExpressionReferenceIdent{
+                source_ident: source_ident.clone(),
+                iterator_ident: "it2".to_string(),
+                field: field_ident.clone(),
+            } ,
         }),
     );
 
@@ -1105,10 +1150,20 @@ fn expression_string_op_test() {
         parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
 
     assert!(errors.len() == 0, "{:?}", errors);
+    let source_ident = "file".to_string(); 
+    
     let expr_enum = ExpressionStmtEnum::ConcatenateString {
-        left_path: "file.it1.id".to_string(),
+        left_reference:ExpressionReferenceIdent{
+            source_ident: source_ident.clone(),
+            iterator_ident: "it1".to_string(),
+            field: Some("id".to_string()),
+        },
         concate_string: "-seper-".to_string(),
-        right_path: "file.it2.name".to_string(),
+        right_reference: ExpressionReferenceIdent{
+            source_ident: source_ident.clone(),
+            iterator_ident: "it2".to_string(),
+            field: Some("name".to_string()),
+        },
     };
     let stmt = ExpressionStmt {
         ident: "exp".to_string(),

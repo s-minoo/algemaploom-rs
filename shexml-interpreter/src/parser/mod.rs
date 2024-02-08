@@ -332,15 +332,28 @@ fn matcher() -> t!(ExpressionEnum) {
         .labelled("parser:matcher")
 }
 
-fn exp_ident() -> t!(String) {
+fn exp_reference_ident() -> t!(ExpressionReferenceIdent) {
     unfold_token_value!(Ident)
-        .chain(
+        .then(
             just(ShExMLToken::Dot)
                 .ignore_then(unfold_token_value!(Ident))
                 .repeated()
-                .at_least(1),
+                .at_least(1)
+                .at_most(2)
+                .map(|idents| {
+                    let iterator = idents[0].clone();
+                    let field = idents.get(1).map(Clone::clone);
+
+                    (iterator, field)
+                }),
         )
-        .map(|strings: Vec<String>| strings.join("."))
+        .map(|(source_ident, (iterator_ident, field))| {
+            ExpressionReferenceIdent {
+                source_ident,
+                iterator_ident,
+                field,
+            }
+        })
         .labelled("parser:exp_ident")
 }
 
@@ -361,8 +374,8 @@ fn expression_stmt() -> t!(ExpressionEnum) {
 }
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
-    let basic_expression =
-        exp_ident().map(|path| ExpressionStmtEnum::Basic { path });
+    let basic_expression = exp_reference_ident()
+        .map(|path| ExpressionStmtEnum::Basic { reference: path });
     basic_expression
         .clone()
         .then(
@@ -378,31 +391,28 @@ fn exp_join_union() -> t!(ExpressionStmtEnum) {
 }
 
 fn exp_string_op() -> t!(ExpressionStmtEnum) {
-    exp_ident()
+    exp_reference_ident()
         .then(unfold_token_value!(StringSep))
-        .then(exp_ident())
-        .map(|((left_path, concate_string), right_path)| {
+        .then(exp_reference_ident())
+        .map(|((left_reference, concate_string), right_reference)| {
             ExpressionStmtEnum::ConcatenateString {
-                left_path,
+                left_reference,
                 concate_string,
-                right_path,
+                right_reference,
             }
         })
         .labelled("parser:exp_string_op")
 }
 
 fn sources() -> t!(Vec<Source>) {
-
     let protocol = select! {
-        ShExMLToken::File => SourceType::File, 
+        ShExMLToken::File => SourceType::File,
         ShExMLToken::HTTP => SourceType::HTTP,
         ShExMLToken::HTTPS => SourceType::HTTPS,
         ShExMLToken::JDBC(jdbc_type) => SourceType::JDBC(jdbc_type),
     };
 
-
     let protocol_uri = protocol.then(unfold_token_value!(URI));
-
 
     just(ShExMLToken::Source)
         .ignore_then(unfold_token_value!(Ident))
@@ -410,7 +420,11 @@ fn sources() -> t!(Vec<Source>) {
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),
         ))
-        .map(|(ident, (source_type, uri))| Source { ident, uri, source_type  })
+        .map(|(ident, (source_type, uri))| Source {
+            ident,
+            uri,
+            source_type,
+        })
         .repeated()
         .at_least(1)
         .labelled("parser:sources")

@@ -69,19 +69,26 @@ pub enum ExpressionEnum {
     FunctionExp(Function),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExpressionReferenceIdent {
+    pub source_ident: String, 
+    pub iterator_ident: String,
+    pub field: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub enum ExpressionStmtEnum {
     Join(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
 
     Union(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
     ConcatenateString {
-        left_path: String,
+        left_reference: ExpressionReferenceIdent,
         concate_string: String,
-        right_path: String,
+        right_reference: ExpressionReferenceIdent,
     },
 
     Basic {
-        path: String,
+        reference: ExpressionReferenceIdent,
     },
 }
 
@@ -112,9 +119,9 @@ impl Serialize for ExpressionStmtEnum {
                 struct_serde.end()
             }
             ExpressionStmtEnum::ConcatenateString {
-                left_path,
+                left_reference: left_path,
                 concate_string,
-                right_path,
+                right_reference: right_path,
             } => {
                 let mut struct_serde =
                     serializer.serialize_struct("ConcatenateString", 4)?;
@@ -127,7 +134,7 @@ impl Serialize for ExpressionStmtEnum {
 
                 struct_serde.end()
             }
-            ExpressionStmtEnum::Basic { path } => {
+            ExpressionStmtEnum::Basic { reference: path } => {
                 let mut struct_serde =
                     serializer.serialize_struct("Basic", 2)?;
 
