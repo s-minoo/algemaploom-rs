@@ -13,7 +13,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-<h3 align="center">CrustMapper: Mapping Algebra for Knowledge Graph Construction</h3>
+<h3 align="center">AlgeMapLoom: Weaving Mapping Languages with Algebraic Operators</h3>
 </div>
 
 <!-- ABOUT THE PROJECT -->
