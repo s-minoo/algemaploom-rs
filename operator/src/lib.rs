@@ -82,6 +82,22 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Field {
+    pub alias: String, 
+    pub reference: String, 
+    pub reference_formulation: DataFormat, 
+    pub inner_fields: Vec<Field>, 
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Iterator {
+    pub reference: String, 
+    pub reference_formulation: DataFormat, 
+    pub fields: Vec<Field>, 
+
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     #[serde(flatten)]
     pub config:              HashMap<String, String>,
