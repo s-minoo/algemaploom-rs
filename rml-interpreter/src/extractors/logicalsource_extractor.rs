@@ -1,10 +1,8 @@
 use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
 
-
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
-
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::{LogicalSource, Source};
 
@@ -14,7 +12,8 @@ impl Extractor<LogicalSource> for LogicalSource {
         graph: &FastGraph,
     ) -> super::ExtractorResult<LogicalSource> {
         let iter_pred = vocab::rml::PROPERTY::ITERATOR.to_rcterm();
-        let refform_pred = vocab::rml::PROPERTY::REFERENCEFORMULATION.to_rcterm();
+        let refform_pred =
+            vocab::rml::PROPERTY::REFERENCEFORMULATION.to_rcterm();
 
         let iterator = get_object(graph, subject, &iter_pred)
             .ok()

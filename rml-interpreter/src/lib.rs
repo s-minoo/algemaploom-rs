@@ -1,4 +1,3 @@
-
 use sophia_term::iri::Iri;
 use sophia_term::Term;
 
@@ -8,4 +7,3 @@ mod test_util;
 
 type TermString = Term<String>;
 type IriString = Iri<String>;
-

@@ -2,12 +2,13 @@ pub mod errors;
 mod lexer;
 mod parser;
 
-pub use parser::r#type::*;
-
-use std::{fs::File, io::Read, path::Path};
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 
 use chumsky::Parser;
 use errors::ShExMLResult;
+pub use parser::r#type::*;
 
 use crate::errors::{ShExMLError, ShExMLErrorType};
 
@@ -26,8 +27,8 @@ pub fn parse_string(shexml_doc_string: String) -> ShExMLResult<ShExMLDocument> {
     let tokens = tokens_res.or_else(|err| {
         Err(ShExMLError {
             dbg_msg: format!("{:?}", err),
-            msg: format!("{}", ShExMLErrorType::LexerError),
-            err: ShExMLErrorType::LexerError,
+            msg:     format!("{}", ShExMLErrorType::LexerError),
+            err:     ShExMLErrorType::LexerError,
         })
     })?;
 
@@ -36,8 +37,8 @@ pub fn parse_string(shexml_doc_string: String) -> ShExMLResult<ShExMLDocument> {
     shexml_doc_res.or_else(|err| {
         Err(ShExMLError {
             dbg_msg: format!("{:?}", err),
-            msg: format!("{}", ShExMLErrorType::ParserError),
-            err: ShExMLErrorType::ParserError,
+            msg:     format!("{}", ShExMLErrorType::ParserError),
+            err:     ShExMLErrorType::ParserError,
         })
     })
 }

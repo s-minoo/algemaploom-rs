@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 use operator::IOType;
 use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
@@ -8,7 +7,7 @@ use sophia_term::iri::Iri;
 use sophia_term::RcTerm;
 
 use super::{Extractor, ExtractorResult};
-use crate::extractors::store::{get_object};
+use crate::extractors::store::get_object;
 use crate::extractors::FromVocab;
 use crate::rml_model::source_target::LogicalTarget;
 
@@ -51,7 +50,8 @@ impl Extractor<LogicalTarget> for LogicalTarget {
         graph: &sophia_inmem::graph::FastGraph,
     ) -> super::ExtractorResult<LogicalTarget> {
         let target_pred = vocab::rmlt::PROPERTY::TARGET.to_rcterm();
-        let serialization_pred = vocab::rmlt::PROPERTY::SERIALIZATION.to_rcterm();
+        let serialization_pred =
+            vocab::rmlt::PROPERTY::SERIALIZATION.to_rcterm();
         let compression_pred = vocab::rmlt::PROPERTY::COMPRESSION.to_rcterm();
 
         let compression = get_object(graph, subject, &compression_pred)

@@ -31,7 +31,6 @@ pub fn main() -> Result<(), ParseError> {
         let mut writer = BufWriter::new(file);
         write!(writer, "{:#?}", rml_model)?;
     } else {
-
         println!("{:#?}", rml_model);
     }
 

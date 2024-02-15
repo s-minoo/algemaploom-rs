@@ -7,9 +7,7 @@ use super::{ExtractorResult, FromVocab, TermMapExtractor};
 use crate::extractors::store::{get_object, get_objects};
 use crate::extractors::Extractor;
 use crate::rml_model::join::JoinCondition;
-use crate::rml_model::term_map::{
-    GraphMap, ObjectMap, TermMapInfo,
-};
+use crate::rml_model::term_map::{GraphMap, ObjectMap, TermMapInfo};
 use crate::IriString;
 
 fn extract_join_condition(

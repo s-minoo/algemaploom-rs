@@ -2,12 +2,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use operator::Target;
+use plangenerator::plan::{Plan, Processed};
 use rml_interpreter::rml_model::term_map::{
     GraphMap, ObjectMap, PredicateMap, SubjectMap,
 };
 use rml_interpreter::rml_model::{PredicateObjectMap, TriplesMap};
-use operator::Target;
-use plangenerator::plan::{Plan, Processed};
 
 #[derive(Debug, Clone)]
 pub struct RefPOM<'a> {
@@ -35,7 +35,6 @@ pub struct Triples<'a> {
     pub sm:   &'a SubjectMap,
     pub poms: Vec<RefPOM<'a>>,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct SearchMap<'a> {

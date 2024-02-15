@@ -83,37 +83,41 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Field {
-    pub alias: String, 
-    pub reference: String, 
-    pub reference_formulation: DataFormat, 
-    pub inner_fields: Vec<Field>, 
+    pub alias:                 String,
+    pub reference:             String,
+    pub reference_formulation: DataFormat,
+    pub inner_fields:          Vec<Field>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Iterator {
-    pub reference: String, 
-    pub reference_formulation: DataFormat, 
-    pub fields: Vec<Field>, 
+    pub reference:             String,
+    pub reference_formulation: DataFormat,
+    pub fields:                Vec<Field>,
+}
 
+impl Hash for Iterator {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.reference.hash(state);
+        self.reference_formulation.hash(state);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     #[serde(flatten)]
-    pub config:              HashMap<String, String>,
-    pub source_type:         IOType,
-    pub data_format:         DataFormat,
-    pub reference_iterators: Vec<String>,
+    pub config:      HashMap<String, String>,
+    pub source_type: IOType,
+    pub iterator:    Iterator,
 }
 
 impl PrettyDisplay for Source {
     fn pretty_string(&self) -> Result<String> {
         let result = format!(
-            "type: {:?} \ndata format: {:?} \nreference iterators: {:?} \nconfig: {}
+            "type: {:?} \nreference iterator: {:?} \nconfig: {}
              ",
             self.source_type,
-            self.data_format,
-            self.reference_iterators,
+            self.iterator,
             serde_json::to_string_pretty(&self.config)?
         );
         Ok(result)
@@ -124,7 +128,7 @@ impl Hash for Source {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         hash_hashmap(&self.config, state);
         self.source_type.hash(state);
-        self.data_format.hash(state);
+        self.iterator.hash(state);
     }
 }
 
@@ -269,27 +273,43 @@ impl PrettyDisplay for Extend {
     }
 }
 
-
 pub type RcExtendFunction = Rc<Function>;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Function {
-    Reference { value: String },
-    Constant { value: String },
-    Template { value: String },
-    UriEncode { inner_function: RcExtendFunction },
-    Iri { inner_function: RcExtendFunction },
-    Literal { inner_function: RcExtendFunction },
-    BlankNode { inner_function: RcExtendFunction },
-    Upper { inner_function: RcExtendFunction },
-    Lower { inner_function: RcExtendFunction },
-    FnO{ 
-        fno_identifier:String, 
+    Reference {
+        value: String,
+    },
+    Constant {
+        value: String,
+    },
+    Template {
+        value: String,
+    },
+    UriEncode {
+        inner_function: RcExtendFunction,
+    },
+    Iri {
+        inner_function: RcExtendFunction,
+    },
+    Literal {
+        inner_function: RcExtendFunction,
+    },
+    BlankNode {
+        inner_function: RcExtendFunction,
+    },
+    Upper {
+        inner_function: RcExtendFunction,
+    },
+    Lower {
+        inner_function: RcExtendFunction,
+    },
+    FnO {
+        fno_identifier:   String,
         #[serde(flatten)]
-        param_func_pairs:HashMap<String, RcExtendFunction>  
-    }
+        param_func_pairs: HashMap<String, RcExtendFunction>,
+    },
 }
-
 
 // Post-mapping operators
 
@@ -321,7 +341,7 @@ impl Hash for Serializer {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum IOType {
-    StdOut, 
+    StdOut,
     File,
     Kafka,
     Websocket,
@@ -330,12 +350,11 @@ pub enum IOType {
     SPARQLEndpoint,
 }
 
-impl Default for IOType{
+impl Default for IOType {
     fn default() -> Self {
         Self::StdOut
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
@@ -366,33 +385,30 @@ impl Hash for Target {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Fragmenter {
-    pub from: String, 
-    pub to: Vec<String>, 
+    pub from: String,
+    pub to:   Vec<String>,
 }
 
-
-impl Fragmenter{
-
-    pub fn target_fragment_exist(&self, target_fragment:&str) -> bool{
-        self.to.iter().filter(|frag| *frag == target_fragment).count() == 1
-        
+impl Fragmenter {
+    pub fn target_fragment_exist(&self, target_fragment: &str) -> bool {
+        self.to
+            .iter()
+            .filter(|frag| *frag == target_fragment)
+            .count()
+            == 1
     }
-
 }
-
 
 impl PrettyDisplay for Fragmenter {
     fn pretty_string(&self) -> Result<String> {
-       let result = format!(
-           "from_fragment: {} \n to_fragments: {}", 
-           self.from, 
-           serde_json::to_string(&self.to)?, 
-           ) ;
+        let result = format!(
+            "from_fragment: {} \n to_fragments: {}",
+            self.from,
+            serde_json::to_string(&self.to)?,
+        );
 
-       Ok(result)
+        Ok(result)
     }
 }
-

@@ -28,7 +28,7 @@ impl TriplesMap {
 pub struct PredicateObjectMap {
     pub predicate_maps: Vec<PredicateMap>,
     pub object_maps:    Vec<ObjectMap>,
-    pub graph_maps:      Vec<GraphMap>,
+    pub graph_maps:     Vec<GraphMap>,
 }
 
 impl PredicateObjectMap {

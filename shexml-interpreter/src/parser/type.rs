@@ -1,26 +1,24 @@
 use std::collections::{HashMap, HashSet};
 
-use serde::{
-    ser::{SerializeSeq, SerializeStruct},
-    Deserialize, Serialize, Serializer,
-};
+use serde::ser::{SerializeSeq, SerializeStruct};
+use serde::{Deserialize, Serialize, Serializer};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ShExMLDocument {
-    pub prefixes: Vec<Prefix>,
-    pub sources: Vec<Source>,
-    pub iterators: Vec<Box<Iterator>>,
+    pub prefixes:         Vec<Prefix>,
+    pub sources:          Vec<Source>,
+    pub iterators:        Vec<Box<Iterator>>,
     pub expression_stmts: Vec<ExpressionStmt>,
-    pub auto_increments: Vec<AutoIncrement>,
-    pub functions: Vec<Function>,
-    pub matchers: Vec<Matcher>,
-    pub graph_shapes: Vec<GraphShapes>,
+    pub auto_increments:  Vec<AutoIncrement>,
+    pub functions:        Vec<Function>,
+    pub matchers:         Vec<Matcher>,
+    pub graph_shapes:     Vec<GraphShapes>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Prefix {
     pub prefix: PrefixNameSpace,
-    pub uri: String,
+    pub uri:    String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -33,8 +31,8 @@ pub enum FieldType {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Field {
     pub field_type: FieldType,
-    pub ident: String,
-    pub query: String,
+    pub ident:      String,
+    pub query:      String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,17 +45,17 @@ pub enum SourceType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
-    pub ident: String,
+    pub ident:       String,
     pub source_type: SourceType,
-    pub uri: String,
+    pub uri:         String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Iterator {
-    pub ident: String,
-    pub query: String,
-    pub iter_type: String,
-    pub fields: Vec<Field>,
+    pub ident:           String,
+    pub query:           String,
+    pub iter_type:       String,
+    pub fields:          Vec<Field>,
     pub nested_iterator: Option<Box<Iterator>>,
 }
 
@@ -71,9 +69,9 @@ pub enum ExpressionEnum {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExpressionReferenceIdent {
-    pub source_ident: String, 
+    pub source_ident:   String,
     pub iterator_ident: String,
-    pub field: Option<String>,
+    pub field:          Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -82,8 +80,8 @@ pub enum ExpressionStmtEnum {
 
     Union(Box<ExpressionStmtEnum>, Box<ExpressionStmtEnum>),
     ConcatenateString {
-        left_reference: ExpressionReferenceIdent,
-        concate_string: String,
+        left_reference:  ExpressionReferenceIdent,
+        concate_string:  String,
         right_reference: ExpressionReferenceIdent,
     },
 
@@ -149,57 +147,57 @@ impl Serialize for ExpressionStmtEnum {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExpressionStmt {
-    pub ident: String,
+    pub ident:     String,
     pub expr_enum: ExpressionStmtEnum,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Matcher {
-    pub ident: String,
+    pub ident:      String,
     pub rename_map: HashMap<String, HashSet<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AutoIncrement {
-    pub ident: String,
-    pub start: u32,
+    pub ident:  String,
+    pub start:  u32,
     pub prefix: Option<String>,
     pub suffix: Option<String>,
-    pub end: Option<u32>,
-    pub step: Option<u32>,
+    pub end:    Option<u32>,
+    pub step:   Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Function {
-    pub ident: String,
+    pub ident:     String,
     pub lang_type: String,
-    pub uri: String,
+    pub uri:       String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShapeIdent {
     pub prefix: PrefixNameSpace,
-    pub local: String,
+    pub local:  String,
 }
 
 impl ShapeIdent {
     pub fn base() -> ShapeIdent {
         ShapeIdent {
             prefix: PrefixNameSpace::BasePrefix,
-            local: "".to_string(),
+            local:  "".to_string(),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GraphShapes {
-    pub ident: ShapeIdent,
+    pub ident:  ShapeIdent,
     pub shapes: Vec<Shape>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Shape {
-    pub ident: ShapeIdent,
+    pub ident:   ShapeIdent,
     pub subject: Subject,
 
     #[serde(serialize_with = "pred_obj_ser")]
@@ -227,7 +225,7 @@ where
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShapeReference {
     pub expr_ident: String,
-    pub field: Option<String>,
+    pub field:      Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -237,18 +235,18 @@ pub enum ShapeExpression {
     Reference(ShapeReference),
 
     Matching {
-        expr_ident: String,
+        expr_ident:    String,
         matcher_ident: String,
     },
 
     Conditional {
-        reference: ShapeReference,
+        reference:        ShapeReference,
         conditional_expr: Box<ShapeExpression>,
     },
 
     Function {
         fun_method_ident: ShapeReference,
-        params_idents: Vec<ShapeReference>,
+        params_idents:    Vec<ShapeReference>,
     },
 }
 
@@ -267,19 +265,19 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Object {
-    pub prefix: Option<PrefixNameSpace>,
+    pub prefix:     Option<PrefixNameSpace>,
     pub expression: ShapeExpression,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Predicate {
     pub prefix: PrefixNameSpace,
-    pub local: String,
+    pub local:  String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Subject {
-    pub prefix: PrefixNameSpace,
+    pub prefix:     PrefixNameSpace,
     pub expression: ShapeExpression,
 }
 

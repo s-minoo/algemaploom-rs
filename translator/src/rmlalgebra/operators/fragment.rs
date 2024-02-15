@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use operator::Fragmenter;
 
-use crate::{rmlalgebra::types::Quads, OperatorTranslator};
+use crate::rmlalgebra::types::Quads;
+use crate::OperatorTranslator;
 #[derive(Debug, Clone)]
 pub struct FragmentTranslator<'a> {
     pub lt_quads_map: &'a HashMap<String, Vec<Quads<'a>>>,

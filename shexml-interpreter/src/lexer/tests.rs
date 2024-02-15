@@ -83,7 +83,7 @@ fn function_if_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local: "Films".to_string(),
+            local:  "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -104,7 +104,7 @@ fn function_if_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "name".to_string(),
+            local:  "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -114,7 +114,7 @@ fn function_if_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "year".to_string(),
+            local:  "year".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -124,7 +124,7 @@ fn function_if_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "countryOfOrigin".to_string(),
+            local:  "countryOfOrigin".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -176,7 +176,7 @@ fn function_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local: "Films".to_string(),
+            local:  "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -188,7 +188,7 @@ fn function_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "name".to_string(),
+            local:  "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -198,7 +198,7 @@ fn function_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "year".to_string(),
+            local:  "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -210,7 +210,7 @@ fn function_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "bigName".to_string(),
+            local:  "bigName".to_string(),
         },
         ShExMLToken::PrefixNS("dbr".to_string()),
         ShExMLToken::PrefixSep,
@@ -260,7 +260,7 @@ fn matching_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local: "Films".to_string(),
+            local:  "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -272,7 +272,7 @@ fn matching_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "name".to_string(),
+            local:  "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -282,7 +282,7 @@ fn matching_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "year".to_string(),
+            local:  "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -294,7 +294,7 @@ fn matching_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "country".to_string(),
+            local:  "country".to_string(),
         },
         ShExMLToken::PrefixNS("dbr".to_string()),
         ShExMLToken::PrefixSep,
@@ -342,13 +342,13 @@ fn graphed_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local: "MyGraph".to_string(),
+            local:  "MyGraph".to_string(),
         },
         ShExMLToken::SqBrackStart,
         ShExMLToken::SqBrackStart,
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local: "Films".to_string(),
+            local:  "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -360,7 +360,7 @@ fn graphed_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "name".to_string(),
+            local:  "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -370,7 +370,7 @@ fn graphed_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "year".to_string(),
+            local:  "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -416,7 +416,7 @@ fn simple_single_shape_test() {
     let expected = Some(vec![
         ShExMLToken::ShapeNode {
             prefix: "".to_string(),
-            local: "Films".to_string(),
+            local:  "Films".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,
@@ -428,7 +428,7 @@ fn simple_single_shape_test() {
         ShExMLToken::CurlStart,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "name".to_string(),
+            local:  "name".to_string(),
         },
         ShExMLToken::SqBrackStart,
         film_exp.clone(),
@@ -438,7 +438,7 @@ fn simple_single_shape_test() {
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
-            local: "year".to_string(),
+            local:  "year".to_string(),
         },
         ShExMLToken::BasePrefix,
         ShExMLToken::PrefixSep,

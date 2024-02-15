@@ -1,5 +1,3 @@
-
-
 use operator::formats::DataFormat;
 
 use super::SerializeTranslator;

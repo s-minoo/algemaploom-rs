@@ -1,7 +1,5 @@
-use plangenerator::{
-    error::PlanError,
-    plan::{Init, Plan},
-};
+use plangenerator::error::PlanError;
+use plangenerator::plan::{Init, Plan};
 
 pub mod rmlalgebra;
 pub mod shexml;

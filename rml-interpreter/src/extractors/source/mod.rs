@@ -5,13 +5,11 @@ use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
 
 use self::csvw_source::extract_csvw_source;
-
 use super::error::ParseError;
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
-
 use crate::extractors::FromVocab;
-use crate::rml_model::source_target::{Source};
+use crate::rml_model::source_target::Source;
 
 impl Extractor<Source> for Source {
     fn extract_self(
@@ -23,14 +21,18 @@ impl Extractor<Source> for Source {
             | sophia_api::term::TermKind::BlankNode => {
                 extract_typed_source(subject_ref, graph_ref)
             }
-            sophia_api::term::TermKind::Literal => Ok(Source::FileInput {
-                path: subject_ref.value().to_string(),
-            }),
+            sophia_api::term::TermKind::Literal => {
+                Ok(Source::FileInput {
+                    path: subject_ref.value().to_string(),
+                })
+            }
 
-            _ => Err(ParseError::GenericError(format!(
-                "Variables cannot be parsed as Source {}",
-                subject_ref
-            ))),
+            _ => {
+                Err(ParseError::GenericError(format!(
+                    "Variables cannot be parsed as Source {}",
+                    subject_ref
+                )))
+            }
         }
     }
 }
@@ -44,18 +46,22 @@ fn extract_typed_source(
 
     let match_result = match source_type {
         sophia_term::Term::Iri(iri) => Ok(iri),
-        _ => Err(ParseError::GenericError(
-            "Object of predicate 'a' cannot be Literal".to_string(),
-        )),
+        _ => {
+            Err(ParseError::GenericError(
+                "Object of predicate 'a' cannot be Literal".to_string(),
+            ))
+        }
     }?;
 
     match match_result {
         iri_string if iri_string == vocab::csvw::CLASS::TABLE.to_rcterm() => {
             extract_csvw_source(subject, graph)
         }
-        invalid_iri => Err(ParseError::GenericError(format!(
-            "Source type extraction not yet supported {:#?}",
-            invalid_iri
-        ))),
+        invalid_iri => {
+            Err(ParseError::GenericError(format!(
+                "Source type extraction not yet supported {:#?}",
+                invalid_iri
+            )))
+        }
     }
 }

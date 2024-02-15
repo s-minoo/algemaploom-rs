@@ -15,8 +15,6 @@ use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 use self::operators::extend::*;
 use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
-use crate::OperatorTranslator;
-
 use self::util::{
     extract_gm_tm_infos, extract_tm_infos_from_poms, generate_lt_quads_from_spo,
 };
@@ -24,11 +22,11 @@ use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
     generate_logtarget_map, generate_lt_quads_from_doc, generate_variable_map,
 };
-use crate::LanguageTranslator;
+use crate::{LanguageTranslator, OperatorTranslator};
 
-pub struct RMLDocumentTranslator;
+pub struct OptimizedRMLDocumentTranslator;
 
-impl LanguageTranslator<Document> for RMLDocumentTranslator {
+impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
     fn translate_to_plan(doc: Document) -> crate::LanguageTranslateResult {
         let mut plan = Plan::<()>::new();
 
@@ -271,8 +269,8 @@ fn add_join_related_ops(
 
             let pom_with_joined_ptm = vec![PredicateObjectMap {
                 predicate_maps: pms.clone(),
-                object_maps: [om.clone()].to_vec(),
-                graph_maps: pom.graph_maps.clone(),
+                object_maps:    [om.clone()].to_vec(),
+                graph_maps:     pom.graph_maps.clone(),
             }];
 
             let mut extend_pairs =
@@ -307,7 +305,7 @@ fn add_join_related_ops(
     Ok(())
 }
 fn translate_source_op(tm: &TriplesMap) -> Source {
-    tm.logical_source.clone().into()
+    todo!()
 }
 
 fn translate_projection_op(tm: &TriplesMap) -> Operator {
@@ -463,7 +461,8 @@ mod tests {
     #[test]
     fn test_operator_translation() -> ExtractorResult<()> {
         let document = parse_file(test_case!("sample_mapping.ttl").into())?;
-        let operators = RMLDocumentTranslator::translate_to_plan(document);
+        let operators =
+            OptimizedRMLDocumentTranslator::translate_to_plan(document);
 
         let _output = File::create("op_trans_output.json")?;
         println!("{:#?}", operators);
@@ -473,7 +472,8 @@ mod tests {
     #[test]
     fn test_operator_translation_complex() -> ExtractorResult<()> {
         let document = parse_file(test_case!("multiple_tm.ttl").into())?;
-        let operators = RMLDocumentTranslator::translate_to_plan(document);
+        let operators =
+            OptimizedRMLDocumentTranslator::translate_to_plan(document);
 
         let _output = File::create("op_trans_complex_output.json")?;
         println!("{:#?}", operators);

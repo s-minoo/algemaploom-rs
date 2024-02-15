@@ -1,15 +1,11 @@
-use std::{
-    fs::File,
-    io::{stdin, stdout, BufReader, IsTerminal, Read},
-    path::PathBuf,
-    process::exit,
-};
+use std::fs::File;
+use std::io::{stdin, stdout, BufReader, IsTerminal, Read};
+use std::path::PathBuf;
+use std::process::exit;
 
 use clap::{CommandFactory, Parser};
-use shexml_interpreter::{
-    errors::{ShExMLError, ShExMLResult},
-    parse_string,
-};
+use shexml_interpreter::errors::{ShExMLError, ShExMLResult};
+use shexml_interpreter::parse_string;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -43,8 +39,9 @@ pub fn main() -> ShExMLResult<()> {
         serde_json::to_string_pretty(&shexml_doc).or_else(|err| {
             Err(ShExMLError {
                 dbg_msg: format!("{:?}", err),
-                msg: format!("{}", err),
-                err: shexml_interpreter::errors::ShExMLErrorType::SerdeError,
+                msg:     format!("{}", err),
+                err:
+                    shexml_interpreter::errors::ShExMLErrorType::SerdeError,
             })
         })?;
 

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 use vocab::ToString;
 
 use crate::rmlalgebra::types::Quads;

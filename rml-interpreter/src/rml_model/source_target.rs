@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use operator::formats::DataFormat;
-use operator::{IOType, Target};
+use operator::{IOType, Iterator, Target};
 use sophia_api::term::TTerm;
 use sophia_term::iri::Iri;
 use vocab::ToString;
@@ -12,9 +12,9 @@ use crate::IriString;
 
 #[derive(Debug, Clone, Eq)]
 pub struct LogicalSource {
-    pub identifier: String,
-    pub iterator: Option<String>,
-    pub source: Source,
+    pub identifier:            String,
+    pub iterator:              Option<String>,
+    pub source:                Source,
     pub reference_formulation: IriString,
 }
 impl PartialEq for LogicalSource {
@@ -22,43 +22,6 @@ impl PartialEq for LogicalSource {
         self.iterator == other.iterator
             && self.source == other.source
             && self.reference_formulation == other.reference_formulation
-    }
-}
-
-impl From<LogicalSource> for operator::Source {
-    fn from(val: LogicalSource) -> Self {
-        let source_type = match &val.source {
-            Source::FileInput { path: _ } => IOType::File,
-
-            // TODO: Determine the IOType for CSVW from the specified URL! <27-09-23, Min Oo> //
-            Source::CSVW {
-                url: _,
-                parse_config: _,
-            } => IOType::File,
-        };
-
-        let data_format = match &val.reference_formulation.value().to_string() {
-            p if *p == vocab::query::CLASS::CSV.to_string() => DataFormat::CSV,
-            p if *p == vocab::query::CLASS::JSONPATH.to_string() => {
-                DataFormat::JSON
-            }
-            p if *p == vocab::query::CLASS::XPATH.to_string() => {
-                DataFormat::XML
-            }
-            p => panic!("Data format not supported {} ", p),
-        };
-
-        let reference_iterators = match &val.iterator {
-            Some(iter) => vec![iter.to_owned()],
-            None => vec![],
-        };
-
-        operator::Source {
-            config: source_config_map(&val),
-            reference_iterators,
-            source_type,
-            data_format,
-        }
     }
 }
 
@@ -82,24 +45,22 @@ pub fn default_file_output(path: String) -> Output {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogicalTarget {
-    pub identifier: String,
-    pub compression: Option<IriString>,
+    pub identifier:    String,
+    pub compression:   Option<IriString>,
     pub serialization: IriString,
-    pub output_type: IOType,
-    pub config: HashMap<String, String>,
+    pub output_type:   IOType,
+    pub config:        HashMap<String, String>,
 }
 
 impl Default for LogicalTarget {
     fn default() -> Self {
         Self {
-            identifier: String::from("default"),
-            compression: Default::default(),
-            serialization: Iri::new(
-                vocab::formats::CLASS::NQUADS.to_string(),
-            )
-            .unwrap(),
-            output_type: Default::default(),
-            config: Default::default(),
+            identifier:    String::from("default"),
+            compression:   Default::default(),
+            serialization: Iri::new(vocab::formats::CLASS::NQUADS.to_string())
+                .unwrap(),
+            output_type:   Default::default(),
+            config:        Default::default(),
         }
     }
 }
@@ -168,7 +129,7 @@ impl From<LogicalTarget> for operator::Target {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
     CSVW {
-        url: String,
+        url:          String,
         parse_config: HashMap<String, String>,
     },
     FileInput {

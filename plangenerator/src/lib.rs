@@ -1,2 +1,2 @@
-pub mod plan;
 pub mod error;
+pub mod plan;

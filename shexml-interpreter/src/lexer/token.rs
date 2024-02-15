@@ -9,10 +9,9 @@ pub enum ShExMLToken {
     AutoIncrement,
     Function,
 
-
-    /// Source type 
-    File, 
-    HTTP, 
+    /// Source type
+    File,
+    HTTP,
     HTTPS,
     JDBC(String),
 

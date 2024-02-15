@@ -11,3 +11,9 @@ pub enum DataFormat {
     NTriples,
     SQL,
 }
+
+impl Default for DataFormat {
+    fn default() -> Self {
+        DataFormat::CSV
+    }
+}

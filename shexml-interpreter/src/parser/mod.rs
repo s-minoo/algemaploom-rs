@@ -117,9 +117,11 @@ fn graph_shapes() -> t!(Vec<GraphShapes>) {
         .map(|(ident, shapes)| GraphShapes { ident, shapes });
 
     graph
-        .or(shapes().map(|shapes| GraphShapes {
-            ident: ShapeIdent::base(),
-            shapes,
+        .or(shapes().map(|shapes| {
+            GraphShapes {
+                ident: ShapeIdent::base(),
+                shapes,
+            }
         }))
         .repeated()
         .at_least(1)
@@ -166,9 +168,8 @@ fn shapes() -> t!(Vec<Shape>) {
             predicate
                 .clone()
                 .then(
-                    obj_prefix.map(|(prefix, expression)| Object {
-                        prefix,
-                        expression,
+                    obj_prefix.map(|(prefix, expression)| {
+                        Object { prefix, expression }
                     }),
                 )
                 .then_ignore(just(ShExMLToken::PredicateSplit))
@@ -208,20 +209,22 @@ fn shape_expression() -> t!(ShapeExpression) {
             just(ShExMLToken::BrackStart),
             just(ShExMLToken::BrackEnd),
         ))
-        .map(
-            |(fun_method_ident, params_idents)| ShapeExpression::Function {
+        .map(|(fun_method_ident, params_idents)| {
+            ShapeExpression::Function {
                 fun_method_ident,
                 params_idents,
-            },
-        );
+            }
+        });
 
     let conditional_expr = reference_expr
         .clone()
         .then_ignore(just(ShExMLToken::If))
         .then(func_expr.clone())
-        .map(|(reference, function)| ShapeExpression::Conditional {
-            reference,
-            conditional_expr: Box::new(function),
+        .map(|(reference, function)| {
+            ShapeExpression::Conditional {
+                reference,
+                conditional_expr: Box::new(function),
+            }
         });
 
     choice((
@@ -420,10 +423,12 @@ fn sources() -> t!(Vec<Source>) {
             just(ShExMLToken::AngleStart),
             just(ShExMLToken::AngleEnd),
         ))
-        .map(|(ident, (source_type, uri))| Source {
-            ident,
-            uri,
-            source_type,
+        .map(|(ident, (source_type, uri))| {
+            Source {
+                ident,
+                uri,
+                source_type,
+            }
         })
         .repeated()
         .at_least(1)
@@ -486,10 +491,12 @@ fn field() -> t!(Field) {
     field_type
         .then(unfold_token_value!(Ident))
         .then(unfold_token_value!(FieldQuery))
-        .map(|((field_type, name), query)| Field {
-            ident: name,
-            query,
-            field_type,
+        .map(|((field_type, name), query)| {
+            Field {
+                ident: name,
+                query,
+                field_type,
+            }
         })
         .labelled("parser:field_type")
 }

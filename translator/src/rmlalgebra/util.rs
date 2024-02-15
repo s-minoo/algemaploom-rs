@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::vec;
 
+use operator::Target;
 use rml_interpreter::rml_model::source_target::LogicalTarget;
 use rml_interpreter::rml_model::term_map::{SubjectMap, TermMapInfo};
 use rml_interpreter::rml_model::{Document, PredicateObjectMap};
-use operator::Target;
 
 use super::types::{Quads, RefPOM, Triples};
 
@@ -37,7 +37,6 @@ pub fn extract_tm_infos_from_poms(
         })
         .collect()
 }
-
 
 pub fn generate_lt_quads_from_doc(
     doc: &Document,

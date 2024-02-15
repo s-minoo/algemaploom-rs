@@ -617,7 +617,7 @@ impl Display for PlanNode {
 mod tests {
     use std::collections::{HashMap, HashSet};
 
-    use operator::{Projection, Rename};
+    use operator::{Iterator, Projection, Rename};
 
     use super::*;
 
@@ -625,10 +625,9 @@ mod tests {
     fn test_plan_source() {
         let mut plan = Plan::new();
         let source = Source {
-            config:              HashMap::new(),
-            source_type:         operator::IOType::File,
-            reference_iterators: vec![],
-            data_format:         operator::formats::DataFormat::CSV,
+            config:      HashMap::new(),
+            source_type: operator::IOType::File,
+            iterator:    Iterator::default(),
         };
         plan.source(source.clone());
         let graph = plan.graph.borrow();
@@ -646,10 +645,9 @@ mod tests {
     fn test_plan_apply() -> std::result::Result<(), PlanError> {
         let mut plan = Plan::new();
         let source = Source {
-            config:              HashMap::new(),
-            source_type:         operator::IOType::File,
-            reference_iterators: vec![],
-            data_format:         operator::formats::DataFormat::CSV,
+            config:      HashMap::new(),
+            source_type: operator::IOType::File,
+            iterator:    Iterator::default(),
         };
 
         let project_op = Operator::ProjectOp {
