@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use display::{JsonDisplay, PrettyDisplay};
-use formats::DataFormat;
+use formats::{DataFormat, ReferenceFormulation};
 use serde::{Deserialize, Serialize};
 
 pub type RcOperator = Rc<Operator>;
@@ -85,14 +85,14 @@ where
 pub struct Field {
     pub alias:                 String,
     pub reference:             String,
-    pub reference_formulation: DataFormat,
+    pub reference_formulation: ReferenceFormulation,
     pub inner_fields:          Vec<Field>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Iterator {
     pub reference:             String,
-    pub reference_formulation: DataFormat,
+    pub reference_formulation: ReferenceFormulation,
     pub fields:                Vec<Field>,
 }
 
