@@ -1,7 +1,8 @@
 use colored::Colorize;
 use plangenerator::error::PlanError;
 use rml_interpreter::extractors::io::parse_file;
-use translator::rmlalgebra::translate_to_algebra;
+use translator::rmlalgebra::OptimizedRMLDocumentTranslator;
+use translator::LanguageTranslator;
 
 fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
     file: F,
@@ -11,7 +12,8 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     let output_prefix = output_prefix.as_ref().to_string();
-    let mut mapping_plan = translate_to_algebra(document)?;
+    let mut mapping_plan =
+        OptimizedRMLDocumentTranslator::translate_to_plan(document)?;
     let full_path = output_prefix.clone() + ".dot";
     let _ = mapping_plan
         .write(full_path.clone().into())
