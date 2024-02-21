@@ -443,15 +443,8 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
             .ignore_then(unfold_token_value!(Ident))
             .then(
                 unfold_token_value!(IteratorType)
-                    .or_not()
+                    .map(|iter|  iter.parse::<IteratorType>().unwrap())
                     .then(unfold_token_value!(IteratorQuery))
-                    .map(|(opt_type, query)| {
-                        if let Some(iter_type) = opt_type {
-                            (iter_type, query)
-                        } else {
-                            ("".to_string(), query)
-                        }
-                    })
                     .delimited_by(
                         just(ShExMLToken::AngleStart),
                         just(ShExMLToken::AngleEnd),

@@ -1208,7 +1208,7 @@ fn iterator_nested_test() {
     let innermost_iter = Iterator {
         ident:           "nestedIterator".to_string(),
         query:           "nestedElements[*]".to_string(),
-        iter_type:       "jsonpath:".to_string(),
+        iter_type:       "jsonpath:".parse().unwrap(),
         fields:          inner_fields,
         nested_iterator: None,
     };
@@ -1227,7 +1227,7 @@ fn iterator_nested_test() {
     let expected_items = Some(vec![Box::new(Iterator {
         ident: "example".to_string(),
         query: "$".to_string(),
-        iter_type: "jsonpath:".to_string(),
+        iter_type: "jsonpath:".parse().unwrap(),
         fields,
         nested_iterator: Some(Box::new(inner_iter)),
     })]);
@@ -1277,7 +1277,7 @@ ITERATOR example <xpath: /path/to/entity> {
     let expected_items = Some(vec![Box::new(Iterator {
         ident: "example".to_string(),
         query: "/path/to/entity".to_string(),
-        iter_type: "xpath:".to_string(),
+        iter_type: "xpath:".parse().unwrap(),
         fields,
         nested_iterator: None,
     })]);

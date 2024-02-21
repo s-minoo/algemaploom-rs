@@ -1,7 +1,13 @@
 use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
 
 use serde::ser::{SerializeSeq, SerializeStruct};
 use serde::{Deserialize, Serialize, Serializer};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ShExMLError {
+    ParseError(String),
+}
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ShExMLDocument {
@@ -54,9 +60,38 @@ pub struct Source {
 pub struct Iterator {
     pub ident:           String,
     pub query:           String,
-    pub iter_type:       String,
+    pub iter_type:       IteratorType,
     pub fields:          Vec<Field>,
     pub nested_iterator: Option<Box<Iterator>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum IteratorType {
+    JSONPath,
+    XPath,
+    CSVRows,
+    SQL,
+    SPARQL,
+}
+
+impl FromStr for IteratorType {
+    type Err = ShExMLError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "jsonpath:" => Ok(IteratorType::JSONPath),
+            "xpath:" => Ok(IteratorType::XPath),
+            "sparql:" => Ok(IteratorType::SPARQL),
+            "sql:" => Ok(IteratorType::SQL),
+            "csvperrow:" => Ok(IteratorType::CSVRows),
+            string => {
+                Err(ShExMLError::ParseError(format!(
+                    "{} cannot be parsed to IteratorType",
+                    string
+                )))
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
