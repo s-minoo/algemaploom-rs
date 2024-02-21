@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::hash::Hash;
 
 use operator::formats::DataFormat;
 use operator::{IOType, Iterator, Target};
+use serde::Serializer;
 use sophia_api::term::TTerm;
 use sophia_term::iri::Iri;
 use vocab::ToString;
@@ -127,29 +129,32 @@ impl From<LogicalTarget> for operator::Target {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Source {
-    CSVW {
-        url:          String,
-        parse_config: HashMap<String, String>,
-    },
-    FileInput {
-        path: String,
-    },
+pub struct Source {
+    pub source_type: SourceType,
+    pub config:      HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SourceType {
+    CSVW,
+    FileInput,
+}
+
+impl Display for SourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SourceType::CSVW => write!(f, "CSVW"),
+            SourceType::FileInput => write!(f, "FileInput"),
+        }
+    }
 }
 
 impl From<Source> for HashMap<String, String> {
     fn from(val: Source) -> Self {
         let mut map = HashMap::new();
-        match val {
-            Source::FileInput { path } => {
-                map.insert("path".to_string(), path);
-            }
-            Source::CSVW { url, parse_config } => {
-                map.insert("url".to_string(), url);
-                map.extend(parse_config);
-            }
-        };
 
+        map.extend(val.config);
+        map.insert("type".to_string(), format!("{}", val.source_type));
         map
     }
 }

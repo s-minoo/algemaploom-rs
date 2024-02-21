@@ -121,7 +121,7 @@ mod tests {
         let subj_map = SubjectMap::create_term_map(sub_ref, &graph)?;
 
         assert_eq!(subj_map.tm_info.term_map_type, TermMapType::Template);
-        assert!(subj_map.classes.len() == 1);
+        assert!(subj_map.classes.len() == 0);
 
         Ok(())
     }

@@ -83,7 +83,7 @@ mod tests {
             })
             .collect::<ExtractorResult<_>>()?;
 
-        assert_eq!(pms.len(), 3);
+        assert_eq!(pms.len(), 2);
 
         pms.iter().for_each(|pm| {
             assert_eq!(pm.tm_info.term_map_type, TermMapType::Constant);

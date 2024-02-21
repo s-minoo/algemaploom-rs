@@ -149,7 +149,7 @@ mod tests {
             .flatten()
             .collect();
 
-        assert_eq!(obj_maps.len(), 3);
+        assert_eq!(obj_maps.len(), 2);
         obj_maps.iter().for_each(|om| {
             assert_eq!(om.tm_info.term_type, Some(TermKind::Literal));
             assert_eq!(om.tm_info.term_map_type, TermMapType::Reference);

@@ -6,7 +6,7 @@ use sophia_inmem::graph::FastGraph;
 
 use crate::extractors::store::get_object;
 use crate::extractors::{ExtractorResult, FromVocab, RcTerm};
-use crate::rml_model::source_target::Source;
+use crate::rml_model::source_target::{Source, SourceType};
 use crate::TermString;
 
 lazy_static! {
@@ -91,7 +91,11 @@ pub fn extract_csvw_source(
     let url = get_object(graph, subject, &url_pred)?.value().to_string();
     let dialect_pred = vocab::csvw::PROPERTY::DIALECT.to_rcterm();
     let dialect_iri = get_object(graph, subject, &dialect_pred)?;
-    let parse_config = extract_parse_config(&dialect_iri, graph)?;
+    let mut config = extract_parse_config(&dialect_iri, graph)?;
 
-    Ok(Source::CSVW { url, parse_config })
+    config.insert("url".to_string(), url);
+    Ok(Source {
+        source_type: SourceType::CSVW,
+        config,
+    })
 }

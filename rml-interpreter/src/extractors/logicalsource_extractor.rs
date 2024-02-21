@@ -46,6 +46,7 @@ fn extract_concrete_source(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::fs::File;
     use std::io::BufReader;
     use std::path::PathBuf;
@@ -56,6 +57,7 @@ mod tests {
     use super::*;
     use crate::extractors::io::load_graph_bread;
     use crate::extractors::ExtractorResult;
+    use crate::rml_model::source_target::SourceType;
     use crate::{load_graph, test_case};
 
     #[test]
@@ -82,13 +84,22 @@ mod tests {
         let triple = graph.triples_with_p(&sub_pred).next().unwrap().unwrap();
 
         let sub_ref = triple.o();
-        let input_type = extract_concrete_source(sub_ref, &graph)?;
+        let generated = extract_concrete_source(sub_ref, &graph)?;
 
+        let config = HashMap::from_iter(vec![(
+            "path".to_string(),
+            "shoes.csv".to_string(),
+        )]);
+
+        let expected = Source {
+            source_type: SourceType::FileInput,
+            config,
+        };
         assert!(
-            input_type
-                == Source::FileInput {
-                    path: "Airport.csv".to_string(),
-                }
+            generated == expected,
+            "Generated: {:?} \n Expected: {:?}",
+            generated,
+            expected
         );
 
         Ok(())

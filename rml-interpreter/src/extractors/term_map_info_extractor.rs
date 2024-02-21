@@ -158,7 +158,7 @@ mod tests {
         assert!(tm_info.term_map_type == TermMapType::Template);
         println!("{:?}", tm_info);
         assert!(
-            tm_info.term_value.value() == "http://airport.example.com/{id}"
+            tm_info.term_value.value() == "example/{brand}"
         );
 
         Ok(())

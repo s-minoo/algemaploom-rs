@@ -1,6 +1,8 @@
 mod csvw_source;
 mod file_source;
 
+use std::collections::HashMap;
+
 use sophia_api::term::TTerm;
 use sophia_inmem::graph::FastGraph;
 
@@ -9,7 +11,7 @@ use super::error::ParseError;
 use super::{Extractor, ExtractorResult, RcTerm};
 use crate::extractors::store::get_object;
 use crate::extractors::FromVocab;
-use crate::rml_model::source_target::Source;
+use crate::rml_model::source_target::{Source, SourceType};
 
 impl Extractor<Source> for Source {
     fn extract_self(
@@ -22,8 +24,14 @@ impl Extractor<Source> for Source {
                 extract_typed_source(subject_ref, graph_ref)
             }
             sophia_api::term::TermKind::Literal => {
-                Ok(Source::FileInput {
-                    path: subject_ref.value().to_string(),
+                let mut config = HashMap::new();
+                config.insert(
+                    "path".to_string(),
+                    subject_ref.value().to_string(),
+                );
+                Ok(Source {
+                    source_type: SourceType::FileInput,
+                    config,
                 })
             }
 
