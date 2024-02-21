@@ -627,7 +627,7 @@ mod tests {
         let source = Source {
             config:      HashMap::new(),
             source_type: operator::IOType::File,
-            iterator:    Iterator::default(),
+            root_iterator:    Iterator::default(),
         };
         plan.source(source.clone());
         let graph = plan.graph.borrow();
@@ -647,7 +647,7 @@ mod tests {
         let source = Source {
             config:      HashMap::new(),
             source_type: operator::IOType::File,
-            iterator:    Iterator::default(),
+            root_iterator:    Iterator::default(),
         };
 
         let project_op = Operator::ProjectOp {

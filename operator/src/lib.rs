@@ -84,14 +84,14 @@ where
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Field {
     pub alias:                 String,
-    pub reference:             String,
+    pub reference:             Option<String>,
     pub reference_formulation: ReferenceFormulation,
     pub inner_fields:          Vec<Field>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Iterator {
-    pub reference:             String,
+    pub reference:             Option<String>,
     pub reference_formulation: ReferenceFormulation,
     pub fields:                Vec<Field>,
 }
@@ -108,7 +108,7 @@ pub struct Source {
     #[serde(flatten)]
     pub config:      HashMap<String, String>,
     pub source_type: IOType,
-    pub iterator:    Iterator,
+    pub root_iterator:    Iterator,
 }
 
 impl PrettyDisplay for Source {
@@ -117,7 +117,7 @@ impl PrettyDisplay for Source {
             "type: {:?} \nreference iterator: {:?} \nconfig: {}
              ",
             self.source_type,
-            self.iterator,
+            self.root_iterator,
             serde_json::to_string_pretty(&self.config)?
         );
         Ok(result)
@@ -128,7 +128,7 @@ impl Hash for Source {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         hash_hashmap(&self.config, state);
         self.source_type.hash(state);
-        self.iterator.hash(state);
+        self.root_iterator.hash(state);
     }
 }
 
