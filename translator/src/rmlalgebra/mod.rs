@@ -4,13 +4,18 @@ mod util;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 use std::rc::Rc;
 
-use operator::{Extend, Operator, Projection, Source};
+use operator::formats::{DataFormat, ReferenceFormulation};
+use operator::{Extend, Field, Iterator, Operator, Projection, Source};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{join, Plan, Processed, RcRefCellPlan};
+use rml_interpreter::rml_model::source_target::SourceType;
 use rml_interpreter::rml_model::term_map::SubjectMap;
 use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
+use sophia_api::term::TTerm;
+use vocab::ToString;
 
 use self::operators::extend::*;
 use self::operators::fragment::FragmentTranslator;
@@ -305,11 +310,62 @@ fn add_join_related_ops(
     Ok(())
 }
 fn translate_source_op(tm: &TriplesMap) -> Source {
-    // TODO: Implement proper triplesmap to source operator parsing  <15-02-24, Min Oo> //
-    todo!()
+
+    let reference_formulation =
+        match tm.logical_source.reference_formulation.value().to_string() {
+            iri if iri == vocab::query::CLASS::JSONPATH.to_string() => {
+                ReferenceFormulation::JSONPath
+            }
+            iri if iri == vocab::query::CLASS::XPATH.to_string() => {
+                ReferenceFormulation::XMLPath
+            }
+            _ => ReferenceFormulation::CSVRows,
+        };
+
+    let mut fields = Vec::new();
+    if reference_formulation != ReferenceFormulation::CSVRows {
+        let references = extract_references_in_tm(tm);
+
+        fields.extend(references.into_iter().map(|reference| {
+            Field {
+                alias:                 reference.clone(),
+                reference:             Some(reference),
+                reference_formulation: reference_formulation.clone(),
+                inner_fields:          vec![],
+            }
+        }));
+    }
+
+    let root_iterator = Iterator {
+        reference: tm.logical_source.iterator.clone(),
+        reference_formulation,
+        fields,
+    };
+
+    let config = tm.logical_source.source.config.clone();
+    let source_type = match tm.logical_source.source.source_type {
+        SourceType::CSVW => operator::IOType::File,
+        SourceType::FileInput => operator::IOType::File,
+    };
+
+    Source {
+        config,
+        source_type,
+        root_iterator,
+    }
 }
 
 fn translate_projection_op(tm: &TriplesMap) -> Operator {
+    let projection_attributes = extract_references_in_tm(tm);
+
+    Operator::ProjectOp {
+        config: Projection {
+            projection_attributes,
+        },
+    }
+}
+
+fn extract_references_in_tm(tm: &TriplesMap) -> HashSet<String> {
     let mut projection_attributes = tm.subject_map.tm_info.get_attributes();
 
     let po_attributes: HashSet<_> = tm
@@ -355,12 +411,7 @@ fn translate_projection_op(tm: &TriplesMap) -> Operator {
 
     // Subject map's attributes alread added to projection_attributes hashset
     projection_attributes.extend(po_attributes);
-
-    Operator::ProjectOp {
-        config: Projection {
-            projection_attributes,
-        },
-    }
+    projection_attributes
 }
 
 #[cfg(test)]
