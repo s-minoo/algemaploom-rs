@@ -329,7 +329,7 @@ fn translate_source_op(tm: &TriplesMap) -> Source {
         fields.extend(references.into_iter().map(|reference| {
             Field {
                 alias:                 reference.clone(),
-                reference:             Some(reference),
+                reference:             reference.clone(),
                 reference_formulation: reference_formulation.clone(),
                 inner_fields:          vec![],
             }
