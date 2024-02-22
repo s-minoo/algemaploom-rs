@@ -435,7 +435,7 @@ fn sources() -> t!(Vec<Source>) {
         .labelled("parser:sources")
 }
 
-fn iterators() -> t!(Vec<Box<Iterator>>) {
+fn iterators() -> t!(Vec<Iterator>) {
     let fields = field().repeated().at_least(1);
 
     recursive(|recurs| {
@@ -456,21 +456,20 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
             .map(|((ident, (iter_type, query)), fields)| {
                 (ident, iter_type, query, fields)
             })
-            .then(just(ShExMLToken::BrackEnd).map(|_| None).or(recurs))
+            .then(recurs.repeated())
             .then_ignore(just(ShExMLToken::BrackEnd).or_not())
-            .map(|((ident, iter_type, query, fields), iterator_opt)| {
-                Some(Box::new(Iterator {
+            .map(|((ident, iter_type, query, fields), nested_iterator)| {
+                Iterator {
                     ident,
                     query,
                     iter_type,
                     fields,
-                    nested_iterator: iterator_opt,
-                }))
+                    nested_iterator,
+                }
             })
     })
     .repeated()
     .at_least(1)
-    .flatten()
     .labelled("parser:iterators")
 }
 

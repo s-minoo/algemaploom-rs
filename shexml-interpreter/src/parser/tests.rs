@@ -1210,11 +1210,11 @@ fn iterator_nested_test() {
         query:           "nestedElements[*]".to_string(),
         iter_type:       None,
         fields:          inner_fields,
-        nested_iterator: None,
+        nested_iterator: vec![],
     };
 
     let inner_iter = Iterator {
-        nested_iterator: Some(Box::new(innermost_iter.clone())),
+        nested_iterator: vec![innermost_iter.clone()],
         ..innermost_iter
     };
 
@@ -1224,13 +1224,13 @@ fn iterator_nested_test() {
         query:      "id".to_string(),
     }];
 
-    let expected_items = Some(vec![Box::new(Iterator {
+    let expected_items = Some(vec![Iterator {
         ident: "example".to_string(),
         query: "$".to_string(),
         iter_type: Some("jsonpath:".parse().unwrap()),
         fields,
-        nested_iterator: Some(Box::new(inner_iter)),
-    })]);
+        nested_iterator: vec![inner_iter],
+    }]);
 
     let (parsed_items, errors) =
         parser::iterators().parse_recovery(tokens_opt.unwrap().0);
@@ -1239,6 +1239,78 @@ fn iterator_nested_test() {
     assert_parse_expected(parsed_items, expected_items)
 }
 
+#[test]
+fn iterator_nested_same_level_test() {
+    let iter_str = "
+    ITERATOR example <jsonpath: $> {
+    PUSHED_FIELD field1 <id>
+    ITERATOR nestedIterator <nestedElements[*]> {
+        POPPED_FIELD field2 <field1>
+        FIELD field3 <field3>
+        ITERATOR nestedIterator <nestedElements[*]> {
+            POPPED_FIELD field2 <field1>
+            FIELD field3 <field3>
+        }
+    }
+        ITERATOR nestedIterator <nestedElements[*]> {
+            POPPED_FIELD field2 <field1>
+            FIELD field3 <field3>
+        }
+}";
+
+    let (tokens_opt, errors) =
+        lexer::iterators().then(end()).parse_recovery(iter_str);
+    assert!(errors.is_empty(), "{:?}", errors);
+
+    let inner_fields = vec![
+        Field {
+            field_type: FieldType::Pop,
+            ident:      "field2".to_string(),
+            query:      "field1".to_string(),
+        },
+        Field {
+            field_type: FieldType::Normal,
+            ident:      "field3".to_string(),
+            query:      "field3".to_string(),
+        },
+    ];
+    let inner_most = Iterator {
+        ident:           "nestedIterator".to_string(),
+        query:           "nestedElements[*]".to_string(),
+        iter_type:       None,
+        fields:          inner_fields,
+        nested_iterator: vec![],
+    };
+
+    let inner_iter1 = Iterator {
+        nested_iterator: vec![inner_most.clone()],
+        ..inner_most.clone()
+    };
+
+    let inner_iter2 = Iterator {
+        ..inner_most
+    };
+
+    let fields = vec![Field {
+        field_type: FieldType::Push,
+        ident:      "field1".to_string(),
+        query:      "id".to_string(),
+    }];
+
+    let expected_items = Some(vec![Iterator {
+        ident: "example".to_string(),
+        query: "$".to_string(),
+        iter_type: Some("jsonpath:".parse().unwrap()),
+        fields,
+        nested_iterator: vec![inner_iter1, inner_iter2],
+    }]);
+
+    let (parsed_items, errors) =
+        parser::iterators().parse_recovery(tokens_opt.unwrap().0);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    assert_parse_expected(parsed_items, expected_items)
+}
 #[test]
 fn iterator_test() {
     let iter_str = "
@@ -1274,13 +1346,13 @@ ITERATOR example <xpath: /path/to/entity> {
         },
     ];
 
-    let expected_items = Some(vec![Box::new(Iterator {
+    let expected_items = Some(vec![Iterator {
         ident: "example".to_string(),
         query: "/path/to/entity".to_string(),
         iter_type: Some("xpath:".parse().unwrap()),
         fields,
-        nested_iterator: None,
-    })]);
+        nested_iterator: vec![],
+    }]);
     assert_parse_expected(parsed_items, expected_items)
 }
 

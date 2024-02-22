@@ -13,7 +13,7 @@ pub enum ShExMLError {
 pub struct ShExMLDocument {
     pub prefixes:         Vec<Prefix>,
     pub sources:          Vec<Source>,
-    pub iterators:        Vec<Box<Iterator>>,
+    pub iterators:        Vec<Iterator>,
     pub expression_stmts: Vec<ExpressionStmt>,
     pub auto_increments:  Vec<AutoIncrement>,
     pub functions:        Vec<Function>,
@@ -62,7 +62,7 @@ pub struct Iterator {
     pub query:           String,
     pub iter_type:       Option<IteratorType>,
     pub fields:          Vec<Field>,
-    pub nested_iterator: Option<Box<Iterator>>,
+    pub nested_iterator: Vec<Iterator>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
