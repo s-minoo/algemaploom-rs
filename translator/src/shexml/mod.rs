@@ -1,7 +1,7 @@
 use plangenerator::plan::Plan;
 use shexml_interpreter::ShExMLDocument;
 
-use crate::LanguageTranslator;
+use crate::{shexml::operators::source::ShExMLSourceTranslator, LanguageTranslator};
 
 mod operators;
 
@@ -12,7 +12,11 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
         model: ShExMLDocument,
     ) -> crate::LanguageTranslateResult {
         let mut plan = Plan::new();
-        model.sources.iter().for_each(|source| todo!());
+        let source_translator =  ShExMLSourceTranslator{
+            document: model,
+        };
+
         todo!()
+
     }
 }
