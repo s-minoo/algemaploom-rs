@@ -438,7 +438,7 @@ fn sources() -> t!(Vec<Source>) {
 fn iterators() -> t!(Vec<Box<Iterator>>) {
     let fields = field().repeated().at_least(1);
 
-    recursive(|iter| {
+    recursive(|recurs| {
         just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Iterator)
             .ignore_then(unfold_token_value!(Ident))
             .then(
@@ -455,7 +455,7 @@ fn iterators() -> t!(Vec<Box<Iterator>>) {
             .map(|((ident, (iter_type, query)), fields)| {
                 (ident, iter_type, query, fields)
             })
-            .then(just(ShExMLToken::BrackEnd).map(|_| None).or(iter))
+            .then(just(ShExMLToken::BrackEnd).map(|_| None).or(recurs))
             .then_ignore(just(ShExMLToken::BrackEnd).or_not())
             .map(|((ident, iter_type, query, fields), iterator_opt)| {
                 Some(Box::new(Iterator {

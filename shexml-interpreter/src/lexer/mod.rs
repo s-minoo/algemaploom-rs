@@ -382,7 +382,7 @@ pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
 pub fn iterators() -> t!(Vec<ShExMLToken>) {
     let header = iterator_header().padded();
 
-    (recursive(|iter| {
+    (recursive(|recur| {
         header
             .chain(token("{", ShExMLToken::BrackStart))
             .chain::<ShExMLToken, _, _>(
@@ -391,7 +391,7 @@ pub fn iterators() -> t!(Vec<ShExMLToken>) {
             .chain::<ShExMLToken, _, _>(
                 token("}", ShExMLToken::BrackEnd)
                     .map(|tok| vec![tok])
-                    .or(iter),
+                    .or(recur),
             )
             .chain(
                 token("}", ShExMLToken::BrackEnd)
