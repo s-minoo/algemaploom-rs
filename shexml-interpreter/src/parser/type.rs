@@ -60,7 +60,7 @@ pub struct Source {
 pub struct Iterator {
     pub ident:           String,
     pub query:           String,
-    pub iter_type:       IteratorType,
+    pub iter_type:       Option<IteratorType>,
     pub fields:          Vec<Field>,
     pub nested_iterator: Option<Box<Iterator>>,
 }

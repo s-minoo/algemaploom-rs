@@ -1,6 +1,6 @@
+#[cfg(test)]
 use std::collections::HashSet;
 
-#[cfg(test)]
 use super::*;
 use crate::{lexer, parser};
 
@@ -1178,10 +1178,10 @@ fn iterator_nested_test() {
     let iter_str = "
     ITERATOR example <jsonpath: $> {
     PUSHED_FIELD field1 <id>
-    ITERATOR nestedIterator <jsonpath: nestedElements[*]> {
+    ITERATOR nestedIterator <nestedElements[*]> {
         POPPED_FIELD field2 <field1>
         FIELD field3 <field3>
-        ITERATOR nestedIterator <jsonpath: nestedElements[*]> {
+        ITERATOR nestedIterator <nestedElements[*]> {
             POPPED_FIELD field2 <field1>
             FIELD field3 <field3>
         }
@@ -1190,7 +1190,7 @@ fn iterator_nested_test() {
 
     let (tokens_opt, errors) =
         lexer::iterators().then(end()).parse_recovery(iter_str);
-    assert!(errors.len() == 0, "{:?}", errors);
+    assert!(errors.is_empty(), "{:?}", errors);
 
     let inner_fields = vec![
         Field {
@@ -1208,7 +1208,7 @@ fn iterator_nested_test() {
     let innermost_iter = Iterator {
         ident:           "nestedIterator".to_string(),
         query:           "nestedElements[*]".to_string(),
-        iter_type:       "jsonpath:".parse().unwrap(),
+        iter_type:       None,
         fields:          inner_fields,
         nested_iterator: None,
     };
@@ -1227,7 +1227,7 @@ fn iterator_nested_test() {
     let expected_items = Some(vec![Box::new(Iterator {
         ident: "example".to_string(),
         query: "$".to_string(),
-        iter_type: "jsonpath:".parse().unwrap(),
+        iter_type: Some("jsonpath:".parse().unwrap()),
         fields,
         nested_iterator: Some(Box::new(inner_iter)),
     })]);
@@ -1277,7 +1277,7 @@ ITERATOR example <xpath: /path/to/entity> {
     let expected_items = Some(vec![Box::new(Iterator {
         ident: "example".to_string(),
         query: "/path/to/entity".to_string(),
-        iter_type: "xpath:".parse().unwrap(),
+        iter_type: Some("xpath:".parse().unwrap()),
         fields,
         nested_iterator: None,
     })]);

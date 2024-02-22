@@ -748,10 +748,10 @@ fn iterator_nest_test() {
     let iter_str = "
     ITERATOR example <jsonpath: $> {
     PUSHED_FIELD field1 <id>
-    ITERATOR nestedIterator <jsonpath: nestedElements[*]> {
+    ITERATOR nestedIterator < nestedElements[*]> {
         POPPED_FIELD field2 <field1>
         FIELD field3 <field3>
-        ITERATOR nestedIterator <jsonpath: nestedElements[*]> {
+        ITERATOR nestedIterator < nestedElements[*]> {
             POPPED_FIELD field2 <field1>
             FIELD field3 <field3>
         }

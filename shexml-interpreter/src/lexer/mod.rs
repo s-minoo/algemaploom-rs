@@ -432,7 +432,7 @@ pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
         within_angled_brackets().map(ShExMLToken::IteratorQuery);
 
     let iter_query_pair = token("<", ShExMLToken::AngleStart)
-        .chain(iterator_type.chain(iterator_query))
+        .chain(iterator_type.or_not().chain(iterator_query))
         .chain(token(">", ShExMLToken::AngleEnd));
 
     iterator_tag
