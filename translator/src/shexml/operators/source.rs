@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 use operator::formats::ReferenceFormulation;
 use operator::{IOType, Source};
@@ -7,13 +8,17 @@ use shexml_interpreter::{ExpressionStmtEnum, Iterator, ShExMLDocument};
 use crate::OperatorTranslator;
 
 #[derive(Debug, Clone)]
-pub struct ShExMLSourceTranslator {
-    pub document: ShExMLDocument,
+pub struct ShExMLSourceTranslator<'a> {
+    pub document: &'a ShExMLDocument,
 }
 
-impl OperatorTranslator<Vec<Source>> for ShExMLSourceTranslator {
-    fn translate(&self) -> Vec<Source> {
-        let ident_configIOtype_map: HashMap<_, _> = self
+pub type SourceExprIdentVecPair = (Source, Vec<String>);
+
+impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
+    for ShExMLSourceTranslator<'a>
+{
+    fn translate(&self) -> HashMap<String, SourceExprIdentVecPair> {
+        let ident_config_iotype_map: HashMap<_, _> = self
             .document
             .sources
             .iter()
@@ -35,30 +40,44 @@ impl OperatorTranslator<Vec<Source>> for ShExMLSourceTranslator {
             .map(|iter| (iter.ident.clone(), iter))
             .collect();
 
-        let source_iter_pairs: HashSet<(&str, &str)> = self
+        let source_iter_pairs: Vec<((&str, &str), &str)> = self
             .document
             .expression_stmts
             .iter()
             .flat_map(|expr_stmt| {
                 extract_source_iter_pairs(&expr_stmt.expr_enum)
+                    .into_iter()
+                    .map(|pair| (pair, expr_stmt.ident.as_str()))
             })
             .collect();
 
-        source_iter_pairs
-            .into_iter()
-            .map(|(source_ident, iter_ident)| {
+        let mut source_expr_idents_map = HashMap::new();
+        for ((source_ident, iter_ident), expr_ident) in source_iter_pairs {
+            let key = format!("{}{}", source_ident, expr_ident);
+            if let Some(source_exprs_pair) =
+                source_expr_idents_map.get_mut(&key)
+            {
+                let (_, exprs): &mut (Source, Vec<String>) = source_exprs_pair;
+
+                exprs.push(expr_ident.to_string());
+            } else {
                 let config_iotype_pair =
-                    ident_configIOtype_map.get(source_ident).unwrap();
+                    ident_config_iotype_map.get(source_ident).unwrap();
 
                 let iter = ident_iterators_map.get(iter_ident).unwrap();
-
-                Source {
+                let source = Source {
                     config:        config_iotype_pair.0.clone(),
                     source_type:   config_iotype_pair.1.clone(),
                     root_iterator: translate_to_operator_iterator(iter),
-                }
-            })
-            .collect()
+                };
+
+                let value = (source, vec![expr_ident.to_string()]);
+
+                source_expr_idents_map.insert(key, value);
+            }
+        }
+
+        source_expr_idents_map
     }
 }
 
