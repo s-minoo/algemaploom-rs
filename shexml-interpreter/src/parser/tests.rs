@@ -116,6 +116,8 @@ fn multiple_graph_test() {
             },
             Object {
                 prefix:     None,
+                language:   None,
+                datatype:   None,
                 expression: ShapeExpression::Conditional {
                     reference:        ShapeReference {
                         expr_ident: "films".to_string(),
@@ -140,6 +142,8 @@ fn multiple_graph_test() {
                 local:  "name".to_string(),
             },
             Object {
+                language:   None,
+                datatype:   None,
                 prefix:     None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -156,6 +160,8 @@ fn multiple_graph_test() {
             local:  "year".to_string(),
         },
         Object {
+            language:   None,
+            datatype:   None,
             prefix:     Some(PrefixNameSpace::BasePrefix),
             expression: ShapeExpression::Reference(ShapeReference {
                 expr_ident: "films".to_string(),
@@ -255,6 +261,8 @@ fn graph_multiple_shapes_test() {
                 local:  "countryOfOrigin".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     None,
                 expression: ShapeExpression::Conditional {
                     reference:        ShapeReference {
@@ -280,6 +288,8 @@ fn graph_multiple_shapes_test() {
                 local:  "name".to_string(),
             },
             Object {
+                language:   None,
+                datatype:   None,
                 prefix:     None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -296,6 +306,8 @@ fn graph_multiple_shapes_test() {
             local:  "year".to_string(),
         },
         Object {
+            language:   None,
+            datatype:   None,
             prefix:     Some(PrefixNameSpace::BasePrefix),
             expression: ShapeExpression::Reference(ShapeReference {
                 expr_ident: "films".to_string(),
@@ -382,6 +394,8 @@ fn graph_shape_test() {
                 local:  "countryOfOrigin".to_string(),
             },
             Object {
+                language:   None,
+                datatype:   None,
                 prefix:     None,
                 expression: ShapeExpression::Conditional {
                     reference:        ShapeReference {
@@ -407,6 +421,8 @@ fn graph_shape_test() {
                 local:  "name".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -420,6 +436,8 @@ fn graph_shape_test() {
                 local:  "year".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -500,6 +518,8 @@ fn shape_condition_if_test() {
                 local:  "countryOfOrigin".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     None,
                 expression: ShapeExpression::Conditional {
                     reference:        ShapeReference {
@@ -525,6 +545,8 @@ fn shape_condition_if_test() {
                 local:  "name".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -538,6 +560,8 @@ fn shape_condition_if_test() {
                 local:  "year".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -590,6 +614,8 @@ fn shape_function_test() {
                 local:  "bigName".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     Some(PrefixNameSpace::NamedPrefix(
                     "dbr".to_string(),
                 )),
@@ -611,6 +637,8 @@ fn shape_function_test() {
                 local:  "name".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -624,6 +652,8 @@ fn shape_function_test() {
                 local:  "year".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -681,6 +711,8 @@ fn shape_simple_test() {
                 local:  "name".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     None,
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -694,6 +726,8 @@ fn shape_simple_test() {
                 local:  "year".to_string(),
             },
             Object {
+                language: None, 
+                datatype: None, 
                 prefix:     Some(PrefixNameSpace::BasePrefix),
                 expression: ShapeExpression::Reference(ShapeReference {
                     expr_ident: "films".to_string(),
@@ -1287,9 +1321,7 @@ fn iterator_nested_same_level_test() {
         ..inner_most.clone()
     };
 
-    let inner_iter2 = Iterator {
-        ..inner_most
-    };
+    let inner_iter2 = Iterator { ..inner_most };
 
     let fields = vec![Field {
         field_type: FieldType::Push,

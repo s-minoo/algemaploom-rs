@@ -123,8 +123,7 @@ pub fn shape_object() -> t!(Vec<ShExMLToken>) {
     ));
 
     let shape_link = token("@", ShExMLToken::AtSymb)
-        .chain(token(":", ShExMLToken::PrefixSep))
-        .chain(ident());
+        .chain(shape_node!(ShapeNode));
 
     let object = choice((
         shape_link,

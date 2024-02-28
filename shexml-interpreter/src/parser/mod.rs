@@ -143,8 +143,6 @@ fn shapes() -> t!(Vec<Shape>) {
 
     let subj_prefix = prefix_shape_pair.clone().then(shape_expr.clone());
 
-    let obj_prefix = prefix_shape_pair.or_not().then(shape_expr);
-
     let shape_ident = shape_ident();
     let predicate = select! {
         ShExMLToken::ShapeTerm{prefix, local} =>{
@@ -153,9 +151,10 @@ fn shapes() -> t!(Vec<Shape>) {
 
                 p_ns = PrefixNameSpace::NamedPrefix(prefix);
             }
-        Predicate{ prefix: p_ns, local: local}
+        Predicate{ prefix: p_ns, local}
         }
     };
+
     shape_ident
         .clone()
         .then(
@@ -166,12 +165,7 @@ fn shapes() -> t!(Vec<Shape>) {
         .then_ignore(just(ShExMLToken::CurlStart))
         .then(
             predicate
-                .clone()
-                .then(
-                    obj_prefix.map(|(prefix, expression)| {
-                        Object { prefix, expression }
-                    }),
-                )
+                .then(object())
                 .then_ignore(just(ShExMLToken::PredicateSplit))
                 .repeated()
                 .at_least(1),
@@ -189,6 +183,119 @@ fn shapes() -> t!(Vec<Shape>) {
         .repeated()
         .at_least(1)
         .labelled("parser:shapes")
+}
+
+fn object() -> t!(Object) {
+    let prefix = select! {
+        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
+        ShExMLToken::PrefixNS(prefix) => PrefixNameSpace::NamedPrefix(prefix),
+    }
+    .then_ignore(just(ShExMLToken::PrefixSep));
+
+    let shape_expr = just(ShExMLToken::SqBrackStart)
+        .ignore_then(shape_expression())
+        .then_ignore(just(ShExMLToken::SqBrackEnd));
+
+    //Prefixed object iri parsing
+    let prefixed_obj_parsed =
+        prefix.clone().then(shape_expr.clone()).map(|(pn, expr)| {
+            Object {
+                prefix:     Some(pn),
+                expression: expr,
+                language:   None,
+                datatype:   None,
+            }
+        });
+    //
+
+    //Literal object parsing
+    let literal_obj = shape_expr.clone().map(|expr| {
+        Object {
+            prefix:     None,
+            expression: expr,
+            language:   None,
+            datatype:   None,
+        }
+    });
+    //
+
+    let literal_obj_lexed = shape_expr.clone();
+    //Datatyped object parsing
+
+    let extract_ln = select! {
+        ShExMLToken::PrefixLN(ln) => ln
+    };
+    let static_datatype =
+        prefix.clone().then(extract_ln).map(|(prefix, local)| {
+            DataType {
+                prefix:     Some(prefix),
+                local_expr: ShapeExpression::Static { value: local },
+            }
+        });
+
+    let dynamic_datatype = prefix
+        .clone()
+        .or_not()
+        .then(shape_expr.clone())
+        .map(|(prefix, local_expr)| DataType { prefix, local_expr });
+
+    let datatyped = literal_obj_lexed
+        .clone()
+        .then(dynamic_datatype.or(static_datatype))
+        .map(|(expression, datatype)| {
+            Object {
+                prefix: None,
+                expression,
+                language: None,
+                datatype: Some(datatype),
+            }
+        });
+
+    //Language tagged object parsing
+    let static_language = select! {
+        ShExMLToken::LangTag(langtag) => langtag
+    }
+    .map(|langtag| ShapeExpression::Static { value: langtag });
+
+    let language_tagged = literal_obj_lexed
+        .clone()
+        .then_ignore(just(ShExMLToken::AtSymb))
+        .then(shape_expr.clone().or(static_language))
+        .map(|(obj_expr, language_expr)| {
+            Object {
+                prefix:     None,
+                expression: obj_expr,
+                language:   Some(language_expr),
+                datatype:   None,
+            }
+        });
+    //
+
+    //Linked shape object parsing
+    let linked_shapenode = shape_ident().map(|shape_ident| {
+        ShapeExpression::Link {
+            other_shape_ident: shape_ident,
+        }
+    });
+    let linked_obj = just(ShExMLToken::AtSymb)
+        .ignore_then(linked_shapenode)
+        .map(|linked_shape| {
+            Object {
+                prefix:     None,
+                expression: linked_shape,
+                language:   None,
+                datatype:   None,
+            }
+        });
+    //
+
+    choice((
+        prefixed_obj_parsed,
+        literal_obj,
+        language_tagged,
+        datatyped, 
+        linked_obj,
+    ))
 }
 
 fn shape_expression() -> t!(ShapeExpression) {

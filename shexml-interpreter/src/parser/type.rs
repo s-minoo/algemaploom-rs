@@ -269,6 +269,14 @@ pub enum ShapeExpression {
     #[serde(serialize_with = "shape_expr_ref_serialize")]
     Reference(ShapeReference),
 
+    Link {
+        other_shape_ident: ShapeIdent,
+    },
+
+    Static {
+        value: String,
+    },
+
     Matching {
         expr_ident:    String,
         matcher_ident: String,
@@ -302,6 +310,14 @@ where
 pub struct Object {
     pub prefix:     Option<PrefixNameSpace>,
     pub expression: ShapeExpression,
+    pub language:   Option<ShapeExpression>,
+    pub datatype:   Option<DataType>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DataType {
+    pub prefix: Option<PrefixNameSpace>, 
+    pub local_expr: ShapeExpression
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

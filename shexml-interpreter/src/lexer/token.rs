@@ -99,7 +99,6 @@ pub enum ShExMLToken {
         prefix: String,
         local:  String,
     },
-    Datatype(String),
     LangTag(String),
 
     /// (
