@@ -394,7 +394,265 @@ fn graphed_shape_test() {
         tokens_opt
     )
 }
+#[test]
+fn simple_single_shape_linking(){
+    let shape_str = "
 
+:Films :[films.id] {
+    :name @:Names;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::AtSymb, 
+        ShExMLToken::ShapeNode{ prefix: "".to_string(), local: "Names".to_string()}, 
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+
+}
+
+#[test]
+fn simple_single_shape_datatype_static(){
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] xsd:string;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PrefixNS("xsd".to_string()), 
+        ShExMLToken::PrefixSep, 
+        ShExMLToken::PrefixLN("string".to_string()), 
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+
+}
+
+#[test]
+fn simple_single_shape_datatype_dynamic() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] xsd:[films.nameDatatype];
+    :year :[films.year] [films.yearDatatype] ;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PrefixNS("xsd".to_string()), 
+        ShExMLToken::PrefixSep, 
+        ShExMLToken::SqBrackStart, 
+        film_exp.clone(), 
+        ShExMLToken::Dot, 
+        ShExMLToken::Ident("nameDatatype".to_string()),
+        ShExMLToken::SqBrackEnd, 
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::SqBrackStart, 
+        film_exp.clone(), 
+        ShExMLToken::Dot, 
+        ShExMLToken::Ident("yearDatatype".to_string()),
+        ShExMLToken::SqBrackEnd, 
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn simple_single_shape_languagetag_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name [films.name] @be-nl;
+    :year :[films.year] @[films.yearlang] ;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::AtSymb, 
+        ShExMLToken::LangTag("be-nl".to_string()),
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "year".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("year".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::AtSymb, 
+        ShExMLToken::SqBrackStart, 
+        film_exp.clone(), 
+        ShExMLToken::Dot, 
+        ShExMLToken::Ident("yearlang".to_string()),
+        ShExMLToken::SqBrackEnd, 
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
 #[test]
 fn simple_single_shape_test() {
     let shape_str = "
