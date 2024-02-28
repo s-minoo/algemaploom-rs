@@ -289,13 +289,9 @@ fn object() -> t!(Object) {
         });
     //
 
-    choice((
-        prefixed_obj_parsed,
-        literal_obj,
-        language_tagged,
-        datatyped, 
-        linked_obj,
-    ))
+    choice(( datatyped, language_tagged, linked_obj))
+        .or(choice((prefixed_obj_parsed, literal_obj)))
+        .labelled("parser:object")
 }
 
 fn shape_expression() -> t!(ShapeExpression) {
