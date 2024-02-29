@@ -682,6 +682,108 @@ fn shape_function_test() {
 }
 
 #[test]
+fn shape_simple_matching_test() {
+    let shape_str = "
+:Films :[films.id] {
+    :name dbr:[films.name MATCHING trump];
+    :year [films.year] xsd:datetime ;
+    :actors @:Actors; 
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shapes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local:  "actors".to_string(),
+            },
+            Object {
+                language:   None,
+                datatype:   None,
+                prefix:     None,
+                expression: ShapeExpression::Link {
+                    other_shape_ident: ShapeIdent {
+                        prefix: PrefixNameSpace::BasePrefix,
+                        local:  "Actors".to_string(),
+                    },
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local:  "name".to_string(),
+            },
+            Object {
+                language:   None,
+                datatype:   None,
+                prefix:     Some(PrefixNameSpace::NamedPrefix(
+                    "dbr".to_string()
+                )),
+                expression: ShapeExpression::Matching {
+                    reference:     ShapeReference {
+                        expr_ident: "films".to_string(),
+                        field:      Some("name".to_string()),
+                    },
+                    matcher_ident: "trump".to_string(),
+                },
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local:  "year".to_string(),
+            },
+            Object {
+                language:   None,
+                datatype:   Some(DataType {
+                    prefix:     Some(PrefixNameSpace::NamedPrefix(
+                        "xsd".to_string(),
+                    )),
+                    local_expr: ShapeExpression::Static {
+                        value: "datetime".to_string(),
+                    },
+                }),
+                prefix:     None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let expected_items = Some(vec![Shape {
+        ident:          ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local:  "Films".to_string(),
+        },
+        subject:        Subject {
+            prefix:     PrefixNameSpace::BasePrefix,
+            expression: ShapeExpression::Reference(ShapeReference {
+                expr_ident: "films".to_string(),
+                field:      Some("id".to_string()),
+            }),
+        },
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+#[test]
 fn shape_simple_link_test() {
     let shape_str = "
 :Films :[films.id] {
