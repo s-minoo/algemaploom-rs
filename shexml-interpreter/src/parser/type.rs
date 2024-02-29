@@ -278,7 +278,7 @@ pub enum ShapeExpression {
     },
 
     Matching {
-        expr_ident:    String,
+        reference:    ShapeReference,
         matcher_ident: String,
     },
 

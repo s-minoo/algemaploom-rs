@@ -289,20 +289,30 @@ fn object() -> t!(Object) {
         });
     //
 
-    choice(( datatyped, language_tagged, linked_obj))
+    choice((datatyped, language_tagged, linked_obj))
         .or(choice((prefixed_obj_parsed, literal_obj)))
         .labelled("parser:object")
 }
 
+// TODO:  Implement parsing of MATCHING expression in shape nodes<28-02-24, yourname> //
 fn shape_expression() -> t!(ShapeExpression) {
+    // referencing expression
     let reference_expr = unfold_token_value!(Ident)
         .then(
             shex_just!(ShExMLToken::Dot)
                 .ignore_then(unfold_token_value!(Ident))
-                .or_not(),
+                .repeated()
+                .map(|fields| {
+                    if fields.is_empty() {
+                        None
+                    } else {
+                        Some(fields.join("."))
+                    }
+                }),
         )
         .map(|(expr_ident, field)| ShapeReference { expr_ident, field });
 
+    // function application expression
     let func_params = reference_expr
         .clone()
         .separated_by(just(ShExMLToken::Comma));
@@ -319,6 +329,19 @@ fn shape_expression() -> t!(ShapeExpression) {
             }
         });
 
+    // matching expression
+    let matching_expr = reference_expr
+        .clone()
+        .then_ignore(just(ShExMLToken::Matching))
+        .then(unfold_token_value!(Ident))
+        .map(|(reference, matcher_ident)| {
+            ShapeExpression::Matching {
+                reference,
+                matcher_ident,
+            }
+        });
+
+    // conditional expression
     let conditional_expr = reference_expr
         .clone()
         .then_ignore(just(ShExMLToken::If))
@@ -333,6 +356,7 @@ fn shape_expression() -> t!(ShapeExpression) {
     choice((
         conditional_expr,
         func_expr,
+        matching_expr, 
         reference_expr.map(ShapeExpression::Reference),
     ))
     .labelled("parser:shape_expression")
