@@ -394,8 +394,66 @@ fn graphed_shape_test() {
         tokens_opt
     )
 }
+
 #[test]
-fn simple_single_shape_linking(){
+fn simple_single_shape_matching() {
+    let shape_str = "
+
+:Films :[films.id] {
+   :country dbr:[films.country MATCHING spain] ;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "country".to_string(),
+        },
+        ShExMLToken::PrefixNS("dbr".to_string()),
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        ShExMLToken::Ident("films".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("country".to_string()),
+        ShExMLToken::Matching, 
+        ShExMLToken::Ident("spain".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn simple_single_shape_linking() {
     let shape_str = "
 
 :Films :[films.id] {
@@ -428,8 +486,11 @@ fn simple_single_shape_linking(){
             prefix: "".to_string(),
             local:  "name".to_string(),
         },
-        ShExMLToken::AtSymb, 
-        ShExMLToken::ShapeNode{ prefix: "".to_string(), local: "Names".to_string()}, 
+        ShExMLToken::AtSymb,
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Names".to_string(),
+        },
         ShExMLToken::PredicateSplit,
         ShExMLToken::CurlEnd,
     ]);
@@ -442,11 +503,10 @@ fn simple_single_shape_linking(){
         expected,
         tokens_opt
     )
-
 }
 
 #[test]
-fn simple_single_shape_datatype_static(){
+fn simple_single_shape_datatype_static() {
     let shape_str = "
 
 :Films :[films.id] {
@@ -484,9 +544,9 @@ fn simple_single_shape_datatype_static(){
         ShExMLToken::Dot,
         ShExMLToken::Ident("name".to_string()),
         ShExMLToken::SqBrackEnd,
-        ShExMLToken::PrefixNS("xsd".to_string()), 
-        ShExMLToken::PrefixSep, 
-        ShExMLToken::PrefixLN("string".to_string()), 
+        ShExMLToken::PrefixNS("xsd".to_string()),
+        ShExMLToken::PrefixSep,
+        ShExMLToken::PrefixLN("string".to_string()),
         ShExMLToken::PredicateSplit,
         ShExMLToken::CurlEnd,
     ]);
@@ -499,7 +559,6 @@ fn simple_single_shape_datatype_static(){
         expected,
         tokens_opt
     )
-
 }
 
 #[test]
@@ -542,13 +601,13 @@ fn simple_single_shape_datatype_dynamic() {
         ShExMLToken::Dot,
         ShExMLToken::Ident("name".to_string()),
         ShExMLToken::SqBrackEnd,
-        ShExMLToken::PrefixNS("xsd".to_string()), 
-        ShExMLToken::PrefixSep, 
-        ShExMLToken::SqBrackStart, 
-        film_exp.clone(), 
-        ShExMLToken::Dot, 
+        ShExMLToken::PrefixNS("xsd".to_string()),
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
         ShExMLToken::Ident("nameDatatype".to_string()),
-        ShExMLToken::SqBrackEnd, 
+        ShExMLToken::SqBrackEnd,
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
             prefix: "".to_string(),
@@ -561,11 +620,11 @@ fn simple_single_shape_datatype_dynamic() {
         ShExMLToken::Dot,
         ShExMLToken::Ident("year".to_string()),
         ShExMLToken::SqBrackEnd,
-        ShExMLToken::SqBrackStart, 
-        film_exp.clone(), 
-        ShExMLToken::Dot, 
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
         ShExMLToken::Ident("yearDatatype".to_string()),
-        ShExMLToken::SqBrackEnd, 
+        ShExMLToken::SqBrackEnd,
         ShExMLToken::PredicateSplit,
         ShExMLToken::CurlEnd,
     ]);
@@ -620,7 +679,7 @@ fn simple_single_shape_languagetag_test() {
         ShExMLToken::Dot,
         ShExMLToken::Ident("name".to_string()),
         ShExMLToken::SqBrackEnd,
-        ShExMLToken::AtSymb, 
+        ShExMLToken::AtSymb,
         ShExMLToken::LangTag("be-nl".to_string()),
         ShExMLToken::PredicateSplit,
         ShExMLToken::ShapeTerm {
@@ -634,12 +693,12 @@ fn simple_single_shape_languagetag_test() {
         ShExMLToken::Dot,
         ShExMLToken::Ident("year".to_string()),
         ShExMLToken::SqBrackEnd,
-        ShExMLToken::AtSymb, 
-        ShExMLToken::SqBrackStart, 
-        film_exp.clone(), 
-        ShExMLToken::Dot, 
+        ShExMLToken::AtSymb,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
         ShExMLToken::Ident("yearlang".to_string()),
-        ShExMLToken::SqBrackEnd, 
+        ShExMLToken::SqBrackEnd,
         ShExMLToken::PredicateSplit,
         ShExMLToken::CurlEnd,
     ]);
