@@ -1,0 +1,51 @@
+PREFIX : <http://example.com/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SOURCE films_xml_file <./test.xml>
+SOURCE films_json_file <./test.json>
+ITERATOR film_xml <xpath: //film> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+    ITERATOR goodReviews <reviews/goodReviews/review> {
+        FIELD user <user>
+        FIELD review <review>
+        ITERATOR nested_badReviews <nestedReview/review> {
+            FIELD user <user>
+            FIELD review <review>
+        }
+    }
+    ITERATOR badReviews <reviews/badReviews/review> {
+        FIELD user <user>
+        FIELD review <review>
+    }
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+    FIELD comment <comment>
+    ITERATOR goodReviews <reviews.goodReviews[*]> {
+        FIELD user <user>
+        FIELD review <review>
+    }
+    ITERATOR badReviews <reviews.badReviews[*]> {
+        FIELD user <user>
+        FIELD review <review>
+    }
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :[films.id] {
+    :type :Film ;
+    :name [films.name] @en ;
+    :year [films.year]  xsd:gYear ;
+    :country [films.country] ;
+    :director [films.directors] ;
+    :goodReview [films.goodReviews.review] ;
+    :badReview [films.badReviews.review] ;
+}
+

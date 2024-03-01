@@ -1,0 +1,33 @@
+PREFIX : <http://example.com/>
+PREFIX xs: <http://www.w3.org/2001/XMLSchema#>
+SOURCE films_xml_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.xml>
+SOURCE films_json_file <https://rawgit.com/herminiogg/ShExML/master/src/test/resources/films.json>
+AUTOINCREMENT my_code1 <"something: " + 1 to 10 by 2>
+AUTOINCREMENT my_code2 <"something: " + 1 by 2 + " ending">
+AUTOINCREMENT my_code3 <1 to 10 + " :closing">
+ITERATOR film_xml <xpath: //film> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :[films.id] {
+    :type :Film ;
+    :internalId1 [my_code1] ;
+    :internalId2 [my_code2] ;
+    :internalId3 [my_code3] ;
+    :name [films.name] ;
+    :year [films.year] xs:gYear ;
+    :country [films.country] ;
+    :director [films.directors] ;
+}

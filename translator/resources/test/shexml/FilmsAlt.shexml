@@ -1,0 +1,27 @@
+      PREFIX : <http://example.com/>
+SOURCE films_xml_file <https://raw.githubusercontent.com/herminiogg/ShExML/develop/src/test/resources/filmsAlt.xml>
+SOURCE films_json_file <https://raw.githubusercontent.com/herminiogg/ShExML/develop/src/test/resources/filmsAlt.json>
+ITERATOR film_xml <xpath: //film> {
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+    FIELD comment <comment>
+}
+ITERATOR film_json <jsonpath: $.films[*]> {
+    FIELD name <['name of the film']>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+    FIELD comment <comment>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+
+:Films :film1 {
+    a :Film ;
+    :name [films.name] ;
+    :year [films.year] ;
+    :country [films.country] ;
+    :director [films.directors] ;
+    :comment [films.comment] ;
+}

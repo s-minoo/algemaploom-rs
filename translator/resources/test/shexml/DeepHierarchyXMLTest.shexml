@@ -1,0 +1,74 @@
+      PREFIX : <http://example.com/>
+SOURCE test_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23113/src/test/resources/deepHierarchy.xml>
+ITERATOR first_tag <xpath: /tags/tag> {
+    FIELD id <id>
+    ITERATOR tag <tag> {
+        FIELD id <id>
+        ITERATOR tag <tag> {
+            FIELD id <id>
+            ITERATOR tag <tag> {
+                FIELD id <id>
+                ITERATOR tag <tag> {
+                    FIELD id <id>
+                    ITERATOR tag <tag> {
+                        FIELD id <id>
+                        ITERATOR tag <tag> {
+                            FIELD id <id>
+                            ITERATOR tag <tag> {
+                                FIELD id <id>
+                                ITERATOR tag <tag> {
+                                    FIELD id <id>
+                                    ITERATOR tag <tag> {
+                                        FIELD id <id>
+                                        FIELD tag <tag>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+EXPRESSION tag <test_file.first_tag>
+
+:tag1 :[tag.id] {
+    :nested @:tag2 ;
+}
+
+:tag2 :[tag.tag.id] {
+    :nested @:tag3 ;
+}
+
+:tag3 :[tag.tag.tag.id] {
+    :nested @:tag4 ;
+}
+
+:tag4 :[tag.tag.tag.tag.id] {
+    :nested @:tag5 ;
+}
+
+:tag5 :[tag.tag.tag.tag.tag.id] {
+    :nested @:tag6 ;
+}
+
+:tag6 :[tag.tag.tag.tag.tag.tag.id] {
+    :nested @:tag7 ;
+}
+
+:tag7 :[tag.tag.tag.tag.tag.tag.tag.id] {
+    :nested @:tag8 ;
+}
+
+:tag8 :[tag.tag.tag.tag.tag.tag.tag.tag.id] {
+    :nested @:tag9 ;
+}
+
+:tag9 :[tag.tag.tag.tag.tag.tag.tag.tag.tag.id] {
+    :nested @:tag10 ;
+}
+
+:tag10 :[tag.tag.tag.tag.tag.tag.tag.tag.tag.tag.id] {
+    :tag [tag.tag.tag.tag.tag.tag.tag.tag.tag.tag.tag] ;
+}
