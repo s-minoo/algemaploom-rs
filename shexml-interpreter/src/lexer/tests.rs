@@ -506,6 +506,57 @@ fn simple_single_shape_linking() {
 }
 
 #[test]
+fn simple_single_shape_object_literal() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name :Jackie;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::PrefixLN("Jackie".to_string()),
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
 fn simple_single_shape_datatype_static() {
     let shape_str = "
 

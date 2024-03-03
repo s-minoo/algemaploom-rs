@@ -119,14 +119,16 @@ pub fn shape_object() -> t!(Vec<ShExMLToken>) {
     let data_type = choice((
         prefix_namespace().chain(shape_node_expression()),
         shape_node_expression(),
-        data_type_static,
+        data_type_static.clone(),
     ));
 
-    let shape_link = token("@", ShExMLToken::AtSymb)
-        .chain(shape_node!(ShapeNode));
+    let shape_link =
+        token("@", ShExMLToken::AtSymb).chain(shape_node!(ShapeNode));
+    let object_literal = data_type_static.clone();
 
     let object = choice((
         shape_link,
+        object_literal,
         prefix_namespace().chain::<ShExMLToken, _, _>(shape_node_expression()),
         shape_node_expression(),
     ))
