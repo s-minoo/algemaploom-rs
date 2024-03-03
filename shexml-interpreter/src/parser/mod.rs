@@ -208,8 +208,27 @@ fn object() -> t!(Object) {
         });
     //
 
+    let namespace_ln = select! {
+        ShExMLToken::PrefixLN(ln) => ln
+    };
+
     //Literal object parsing
-    let literal_obj = shape_expr.clone().map(|expr| {
+
+    let literal_obj =
+        prefix
+            .clone()
+            .then(namespace_ln)
+            .map(|(prefix, ln)| {
+                Object {
+                    prefix:     Some(prefix),
+                    expression: ShapeExpression::Static { value: ln },
+                    language:   None,
+                    datatype:   None,
+                }
+            });
+
+    // Literal object with shape expression
+    let literal_obj_expr = shape_expr.clone().map(|expr| {
         Object {
             prefix:     None,
             expression: expr,
@@ -222,11 +241,8 @@ fn object() -> t!(Object) {
     let literal_obj_lexed = shape_expr.clone();
     //Datatyped object parsing
 
-    let extract_ln = select! {
-        ShExMLToken::PrefixLN(ln) => ln
-    };
     let static_datatype =
-        prefix.clone().then(extract_ln).map(|(prefix, local)| {
+        prefix.clone().then(namespace_ln).map(|(prefix, local)| {
             DataType {
                 prefix:     Some(prefix),
                 local_expr: ShapeExpression::Static { value: local },
@@ -290,7 +306,7 @@ fn object() -> t!(Object) {
     //
 
     choice((datatyped, language_tagged, linked_obj))
-        .or(choice((prefixed_obj_parsed, literal_obj)))
+        .or(choice((prefixed_obj_parsed, literal_obj_expr, literal_obj)))
         .labelled("parser:object")
 }
 
@@ -356,7 +372,7 @@ fn shape_expression() -> t!(ShapeExpression) {
     choice((
         conditional_expr,
         func_expr,
-        matching_expr, 
+        matching_expr,
         reference_expr.map(ShapeExpression::Reference),
     ))
     .labelled("parser:shape_expression")
