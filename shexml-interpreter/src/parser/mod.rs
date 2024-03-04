@@ -310,7 +310,6 @@ fn object() -> t!(Object) {
         .labelled("parser:object")
 }
 
-// TODO:  Implement parsing of MATCHING expression in shape nodes<28-02-24, yourname> //
 fn shape_expression() -> t!(ShapeExpression) {
     // referencing expression
     let reference_expr = unfold_token_value!(Ident)
