@@ -1458,6 +1458,41 @@ fn expression_join_union_test() {
 }
 
 #[test]
+fn expression_simple_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.name>
+        ";
+
+    let (tokens_opt, errors) = lexer::expression_stmt()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    println!("{:?}", tokens_opt);
+    let (parsed_items, errors) =
+        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let source_ident = "file".to_string();
+    let field_ident = Some("name".to_string());
+    let expr_enum = ExpressionStmtEnum::Basic {
+        reference: ExpressionReferenceIdent {
+            source_ident,
+            iterator_ident: "it1".to_string(),
+            field: field_ident,
+        },
+    };
+
+    let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
+        ident: "exp".to_string(),
+        expr_enum,
+    }));
+
+    assert_parse_expected(parsed_items, expected_items);
+}
+#[test]
 fn expression_join_test() {
     let exp_str = "
         EXPRESSION exp <file.it1.name JOIN file.it2.name>

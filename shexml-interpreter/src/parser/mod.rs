@@ -506,7 +506,7 @@ fn expression_stmt() -> t!(ExpressionEnum) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
         .then_ignore(just(ShExMLToken::AngleStart))
-        .then(exp_string_op().or(exp_join_union()))
+        .then(exp_string_op().or(exp_join_union()).or(exp()))
         .then_ignore(just(ShExMLToken::AngleEnd))
         .map(|(ident, expression)| {
             let stmt = ExpressionStmt {
@@ -517,6 +517,12 @@ fn expression_stmt() -> t!(ExpressionEnum) {
         })
         .labelled("parser:expression_stmt")
 }
+
+
+fn exp() -> t!(ExpressionStmtEnum){
+    exp_reference_ident().map(|reference| ExpressionStmtEnum::Basic { reference })
+}
+
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
     let basic_expression = exp_reference_ident()
