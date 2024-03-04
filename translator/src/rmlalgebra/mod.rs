@@ -151,6 +151,13 @@ fn add_non_join_related_ops(
     search_map: &SearchMap,
     plan: &RcRefCellPlan<Processed>,
 ) -> Result<(), PlanError> {
+
+    if no_join_poms.is_empty() & sm.classes.is_empty(){
+        return Ok(())
+    }
+
+
+
     let variable_map = &search_map.variable_map;
     let target_map = &search_map.target_map;
     let mut plan = plan.borrow_mut();
