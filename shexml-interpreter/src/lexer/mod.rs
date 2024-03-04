@@ -370,6 +370,7 @@ pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
         .chain(
             join_union
                 .or(str_operation)
+                .or(sub_ident.clone())
                 .repeated()
                 .at_least(1)
                 .flatten(),
