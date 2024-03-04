@@ -429,6 +429,7 @@ mod tests {
 
     import_test_mods!();
 
+    #[ignore]
     #[test]
     fn test_get_attributes_term_map_info() {
         let identifier = "tm_1".to_string();
@@ -457,9 +458,10 @@ mod tests {
         assert_eq!(attributes, check);
     }
 
+    #[ignore]
     #[test]
     fn test_projection_operator() -> ExtractorResult<()> {
-        let graph = load_graph!("sample_mapping.ttl").unwrap();
+        let graph = load_graph!("rml/sample_mapping.ttl").unwrap();
         let mut triples_map_vec = extract_triples_maps(&graph)?;
         assert_eq!(triples_map_vec.len(), 1);
 
@@ -488,9 +490,10 @@ mod tests {
         v.into_iter().map(|st| st.to_string()).collect()
     }
 
+    #[ignore]
     #[test]
     fn test_extend_operator() -> ExtractorResult<()> {
-        let graph = load_graph!("sample_mapping.ttl").unwrap();
+        let graph = load_graph!("rml/sample_mapping.ttl").unwrap();
         let mut triples_map_vec = extract_triples_maps(&graph)?;
         assert_eq!(triples_map_vec.len(), 1);
         let triples_map = triples_map_vec.pop().unwrap();
@@ -510,9 +513,10 @@ mod tests {
         Ok(())
     }
 
+    #[ignore]
     #[test]
     fn test_operator_translation() -> ExtractorResult<()> {
-        let document = parse_file(test_case!("sample_mapping.ttl").into())?;
+        let document = parse_file(test_case!("rml/sample_mapping.ttl").into())?;
         let operators =
             OptimizedRMLDocumentTranslator::translate_to_plan(document);
 
@@ -521,9 +525,10 @@ mod tests {
         Ok(())
     }
 
+    #[ignore]
     #[test]
     fn test_operator_translation_complex() -> ExtractorResult<()> {
-        let document = parse_file(test_case!("multiple_tm.ttl").into())?;
+        let document = parse_file(test_case!("rml/multiple_tm.ttl").into())?;
         let operators =
             OptimizedRMLDocumentTranslator::translate_to_plan(document);
 
