@@ -1034,6 +1034,51 @@ fn single_matcher_test() {
         tokens_opt
     );
 }
+#[test]
+fn string_op_union_expression_test() {
+    let exp_str = "
+        EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name  UNION file.it3.union>
+        ";
+
+    let (tokens_opt, errors) = expression_stmt()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(exp_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    println!("{:?}", tokens_opt);
+
+    let file_ident = ShExMLToken::Ident("file".to_string());
+    let expected_tokens = Some(vec![
+        ShExMLToken::Expression,
+        ShExMLToken::Ident("exp".to_string()),
+        ShExMLToken::AngleStart,
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it1".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::StringSep("-seper-".to_string()), 
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it2".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::Union, 
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it3".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("union".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+    assert!(
+        tokens_opt == expected_tokens,
+        "Expected tokens: {:#?}, Generated Output: {:#?}",
+        expected_tokens,
+        tokens_opt
+    );
+}
 
 #[test]
 fn string_op_expression_test() {
