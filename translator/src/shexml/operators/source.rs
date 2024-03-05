@@ -1,15 +1,14 @@
 use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
 
 use operator::formats::ReferenceFormulation;
 use operator::{IOType, Source};
-use shexml_interpreter::{ExpressionStmtEnum, Iterator, ShExMLDocument};
+use shexml_interpreter::{ExpressionStmtEnum, IndexedShExMLDocument, Iterator};
 
 use crate::OperatorTranslator;
 
 #[derive(Debug, Clone)]
 pub struct ShExMLSourceTranslator<'a> {
-    pub document: &'a ShExMLDocument,
+    pub document: &'a IndexedShExMLDocument,
 }
 
 pub type SourceExprIdentVecPair = (Source, Vec<String>);
@@ -21,7 +20,7 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
         let ident_config_iotype_map: HashMap<_, _> = self
             .document
             .sources
-            .iter()
+            .values()
             .map(|source| {
                 let mut config = HashMap::new();
                 config.insert("url".to_string(), source.uri.clone());
@@ -33,17 +32,12 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
             })
             .collect();
 
-        let ident_iterators_map: HashMap<_, _> = self
-            .document
-            .iterators
-            .iter()
-            .map(|iter| (iter.ident.clone(), iter))
-            .collect();
+        let ident_iterators_map: &HashMap<_, _> = &self.document.iterators;
 
-        let source_iter_pairs: Vec<((&str, &str), &str)> = self
+        let sourceIter_exprIdent: Vec<((&str, &str), &str)> = self
             .document
             .expression_stmts
-            .iter()
+            .values()
             .flat_map(|expr_stmt| {
                 extract_source_iter_pairs(&expr_stmt.expr_enum)
                     .into_iter()
@@ -52,8 +46,8 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
             .collect();
 
         let mut source_expr_idents_map = HashMap::new();
-        for ((source_ident, iter_ident), expr_ident) in source_iter_pairs {
-            let key = format!("{}{}", source_ident, expr_ident);
+        for ((source_ident, iter_ident), expr_ident) in sourceIter_exprIdent {
+            let key = format!("{}.{}", source_ident, iter_ident);
             if let Some(source_exprs_pair) =
                 source_expr_idents_map.get_mut(&key)
             {
@@ -201,5 +195,32 @@ fn translate_to_flat_fields(
             })
         }
         shexml_interpreter::FieldType::Pop => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use shexml_interpreter::errors::ShExMLResult;
+
+    use super::*;
+    use crate::test_case;
+
+    #[test]
+    fn source_translate_test() -> ShExMLResult<()> {
+        let simple_shexml = test_case!("shexml/sample.shexml");
+        let shexml_doc = shexml_interpreter::parse_file(simple_shexml)?.convert_to_indexed();
+        let source_translator = ShExMLSourceTranslator {
+            document: &shexml_doc,
+        };
+
+        let alge_source = source_translator.translate();
+
+        for (source_ident, (source, expr_ident)) in alge_source.iter() {
+            println!("Source id: {:?}", source_ident);
+            println!("Expr idents: {:#?}", expr_ident);
+            println!("Source: {:#?}", source);
+        }
+
+        Ok(())
     }
 }
