@@ -435,7 +435,7 @@ fn simple_single_shape_matching() {
         ShExMLToken::Ident("films".to_string()),
         ShExMLToken::Dot,
         ShExMLToken::Ident("country".to_string()),
-        ShExMLToken::Matching, 
+        ShExMLToken::Matching,
         ShExMLToken::Ident("spain".to_string()),
         ShExMLToken::SqBrackEnd,
         ShExMLToken::PredicateSplit,
@@ -1048,6 +1048,31 @@ fn string_op_expression_test() {
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
+
+    let file_ident = ShExMLToken::Ident("file".to_string());
+    let expected_tokens = Some(vec![
+        ShExMLToken::Expression,
+        ShExMLToken::Ident("exp".to_string()),
+        ShExMLToken::AngleStart,
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it1".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::StringSep("-seper-".to_string()), 
+        file_ident.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("it2".to_string()),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+    assert!(
+        tokens_opt == expected_tokens,
+        "Expected tokens: {:#?}, Generated Output: {:#?}",
+        expected_tokens,
+        tokens_opt
+    );
 }
 
 #[test]
@@ -1083,8 +1108,6 @@ fn iterator_expression_test() {
         tokens_opt
     );
 }
-
-
 
 #[test]
 fn join_union_expression_test() {
