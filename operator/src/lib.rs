@@ -277,6 +277,11 @@ pub type RcExtendFunction = Rc<Function>;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Function {
+    Concatenate{
+        left_value: RcExtendFunction,
+        separator: String, 
+        right_value: RcExtendFunction,
+    },
     Reference {
         value: String,
     },
