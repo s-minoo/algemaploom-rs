@@ -91,12 +91,17 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
         OptimizedRMLDocumentTranslator::translate_to_plan(document)?;
     let full_path = output_prefix.clone() + ".dot";
     let _ = mapping_plan
-        .write(full_path.clone().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
-    let pretty_path = output_prefix + "_pretty.dot";
+         .write(full_path.clone().into())
+         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
+     
+    let pretty_path = output_prefix.clone() + "_pretty.dot";
+     let _ = mapping_plan
+         .write_pretty(pretty_path.clone().into())
+         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
+    let json_path = output_prefix + ".json";
     let _ = mapping_plan
-        .write_pretty(pretty_path.clone().into())
+        .write_json(json_path.clone().into())
         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
 
     println!(
@@ -106,8 +111,9 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
     );
     println!("Generated dot file: {}", full_path.yellow());
     println!(
-        "The pretty dot file version for visualization is: {}\n",
+        "The pretty dot file version for visualization is: {}",
         pretty_path.yellow()
     );
+    println!("Generated json file: {}", json_path.yellow());
     Ok(())
 }
