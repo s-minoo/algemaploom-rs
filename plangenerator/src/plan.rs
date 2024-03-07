@@ -11,6 +11,7 @@ use operator::display::PrettyDisplay;
 use operator::{Fragmenter, Join, Operator, Serializer, Source, Target};
 use petgraph::dot::Dot;
 use petgraph::graph::{DiGraph, NodeIndex};
+use serde::Serialize;
 use serde_json::json;
 
 use crate::error::PlanError;
@@ -194,6 +195,12 @@ impl<T> Plan<T> {
     pub fn write(&mut self, path: PathBuf) -> Result<()> {
         self.write_fmt(path, &|dot| format!("{:?}", dot))?;
         Ok(())
+    }
+    
+    pub fn write_json(&self, path: PathBuf) -> Result<()> {
+        let graph = &*self.graph.borrow();
+        let json_string = serde_json::to_string(&graph).unwrap();
+        write_string_to_file(path, json_string)
     }
 }
 
@@ -556,7 +563,7 @@ impl Plan<Serialized> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct PlanEdge {
     pub fragment: String,
 }
@@ -581,7 +588,7 @@ impl Debug for PlanEdge {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct PlanNode {
     pub id:       String,
     pub operator: Operator,
