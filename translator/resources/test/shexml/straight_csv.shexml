@@ -1,0 +1,33 @@
+PREFIX : <http://example.com/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SOURCE films_csv_file <./film.csv>
+SOURCE films_second_csv_file <./film2.csv>
+ITERATOR film_xml <csvperrow> {
+    FIELD id <@id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <directors/director>
+}
+ITERATOR film_json <csvperrow> {
+    FIELD id <id>
+    FIELD name <name>
+    FIELD year <year>
+    FIELD country <country>
+    FIELD directors <director>
+    FIELD comment <comment>
+}
+EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+EXPRESSION films_name_xml <films_xml_file.film_xml.name> 
+EXPRESSION fimls_name_year <films_xml_file.film_xml.name + "_" + films_xml_file.film_json.name>
+
+:Films :[films.id] {
+    :type :Film ;
+    :name [films.name] @en ;
+    :year [films.year]  xsd:gYear ;
+    :country [films.country] ;
+    :director [films.directors] ;
+    :goodReview [films.goodReviews.review] ;
+    :badReview [films.badReviews.review] ;
+}
+
