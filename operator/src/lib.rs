@@ -38,7 +38,7 @@ impl PrettyDisplay for Operator {
     fn pretty_string(&self) -> Result<String> {
         let (title_string, content_string) = match self {
             Operator::SourceOp { config } => {
-                ("Source Opeartor".to_string(), config.pretty_string()?)
+                ("Source Operator".to_string(), config.pretty_string()?)
             }
             Operator::ProjectOp { config } => {
                 ("Projection Operator".to_string(), config.pretty_string()?)
