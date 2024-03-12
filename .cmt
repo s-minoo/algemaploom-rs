@@ -33,6 +33,7 @@
     println = "chore: remove printlns"
     style =  "style: rustfmt file"
     vb = "chore: version bump"
+    todo = "chore: add todo"
     readme = "docs: updated readme"
     ignore = "docs: updated .gitignore"
     cmt = "chore: update .cmt"
