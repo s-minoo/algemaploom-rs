@@ -23,7 +23,7 @@ pub struct ShExMLDocument {
 }
 
 pub fn get_shapes_from_expr_ident<'a>(
-    graph_shapes: &'a Vec<GraphShapes>,
+    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
     expr_ident: &'a str,
 ) -> Vec<&'a Shape> {
     let mut result = Vec::new();
