@@ -349,6 +349,20 @@ pub struct Shape {
     pub pred_obj_pairs: HashMap<Predicate, Object>,
 }
 
+pub type ShapeTriples<'a> = (&'a Subject, &'a Predicate, &'a Object);
+
+impl Shape {
+    pub fn convert_to_triples<'a>(&'a self) -> Vec<ShapeTriples<'a>> {
+        let mut result = Vec::new();
+
+        for (pred, obj) in self.pred_obj_pairs.iter() {
+            result.push((&self.subject, pred, obj));
+        }
+
+        result
+    }
+}
+
 fn pred_obj_ser<S>(
     pred_obj_pairs: &HashMap<Predicate, Object>,
     s: S,
