@@ -334,10 +334,28 @@ impl ShapeIdent {
     }
 }
 
+pub type ShapeQuads<'a> =
+    (&'a Subject, &'a Predicate, &'a Object, &'a ShapeIdent);
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GraphShapes {
     pub ident:  ShapeIdent,
     pub shapes: Vec<Shape>,
+}
+
+impl GraphShapes {
+    pub fn convert_to_quads(&self) -> Vec<ShapeQuads<'_>> {
+        let mut result = Vec::new();
+        for (subj, pred, obj) in self
+            .shapes
+            .iter()
+            .flat_map(|shape| shape.convert_to_triples())
+        {
+            result.push((subj, pred, obj, &self.ident));
+        }
+
+        result
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -352,7 +370,7 @@ pub struct Shape {
 pub type ShapeTriples<'a> = (&'a Subject, &'a Predicate, &'a Object);
 
 impl Shape {
-    pub fn convert_to_triples<'a>(&'a self) -> Vec<ShapeTriples<'a>> {
+    pub fn convert_to_triples(&self) -> Vec<ShapeTriples<'_>> {
         let mut result = Vec::new();
 
         for (pred, obj) in self.pred_obj_pairs.iter() {
