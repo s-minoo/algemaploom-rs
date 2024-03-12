@@ -30,11 +30,11 @@ macro_rules! shape_node {
     };
 }
 
-pub fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
+fn token(st: &'static str, token: ShExMLToken) -> t!(ShExMLToken) {
     just(st).padded().to(token)
 }
 
-pub fn within_angled_brackets() -> t!(String) {
+fn within_angled_brackets() -> t!(String) {
     none_of("<>")
         .repeated()
         .at_least(1)
@@ -103,7 +103,7 @@ pub fn shapes() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:shapes")
 }
 
-pub fn shape_object() -> t!(Vec<ShExMLToken>) {
+fn shape_object() -> t!(Vec<ShExMLToken>) {
     let language_tag = token("@", ShExMLToken::AtSymb).chain(
         shape_node_expression().or(pn_char().repeated().at_least(1).map(
             |chars| vec![ShExMLToken::LangTag(chars.into_iter().collect())],
@@ -141,7 +141,7 @@ pub fn shape_object() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:shape_object")
 }
 
-pub fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
+fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
     let matching = shape_sub_ident()
         .padded()
         .chain(token("MATCHING ", ShExMLToken::Matching))
@@ -163,7 +163,7 @@ pub fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:shape_node_expression")
 }
 
-pub fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
+fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
     ident()
         .chain(
             token(".", ShExMLToken::Dot)
@@ -174,7 +174,7 @@ pub fn shape_sub_ident() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:shape_sub_ident")
 }
 
-pub fn shape_function_application() -> t!(Vec<ShExMLToken>) {
+fn shape_function_application() -> t!(Vec<ShExMLToken>) {
     shape_sub_ident()
         .chain(token("(", ShExMLToken::BrackStart))
         .chain::<ShExMLToken, _, _>(shape_sub_ident())
@@ -409,7 +409,7 @@ pub fn iterators() -> t!(Vec<ShExMLToken>) {
     .labelled("lexer:iterators")
 }
 
-pub fn field() -> t!(Vec<ShExMLToken>) {
+fn field() -> t!(Vec<ShExMLToken>) {
     let field_tag = token("FIELD", ShExMLToken::Field);
     let push_field_tag = token("PUSHED_FIELD", ShExMLToken::PushField);
     let pop_field_tag = token("POPPED_FIELD", ShExMLToken::PopField);
@@ -425,7 +425,7 @@ pub fn field() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:field")
 }
 
-pub fn iterator_header() -> t!(Vec<ShExMLToken>) {
+fn iterator_header() -> t!(Vec<ShExMLToken>) {
     let iterator_tag = token("ITERATOR", ShExMLToken::Iterator);
     let iterator_name = ident().padded();
 
@@ -466,7 +466,7 @@ pub fn sources() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:sources")
 }
 
-pub fn ident() -> t!(ShExMLToken) {
+fn ident() -> t!(ShExMLToken) {
     pn_char()
         .repeated()
         .at_least(1)
@@ -492,7 +492,7 @@ pub fn prefixes() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:prefixes")
 }
 
-pub fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
+fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
     pn_prefix()
         .or_not()
         .then_ignore(just(":"))
@@ -509,7 +509,7 @@ pub fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
         .labelled("lexer:prefix_namespace")
 }
 
-pub fn protocol() -> t!(String) {
+fn protocol() -> t!(String) {
     filter(|c: &char| c.is_ascii_alphabetic())
         .repeated()
         .at_least(1)
@@ -518,7 +518,7 @@ pub fn protocol() -> t!(String) {
         .labelled("lexer:protocol")
 }
 
-pub fn path() -> t!(String) {
+fn path() -> t!(String) {
     none_of("<>\"{}|^`\\[]")
         .repeated()
         .at_least(1)
@@ -569,7 +569,7 @@ fn protocol_iri_tokenize() -> t!(Vec<ShExMLToken>) {
     })
 }
 
-pub fn protocol_iri_ref() -> t!(ShExMLToken) {
+fn protocol_iri_ref() -> t!(ShExMLToken) {
     let uri = protocol()
         .chain::<String, _, _>(just("//").map(|c| c.to_string()))
         .chain(path())
@@ -578,19 +578,19 @@ pub fn protocol_iri_ref() -> t!(ShExMLToken) {
     uri
 }
 
-pub fn pn_char_base() -> t!(char) {
+fn pn_char_base() -> t!(char) {
     filter(|c: &char| c.is_alphabetic())
 }
 
-pub fn pn_char_u() -> t!(char) {
+fn pn_char_u() -> t!(char) {
     pn_char_base().or(just('_'))
 }
-pub fn pn_char() -> t!(char) {
+fn pn_char() -> t!(char) {
     pn_char_u()
         .or(just('-'))
         .or(filter(|c: &char| c.is_numeric()))
 }
-pub fn pn_prefix() -> t!(Vec<char>) {
+fn pn_prefix() -> t!(Vec<char>) {
     let ne = just('.')
         .repeated()
         .then(pn_char().repeated().at_least(1))

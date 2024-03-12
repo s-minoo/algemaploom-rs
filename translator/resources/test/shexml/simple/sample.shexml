@@ -38,6 +38,8 @@ ITERATOR film_json <jsonpath: $.films[*]> {
     }
 }
 EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
+EXPRESSION films_name_xml <films_xml_file.film_xml.name> 
+EXPRESSION fimls_name_year <films_xml_file.film_xml.name + "_" + films_xml_file.film_json.name>
 
 :Films :[films.id] {
     :type :Film ;

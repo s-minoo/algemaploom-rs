@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::fmt::Display;
 use std::str::FromStr;
 
 use serde::ser::{SerializeSeq, SerializeStruct};
@@ -19,6 +20,109 @@ pub struct ShExMLDocument {
     pub functions:        Vec<Function>,
     pub matchers:         Vec<Matcher>,
     pub graph_shapes:     Vec<GraphShapes>,
+}
+
+pub fn get_shapes_from_expr_ident<'a>(
+    graph_shapes: &'a Vec<GraphShapes>,
+    expr_ident: &'a str,
+) -> Vec<&'a Shape> {
+    let mut result = Vec::new();
+    for graph in graph_shapes {
+        for shape in &graph.shapes {
+            let subj_expr_ident = match &shape.subject.expression {
+                ShapeExpression::Reference(reference) => &reference.expr_ident,
+                ShapeExpression::Matching {
+                    reference,
+                    matcher_ident: _,
+                } => &reference.expr_ident,
+                ShapeExpression::Conditional {
+                    reference,
+                    conditional_expr: _,
+                } => &reference.expr_ident,
+                _ => "",
+            };
+
+            if subj_expr_ident == expr_ident {
+                result.push(shape);
+            }
+        }
+    }
+    result
+}
+
+impl ShExMLDocument {
+    pub fn convert_to_indexed(self) -> IndexedShExMLDocument {
+        let prefixes = self
+            .prefixes
+            .into_iter()
+            .map(|pref| (pref.prefix.to_string(), pref))
+            .collect();
+
+        let sources = self
+            .sources
+            .into_iter()
+            .map(|source| (source.ident.clone(), source))
+            .collect();
+
+        let iterators = self
+            .iterators
+            .into_iter()
+            .map(|iter| (iter.ident.clone(), iter))
+            .collect();
+
+        let expression_stmts = self
+            .expression_stmts
+            .into_iter()
+            .map(|expr| (expr.ident.clone(), expr))
+            .collect();
+
+        let auto_increments = self
+            .auto_increments
+            .into_iter()
+            .map(|auto_inc| (auto_inc.ident.clone(), auto_inc))
+            .collect();
+
+        let functions = self
+            .functions
+            .into_iter()
+            .map(|func| (func.ident.clone(), func))
+            .collect();
+
+        let matchers = self
+            .matchers
+            .into_iter()
+            .map(|matcher| (matcher.ident.clone(), matcher))
+            .collect();
+
+        let graph_shapes = self
+            .graph_shapes
+            .into_iter()
+            .map(|graph_shape| (graph_shape.ident.to_string(), graph_shape))
+            .collect();
+
+        IndexedShExMLDocument {
+            prefixes,
+            sources,
+            iterators,
+            expression_stmts,
+            auto_increments,
+            functions,
+            matchers,
+            graph_shapes,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct IndexedShExMLDocument {
+    pub prefixes:         HashMap<String, Prefix>,
+    pub sources:          HashMap<String, Source>,
+    pub iterators:        HashMap<String, Iterator>,
+    pub expression_stmts: HashMap<String, ExpressionStmt>,
+    pub auto_increments:  HashMap<String, AutoIncrement>,
+    pub functions:        HashMap<String, Function>,
+    pub matchers:         HashMap<String, Matcher>,
+    pub graph_shapes:     HashMap<String, GraphShapes>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -215,6 +319,12 @@ pub struct ShapeIdent {
     pub local:  String,
 }
 
+impl Display for ShapeIdent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.prefix, self.local)
+    }
+}
+
 impl ShapeIdent {
     pub fn base() -> ShapeIdent {
         ShapeIdent {
@@ -278,7 +388,7 @@ pub enum ShapeExpression {
     },
 
     Matching {
-        reference:    ShapeReference,
+        reference:     ShapeReference,
         matcher_ident: String,
     },
 
@@ -316,8 +426,8 @@ pub struct Object {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DataType {
-    pub prefix: Option<PrefixNameSpace>, 
-    pub local_expr: ShapeExpression
+    pub prefix:     Option<PrefixNameSpace>,
+    pub local_expr: ShapeExpression,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -338,6 +448,15 @@ pub enum PrefixNameSpace {
     #[serde(serialize_with = "ns_serialize")]
     NamedPrefix(String),
     BasePrefix,
+}
+
+impl Display for PrefixNameSpace {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PrefixNameSpace::NamedPrefix(prefix) => write!(f, "{}", prefix),
+            PrefixNameSpace::BasePrefix => write!(f, ":"),
+        }
+    }
 }
 
 fn ns_serialize<S>(ns: &String, s: S) -> Result<S::Ok, S::Error>

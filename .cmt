@@ -10,7 +10,15 @@
         "test",
         "chore"
     ]
-    "Scope" = @ # Single line input
+    "Scope" = [
+        "shexml-interpreter",
+        "rml-interpreter", 
+        "translator/rml", 
+        "translator/shexml", 
+        "vocab", 
+        "operator", 
+        "bin"
+    ]
     "Subject" = @
     "Body" = !@ # Multi-line input
     "Footer" = !@
