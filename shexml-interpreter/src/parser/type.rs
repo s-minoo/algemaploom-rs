@@ -163,7 +163,7 @@ pub struct Source {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Iterator {
     pub ident:           String,
-    pub query:           String,
+    pub query:           Option<String>,
     pub iter_type:       Option<IteratorType>,
     pub fields:          Vec<Field>,
     pub nested_iterator: Vec<Iterator>,
@@ -187,7 +187,7 @@ impl FromStr for IteratorType {
             "xpath:" => Ok(IteratorType::XPath),
             "sparql:" => Ok(IteratorType::SPARQL),
             "sql:" => Ok(IteratorType::SQL),
-            "csvperrow:" => Ok(IteratorType::CSVRows),
+            "csvperrow" => Ok(IteratorType::CSVRows),
             string => {
                 Err(ShExMLError::ParseError(format!(
                     "{} cannot be parsed to IteratorType",
