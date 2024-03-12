@@ -15,6 +15,7 @@
         "rml-interpreter", 
         "translator/rml", 
         "translator/shexml", 
+        "plangenerator", 
         "vocab", 
         "operator", 
         "bin"
