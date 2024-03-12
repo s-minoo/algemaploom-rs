@@ -22,6 +22,34 @@ pub struct ShExMLDocument {
     pub graph_shapes:     Vec<GraphShapes>,
 }
 
+pub fn get_shapes_from_expr_ident<'a>(
+    graph_shapes: &'a Vec<GraphShapes>,
+    expr_ident: &'a str,
+) -> Vec<&'a Shape> {
+    let mut result = Vec::new();
+    for graph in graph_shapes {
+        for shape in &graph.shapes {
+            let subj_expr_ident = match &shape.subject.expression {
+                ShapeExpression::Reference(reference) => &reference.expr_ident,
+                ShapeExpression::Matching {
+                    reference,
+                    matcher_ident: _,
+                } => &reference.expr_ident,
+                ShapeExpression::Conditional {
+                    reference,
+                    conditional_expr: _,
+                } => &reference.expr_ident,
+                _ => "",
+            };
+
+            if subj_expr_ident == expr_ident {
+                result.push(shape);
+            }
+        }
+    }
+    result
+}
+
 impl ShExMLDocument {
     pub fn convert_to_indexed(self) -> IndexedShExMLDocument {
         let prefixes = self
