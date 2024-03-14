@@ -524,26 +524,28 @@ pub enum ShapeExpression {
 }
 
 impl ShapeExpression {
-    pub fn extract_expr_idents(&self) -> Vec<&str> {
-        let mut result = Vec::new();
+    pub fn extract_expr_idents(&self) -> HashSet<&str> {
+        let mut result = HashSet::new();
 
         match self {
             ShapeExpression::Reference(reference) => {
-                result.push(reference.expr_ident.as_str())
+                result.insert(reference.expr_ident.as_str());
             }
             ShapeExpression::Matching {
                 reference,
                 matcher_ident: _,
-            } => result.push(reference.expr_ident.as_str()),
+            } => {
+                result.insert(reference.expr_ident.as_str());
+            }
             ShapeExpression::Conditional {
                 reference,
                 conditional_expr,
             } => {
-                result.push(reference.expr_ident.as_str());
+                result.insert(reference.expr_ident.as_str());
                 result.extend(&conditional_expr.extract_expr_idents());
             }
             ShapeExpression::Function {
-                fun_method_ident:_,
+                fun_method_ident: _,
                 params_idents,
             } => {
                 result.extend(
