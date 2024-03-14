@@ -92,19 +92,45 @@ fn check_obj_related_expression(
     }
 }
 
-pub fn get_quads_from_expr_idents<'a>(
+pub type ShExMLQuads<'a> =
+    Vec<(&'a Subject, &'a Predicate, &'a Object, &'a ShapeIdent)>;
+
+pub fn get_quads_from_same_source<'a>(
     graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
     expr_idents: HashSet<&'a str>,
-) -> Vec<(&'a Subject, &'a Predicate, &'a Object, &'a ShapeIdent)> {
+) -> ShExMLQuads<'a>{
+    get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
+        subj_check && obj_check
+    })
+}
+
+pub fn get_quads_from_different_source<'a>(
+    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
+    expr_idents: HashSet<&'a str>,
+) -> ShExMLQuads<'a>{
+    get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
+        subj_check || obj_check
+    })
+}
+
+fn get_quads_from_shapes<'a, CheckerFn>(
+    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
+    expr_idents: HashSet<&'a str>,
+    source_checker: CheckerFn,
+) -> ShExMLQuads<'a>
+where
+    CheckerFn: Fn(bool, bool) -> bool,
+{
     let mut result = Vec::new();
 
     for graph in graph_shapes {
         let quads = convert_graph_shape_to_quads(graph);
         for quad in quads {
             let (subj, _, obj, _) = quad;
-            if check_subj_expr_ident(subj, &expr_idents)
-                && check_obj_expr_ident(obj, &expr_idents)
-            {
+            if source_checker(
+                check_subj_expr_ident(subj, &expr_idents),
+                check_obj_expr_ident(obj, &expr_idents),
+            ) {
                 result.push(quad);
             }
         }
