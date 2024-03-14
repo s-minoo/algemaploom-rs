@@ -98,7 +98,7 @@ pub type ShExMLQuads<'a> =
 pub fn get_quads_from_same_source<'a>(
     graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
     expr_idents: HashSet<&'a str>,
-) -> ShExMLQuads<'a>{
+) -> ShExMLQuads<'a> {
     get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
         subj_check && obj_check
     })
@@ -107,7 +107,7 @@ pub fn get_quads_from_same_source<'a>(
 pub fn get_quads_from_different_source<'a>(
     graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
     expr_idents: HashSet<&'a str>,
-) -> ShExMLQuads<'a>{
+) -> ShExMLQuads<'a> {
     get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
         subj_check || obj_check
     })
@@ -521,6 +521,42 @@ pub enum ShapeExpression {
         fun_method_ident: ShapeReference,
         params_idents:    Vec<ShapeReference>,
     },
+}
+
+impl ShapeExpression {
+    pub fn extract_expr_idents(&self) -> Vec<&str> {
+        let mut result = Vec::new();
+
+        match self {
+            ShapeExpression::Reference(reference) => {
+                result.push(reference.expr_ident.as_str())
+            }
+            ShapeExpression::Matching {
+                reference,
+                matcher_ident: _,
+            } => result.push(reference.expr_ident.as_str()),
+            ShapeExpression::Conditional {
+                reference,
+                conditional_expr,
+            } => {
+                result.push(reference.expr_ident.as_str());
+                result.extend(&conditional_expr.extract_expr_idents());
+            }
+            ShapeExpression::Function {
+                fun_method_ident:_,
+                params_idents,
+            } => {
+                result.extend(
+                    params_idents
+                        .iter()
+                        .map(|shape_ref| shape_ref.expr_ident.as_str()),
+                )
+            }
+            _ => {}
+        }
+
+        result
+    }
 }
 
 fn shape_expr_ref_serialize<S>(
