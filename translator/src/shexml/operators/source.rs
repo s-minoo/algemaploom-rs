@@ -117,12 +117,11 @@ fn translate_to_operator_iterator(
         shexml_iter.iter_type.as_ref().unwrap(),
     );
 
-    let reference = shexml_iter.query.to_string();
     let fields =
         translate_to_operator_fields(shexml_iter, &reference_formulation);
 
     operator::Iterator {
-        reference: Some(reference),
+        reference: shexml_iter.query.clone(),
         reference_formulation,
         fields,
     }
@@ -166,7 +165,10 @@ fn translate_to_operator_fields(
         .map(|nested_iter| {
             operator::Field {
                 alias:                 nested_iter.ident.clone(),
-                reference:             nested_iter.query.clone(),
+                reference:             nested_iter
+                    .query
+                    .clone()
+                    .expect("Nested iterator needs a query string"),
                 reference_formulation: ref_formulation.clone(),
                 inner_fields:          translate_to_operator_fields(
                     nested_iter,
@@ -207,16 +209,29 @@ mod tests {
 
     #[test]
     fn source_translate_test() -> ShExMLResult<()> {
-        let simple_shexml = test_case!("shexml/sample.shexml");
-        let shexml_doc = shexml_interpreter::parse_file(simple_shexml)?.convert_to_indexed();
+        let simple_shexml = test_case!("shexml/straight_csv/input.shexml");
+        let shexml_doc =
+            shexml_interpreter::parse_file(simple_shexml)?.convert_to_indexed();
         let source_translator = ShExMLSourceTranslator {
             document: &shexml_doc,
         };
 
         let alge_source = source_translator.translate();
+        let expected_source_ids = vec![
+            "films_csv_file.film_csv",
+            "films_second_csv_file.film_second_csv",
+        ];
 
-        for (source_ident, (source, expr_ident)) in alge_source.iter() {
-            println!("Source id: {:?}", source_ident);
+        for expected_source_id in expected_source_ids {
+            let (source, expr_ident) =
+                alge_source.get(expected_source_id).unwrap_or_else(|| {
+                    panic!(
+                        "Expected {} source to be parsed \n\
+                    But only these sources: {:#?}, got parsed! ",
+                        expected_source_id,
+                        alge_source.keys().collect::<Vec<_>>()
+                    )
+                });
             println!("Expr idents: {:#?}", expr_ident);
             println!("Source: {:#?}", source);
         }
