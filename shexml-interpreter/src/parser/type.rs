@@ -493,6 +493,16 @@ pub struct ShapeReference {
     pub field:      Option<String>,
 }
 
+impl Display for ShapeReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(field_str) = &self.field {
+            write!(f, "{}.{}", self.expr_ident, field_str)
+        } else {
+            write!(f, "{}", self.expr_ident)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "type")]
 pub enum ShapeExpression {
