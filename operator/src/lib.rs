@@ -288,9 +288,20 @@ pub enum Function {
     Constant {
         value: String,
     },
-    Template {
+    TemplateString {
         value: String,
     },
+
+    Replace{
+        replace_map:    HashMap<String, HashSet<String>>,
+        inner_function: RcExtendFunction, 
+    },
+
+    TemplateFunctionValue{
+        template: String, 
+        variable_function_pairs: Vec<(String, RcExtendFunction)>, 
+    },
+
     UriEncode {
         inner_function: RcExtendFunction,
     },
@@ -299,6 +310,8 @@ pub enum Function {
     },
     Literal {
         inner_function: RcExtendFunction,
+        dtype_function: Option<RcExtendFunction>, 
+        langtype_function: Option<RcExtendFunction>,
     },
     BlankNode {
         inner_function: RcExtendFunction,
