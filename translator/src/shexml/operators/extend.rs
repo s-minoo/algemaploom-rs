@@ -6,7 +6,7 @@ use operator::Function;
 use shexml_interpreter::{ExpressionReferenceIdent, Iterator};
 
 
-pub fn translate_concatenate(
+pub fn translate_concatenate_to_extend_pairs(
     expr_ident: &str,
     iterators: &HashMap<String, Iterator>,
     string_concate_expr: &shexml_interpreter::ExpressionStmtEnum,

@@ -43,7 +43,7 @@ pub fn extract_extend_function_from_term_map(
     let value_function: RcExtendFunction = match tm_info.term_map_type {
         TermMapType::Constant => Function::Constant { value: term_value },
         TermMapType::Reference => Function::Reference { value: term_value },
-        TermMapType::Template => Function::Template { value: term_value },
+        TermMapType::Template => Function::TemplateString { value: term_value },
         TermMapType::Function => {
             let fn_map = tm_info.fun_map_opt.as_ref().unwrap();
             let fno_identifier = fn_map.function_iri.clone();
@@ -79,6 +79,8 @@ pub fn extract_extend_function_from_term_map(
         sophia_api::term::TermKind::Literal => {
             Function::Literal {
                 inner_function: value_function,
+                langtype_function: None, 
+                dtype_function: None,
             }
         }
         sophia_api::term::TermKind::BlankNode => {
