@@ -6,8 +6,8 @@ use operator::{Extend, Function, Rename, Serializer, Target};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Plan, Processed, RcRefCellPlan, Serialized, Sunk};
 use shexml_interpreter::{
-    get_quads_from_same_source, IndexedShExMLDocument, Object, Prefix,
-    PrefixNameSpace, ShExMLDocument, ShExMLQuads, ShapeExpression, ShapeIdent,
+    get_quads_from_same_source, IndexedShExMLDocument, Object,
+    PrefixNameSpace, ShExMLDocument, ShExMLQuads, ShapeIdent,
     Subject,
 };
 
@@ -44,7 +44,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             })
             .collect();
 
-        for (source_ident, (sourced_plan, expr_idents)) in
+        for (_source_ident, (sourced_plan, expr_idents)) in
             scidentkey_sourcedplan_exprident_pairval_map.iter()
         {
             let expr_idents_hashset =
@@ -213,7 +213,7 @@ fn add_rename_extend_op_from_quads(
     let mut triples_extend_func_pairs: HashMap<String, Function> =
         HashMap::new();
 
-    for (subj_idx, (subj, obj_shape_pairs)) in sub_obj_map.iter().enumerate() {
+    for (_subj_idx, (subj, obj_shape_pairs)) in sub_obj_map.iter().enumerate() {
         if let Some(subj_term_func) = extend::term::rdf_term_function(
             doc,
             Some(&subj.prefix),
@@ -223,7 +223,7 @@ fn add_rename_extend_op_from_quads(
                 inner_function: subj_term_func.into(),
             };
 
-            for (obj_idx, (obj, shape_ident)) in
+            for (_obj_idx, (obj, _shape_ident)) in
                 obj_shape_pairs.iter().enumerate()
             {
                 let subj_variable =

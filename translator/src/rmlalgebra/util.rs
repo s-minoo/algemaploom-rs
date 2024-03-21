@@ -16,7 +16,7 @@ pub fn extract_gm_tm_infos<'a>(
 
     result.extend(sm.graph_maps.iter().map(|gm| &gm.tm_info));
 
-    poms.into_iter().for_each(|pom| {
+    poms.iter().for_each(|pom| {
         result.extend(pom.predicate_maps.iter().map(|pm| &pm.tm_info));
         result.extend(pom.object_maps.iter().map(|om| &om.tm_info));
     });
@@ -82,7 +82,7 @@ pub fn generate_lt_quads_from_spo<'a>(
             pm.tm_info.logical_targets.iter().for_each(|lt| {
                 let ref_pom = RefPOM {
                     pm: vec![pm],
-                    om: oms.iter().map(|om| om.into()).collect(),
+                    om: oms.iter().map(|om| om).collect(),
                 };
                 let pm_gms = pm.graph_maps.iter();
                 let gms = pm_gms.chain(pom_gms.clone()).collect();
@@ -101,7 +101,7 @@ pub fn generate_lt_quads_from_spo<'a>(
         for om in oms {
             om.tm_info.logical_targets.iter().for_each(|lt| {
                 let ref_pom = RefPOM {
-                    pm: pms.iter().map(|pm| pm.into()).collect(),
+                    pm: pms.iter().map(|pm| pm).collect(),
                     om: vec![om],
                 };
 

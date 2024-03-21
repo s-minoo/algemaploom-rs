@@ -21,9 +21,9 @@ fn translate_fragment_op_from_lts_str(
 ) -> Option<Fragmenter> {
     let target_lt_ids = lt_quads_map.keys();
 
-    let to: Vec<String> = target_lt_ids.map(|id| id.clone()).collect();
+    let to: Vec<String> = target_lt_ids.cloned().collect();
 
-    if to.len() == 1 && to.iter().next() == Some(&from_fragment.to_string()) {
+    if to.len() == 1 && to.first() == Some(&from_fragment.to_string()) {
         return None;
     }
 

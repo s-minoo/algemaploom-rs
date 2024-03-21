@@ -4,10 +4,10 @@ mod util;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
+
 use std::rc::Rc;
 
-use operator::formats::{DataFormat, ReferenceFormulation};
+use operator::formats::{ReferenceFormulation};
 use operator::{Extend, Field, Iterator, Operator, Projection, Source};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{join, Plan, Processed, RcRefCellPlan};
@@ -39,8 +39,8 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
             .triples_maps
             .iter()
             .map(|tm| {
-                let source_op = translate_source_op(&tm);
-                let projection_op = translate_projection_op(&tm);
+                let source_op = translate_source_op(tm);
+                let projection_op = translate_projection_op(tm);
                 let result = (
                     tm,
                     Rc::new(RefCell::new(

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use shexml_interpreter::{
-    ExpressionStmt, FieldType, IndexedShExMLDocument, Iterator,
+    ExpressionStmt, FieldType, Iterator,
 };
 
 pub fn translate_rename_pairs_map(
