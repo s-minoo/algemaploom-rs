@@ -2,20 +2,23 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use operator::{Extend, Function, Rename};
+use operator::{Extend, Function, Rename, Serializer, Target};
 use plangenerator::error::PlanError;
-use plangenerator::plan::{Plan, Processed, RcRefCellPlan};
+use plangenerator::plan::{Plan, Processed, RcRefCellPlan, Serialized, Sunk};
 use shexml_interpreter::{
     get_quads_from_same_source, IndexedShExMLDocument, Object, Prefix,
     PrefixNameSpace, ShExMLDocument, ShExMLQuads, ShapeExpression, ShapeIdent,
     Subject,
 };
 
+use self::util::IndexVariableTerm;
 use crate::shexml::operators::source::ShExMLSourceTranslator;
 use crate::shexml::operators::{extend, rename};
+use crate::shexml::util::variablelize_quads;
 use crate::{LanguageTranslator, OperatorTranslator};
 
 mod operators;
+mod util;
 
 pub struct ShExMLTranslator;
 
@@ -61,7 +64,9 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             );
         }
 
-        todo!()
+        // TODO: Also try to handle joins across different sources in ShExML  <21-03-24, Min Oo> //
+
+        Ok(plan)
     }
 }
 
@@ -69,17 +74,80 @@ fn add_non_join_related_op(
     doc: &IndexedShExMLDocument,
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
-) -> Result<Plan<Processed>, PlanError> {
-    let renamed_extended_plan =
-        add_rename_extend_op_from_quads(doc, quads, sourced_plan.clone());
+) -> Result<Plan<Sunk>, PlanError> {
+    let variablized_terms = variablelize_quads(quads);
+    let mut renamed_extended_plan = add_rename_extend_op_from_quads(
+        doc,
+        quads,
+        sourced_plan.clone(),
+        &variablized_terms,
+    )?;
 
-    todo!()
+    let mut serialized_plan = add_serializer_op_from_quads(
+        doc,
+        quads,
+        &mut renamed_extended_plan,
+        &variablized_terms,
+    )?;
+
+    serialized_plan.sink(&Target {
+        configuration: HashMap::new(),
+        target_type:   operator::IOType::StdOut,
+        data_format:   operator::formats::DataFormat::NQuads,
+    })
+}
+
+fn add_serializer_op_from_quads(
+    doc: &IndexedShExMLDocument,
+    quads: &ShExMLQuads<'_>,
+    extended_plan: &mut Plan<Processed>,
+    variablized_terms: &IndexVariableTerm<'_>,
+) -> Result<Plan<Serialized>, PlanError> {
+    let mut bgp_patterns = Vec::new();
+    for (subj, pred, obj, graph) in quads {
+        let subj_variable =
+            variablized_terms.subject_variable_index.get(*subj).unwrap();
+        let obj_variable =
+            variablized_terms.object_variable_index.get(*obj).unwrap();
+
+        if let Some(pred_prefix_value) =
+            doc.prefixes.get(&pred.prefix.to_string())
+        {
+            let pred_prefix_uri = pred_prefix_value.uri;
+            let graph_value = if graph.prefix == PrefixNameSpace::BasePrefix {
+                "".to_string()
+            } else {
+                let graph_prefix_uri =
+                    doc.prefixes.get(&graph.prefix.to_string()).unwrap().uri;
+                format!("{}{}", graph_prefix_uri, graph.local)
+            };
+
+            let single_bgp = format!(
+                "?{} <{}{}> ?{} {}.",
+                subj_variable,
+                pred_prefix_uri,
+                pred.local,
+                obj_variable,
+                graph_value
+            );
+
+            bgp_patterns.push(single_bgp);
+        };
+    }
+    let serializer = Serializer {
+        template: bgp_patterns.join("\n"),
+        options:  None,
+        format:   operator::formats::DataFormat::NQuads,
+    };
+
+    extended_plan.serialize(serializer)
 }
 
 fn add_rename_extend_op_from_quads(
     doc: &IndexedShExMLDocument,
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
+    variablized_terms: &IndexVariableTerm<'_>,
 ) -> Result<Plan<Processed>, PlanError> {
     let mut expression_extend_func_pairs: Vec<(String, Function)> = Vec::new();
     let expression_stmts_map = &doc.expression_stmts;
@@ -146,9 +214,11 @@ fn add_rename_extend_op_from_quads(
         HashMap::new();
 
     for (subj_idx, (subj, obj_shape_pairs)) in sub_obj_map.iter().enumerate() {
-        if let Some(subj_term_func) =
-            rdf_term_function(doc, Some(&subj.prefix), &subj.expression)
-        {
+        if let Some(subj_term_func) = extend::term::rdf_term_function(
+            doc,
+            Some(&subj.prefix),
+            &subj.expression,
+        ) {
             let subj_term_iri_func = Function::Iri {
                 inner_function: subj_term_func.into(),
             };
@@ -157,18 +227,25 @@ fn add_rename_extend_op_from_quads(
                 obj_shape_pairs.iter().enumerate()
             {
                 let subj_variable =
-                    format!("{}_sm_{}", shape_ident.local, subj_idx);
+                    variablized_terms.subject_variable_index.get(subj).unwrap();
 
-                if triples_extend_func_pairs.get(&subj_variable).is_none() {
-                    triples_extend_func_pairs
-                        .insert(subj_variable, subj_term_iri_func.clone());
+                if triples_extend_func_pairs.get(subj_variable).is_none() {
+                    triples_extend_func_pairs.insert(
+                        subj_variable.to_string(),
+                        subj_term_iri_func.clone(),
+                    );
                 }
 
-                if let Some(obj_func) = obj_lang_datatype_function(doc, obj) {
-                    let obj_variable =
-                        format!("{}_om_{}", shape_ident.local, obj_idx);
+                if let Some(obj_func) =
+                    extend::term::obj_lang_datatype_function(doc, obj)
+                {
+                    let obj_variable = variablized_terms
+                        .object_variable_index
+                        .get(obj)
+                        .unwrap();
 
-                    triples_extend_func_pairs.insert(obj_variable, obj_func);
+                    triples_extend_func_pairs
+                        .insert(obj_variable.to_string(), obj_func);
                 }
             }
         }
@@ -182,101 +259,6 @@ fn add_rename_extend_op_from_quads(
         },
         "Extend_for_Serializer",
     )
-}
-
-fn obj_lang_datatype_function(
-    doc: &IndexedShExMLDocument,
-    obj: &Object,
-) -> Option<Function> {
-    let obj_function_opt =
-        rdf_term_function(doc, obj.prefix.as_ref(), &obj.expression);
-
-    let obj_inner_function = obj_function_opt?;
-    if obj.prefix.is_some() {
-        Some(Function::Iri {
-            inner_function: obj_inner_function.into(),
-        })
-    } else {
-        let dtype_function = obj.datatype.as_ref().and_then(|dtype| {
-            rdf_term_function(doc, dtype.prefix.as_ref(), &dtype.local_expr)
-                .map(|fun| fun.into())
-        });
-
-        let langtype_function = obj.language.as_ref().and_then(|lang_expr| {
-            rdf_term_function(doc, None, lang_expr).map(|fun| fun.into())
-        });
-
-        Some(Function::Literal {
-            inner_function: obj_inner_function.into(),
-            dtype_function,
-            langtype_function,
-        })
-    }
-}
-
-fn rdf_term_function(
-    doc: &IndexedShExMLDocument,
-    prefix_ns_opt: Option<&PrefixNameSpace>,
-    shape_expression: &ShapeExpression,
-) -> Option<Function> {
-    let function_value_opt = match shape_expression {
-        ShapeExpression::Reference(reference) => {
-            Some(Function::Reference {
-                value: reference.to_string(),
-            })
-        }
-        ShapeExpression::Matching {
-            reference,
-            matcher_ident,
-        } => {
-            let ref_func = Function::Reference {
-                value: reference.to_string(),
-            };
-
-            doc.matchers.get(matcher_ident).map(|matcher| {
-                Function::Replace {
-                    replace_map:    matcher.rename_map.clone(),
-                    inner_function: ref_func.into(),
-                }
-            })
-        }
-
-        ShapeExpression::Link { other_shape_ident } => {
-            Some(Function::Reference {
-                value: other_shape_ident.to_string(),
-            })
-        }
-
-        shape_expression => {
-            println!(
-                "Extracting functions from shape expression: {:#?} is not supported",
-                shape_expression
-            );
-
-            None
-        }
-    };
-    //Still need to handle templating if there is a prefix
-    if let Some(new_func) = function_value_opt {
-        if let Some(prefix_ns) = prefix_ns_opt {
-            let prefix_opt = doc.prefixes.get(&prefix_ns.to_string());
-            if let Some(prefix) = prefix_opt {
-                let template = format!("{}{{func_value}}", prefix.uri,);
-
-                return Some(Function::TemplateFunctionValue {
-                    template,
-                    variable_function_pairs: vec![(
-                        "func_value".to_string(),
-                        Rc::new(new_func),
-                    )],
-                });
-            }
-        } else {
-            return Some(new_func);
-        }
-    }
-
-    None
 }
 
 #[cfg(test)]

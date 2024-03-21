@@ -5,6 +5,7 @@ use either::Either;
 use operator::Function;
 use shexml_interpreter::{ExpressionReferenceIdent, Iterator};
 
+pub mod term;
 
 pub fn translate_concatenate_to_extend_pairs(
     expr_ident: &str,
@@ -89,4 +90,3 @@ fn create_concat_function(
         right_value,
     }
 }
-
