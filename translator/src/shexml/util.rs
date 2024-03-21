@@ -7,7 +7,7 @@ pub struct IndexVariableTerm<'a> {
     pub object_variable_index:  HashMap<&'a Object, String>,
 }
 
-pub fn variablelize_quads(quads: &ShExMLQuads<'_>) -> IndexVariableTerm<'_> {
+pub fn variablelize_quads<'a>(quads: &'a ShExMLQuads<'a>) -> IndexVariableTerm<'a> {
     let mut subject_variable_index = HashMap::new();
     let mut object_variable_index = HashMap::new();
 

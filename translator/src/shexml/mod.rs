@@ -113,12 +113,12 @@ fn add_serializer_op_from_quads(
         if let Some(pred_prefix_value) =
             doc.prefixes.get(&pred.prefix.to_string())
         {
-            let pred_prefix_uri = pred_prefix_value.uri;
+            let pred_prefix_uri = &pred_prefix_value.uri;
             let graph_value = if graph.prefix == PrefixNameSpace::BasePrefix {
                 "".to_string()
             } else {
                 let graph_prefix_uri =
-                    doc.prefixes.get(&graph.prefix.to_string()).unwrap().uri;
+                    &doc.prefixes.get(&graph.prefix.to_string()).unwrap().uri;
                 format!("{}{}", graph_prefix_uri, graph.local)
             };
 
