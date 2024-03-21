@@ -541,7 +541,6 @@ dependencies = [
  "clap",
  "colored",
  "csv",
- "either",
  "lazy_static",
  "operator",
  "petgraph",
@@ -1146,6 +1145,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "either",
  "lazy_static",
  "operator",
  "plangenerator",

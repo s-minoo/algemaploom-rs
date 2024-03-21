@@ -524,6 +524,7 @@ impl WhereByPlan<Processed> {
             .zip(right_attributes.clone().into_iter())
             .collect();
 
+        // TODO: Enable specification of join type and predicate type  <12-03-24, yourname> //
         let join_op = Operator::JoinOp {
             config: Join {
                 join_alias: joined_plan.alias.clone(),
@@ -632,9 +633,9 @@ mod tests {
     fn test_plan_source() {
         let mut plan = Plan::new();
         let source = Source {
-            config:      HashMap::new(),
-            source_type: operator::IOType::File,
-            root_iterator:    Iterator::default(),
+            config:        HashMap::new(),
+            source_type:   operator::IOType::File,
+            root_iterator: Iterator::default(),
         };
         plan.source(source.clone());
         let graph = plan.graph.borrow();
@@ -652,9 +653,9 @@ mod tests {
     fn test_plan_apply() -> std::result::Result<(), PlanError> {
         let mut plan = Plan::new();
         let source = Source {
-            config:      HashMap::new(),
-            source_type: operator::IOType::File,
-            root_iterator:    Iterator::default(),
+            config:        HashMap::new(),
+            source_type:   operator::IOType::File,
+            root_iterator: Iterator::default(),
         };
 
         let project_op = Operator::ProjectOp {

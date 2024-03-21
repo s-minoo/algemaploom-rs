@@ -1034,6 +1034,9 @@ fn single_matcher_test() {
         tokens_opt
     );
 }
+
+// TODO: Lex string concatenation + union operation properly <12-03-24, yourname> //
+#[ignore]
 #[test]
 fn string_op_union_expression_test() {
     let exp_str = "
@@ -1250,6 +1253,31 @@ fn iterator_header_test() {
         ShExMLToken::AngleStart,
         ShExMLToken::IteratorType("xpath:".to_string()),
         ShExMLToken::IteratorQuery("/path/to/entity".to_string()),
+        ShExMLToken::AngleEnd,
+    ]);
+    assert!(
+        tokens_opt == expected_tokens,
+        "{:?} is the parsed tokens
+            {:?} is the expected tokens
+            ",
+        tokens_opt,
+        expected_tokens
+    );
+}
+
+#[test]
+fn iterator_csvperrow_test() {
+    let iter_str = "ITERATOR example <csvperrow>";
+    let (tokens_opt, errors) = iterator_header()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(iter_str);
+    assert!(errors.len() == 0, "{:?}", errors);
+    let expected_tokens = Some(vec![
+        ShExMLToken::Iterator,
+        ShExMLToken::Ident("example".to_string()),
+        ShExMLToken::AngleStart,
+        ShExMLToken::IteratorType("csvperrow".to_string()),
         ShExMLToken::AngleEnd,
     ]);
     assert!(

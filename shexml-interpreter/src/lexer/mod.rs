@@ -430,11 +430,19 @@ fn iterator_header() -> t!(Vec<ShExMLToken>) {
     let iterator_name = ident().padded();
 
     let iterator_type = protocol().padded().map(ShExMLToken::IteratorType);
+    let csv_iterator_type = just("csvperrow".to_string())
+        .padded()
+        .map(ShExMLToken::IteratorType);
     let iterator_query =
         within_angled_brackets().map(ShExMLToken::IteratorQuery);
 
     let iter_query_pair = token("<", ShExMLToken::AngleStart)
-        .chain(iterator_type.or_not().chain(iterator_query))
+        .chain(
+            iterator_type
+                .or(csv_iterator_type)
+                .or_not()
+                .chain::<ShExMLToken, _, _>(iterator_query.or_not()),
+        )
         .chain(token(">", ShExMLToken::AngleEnd));
 
     iterator_tag

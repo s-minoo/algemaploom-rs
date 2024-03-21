@@ -1613,7 +1613,7 @@ fn iterator_nested_test() {
 
     let innermost_iter = Iterator {
         ident:           "nestedIterator".to_string(),
-        query:           "nestedElements[*]".to_string(),
+        query:           Some("nestedElements[*]".to_string()),
         iter_type:       None,
         fields:          inner_fields,
         nested_iterator: vec![],
@@ -1632,7 +1632,7 @@ fn iterator_nested_test() {
 
     let expected_items = Some(vec![Iterator {
         ident: "example".to_string(),
-        query: "$".to_string(),
+        query: Some("$".to_string()),
         iter_type: Some("jsonpath:".parse().unwrap()),
         fields,
         nested_iterator: vec![inner_iter],
@@ -1682,7 +1682,7 @@ fn iterator_nested_same_level_test() {
     ];
     let inner_most = Iterator {
         ident:           "nestedIterator".to_string(),
-        query:           "nestedElements[*]".to_string(),
+        query:           Some("nestedElements[*]".to_string()),
         iter_type:       None,
         fields:          inner_fields,
         nested_iterator: vec![],
@@ -1703,7 +1703,7 @@ fn iterator_nested_same_level_test() {
 
     let expected_items = Some(vec![Iterator {
         ident: "example".to_string(),
-        query: "$".to_string(),
+        query: Some("$".to_string()),
         iter_type: Some("jsonpath:".parse().unwrap()),
         fields,
         nested_iterator: vec![inner_iter1, inner_iter2],
@@ -1752,7 +1752,7 @@ ITERATOR example <xpath: /path/to/entity> {
 
     let expected_items = Some(vec![Iterator {
         ident: "example".to_string(),
-        query: "/path/to/entity".to_string(),
+        query: Some("/path/to/entity".to_string()),
         iter_type: Some("xpath:".parse().unwrap()),
         fields,
         nested_iterator: vec![],
@@ -1760,6 +1760,49 @@ ITERATOR example <xpath: /path/to/entity> {
     assert_parse_expected(parsed_items, expected_items)
 }
 
+#[test]
+fn iterator_csvperrrow_test() {
+    let iter_str = "
+ITERATOR example <csvperrow> {
+    FIELD field1 <@attribute>
+    FIELD field2 <field2>
+    FIELD field3 <path/to/field3>
+}";
+
+    let (tokens_opt, errors) = lexer::iterators()
+        .then_ignore(end())
+        .parse_recovery(iter_str);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+    let parsed_items = parser::iterators().parse(tokens_opt.unwrap()).ok();
+
+    let fields = vec![
+        Field {
+            field_type: FieldType::Normal,
+            ident:      "field1".to_string(),
+            query:      "@attribute".to_string(),
+        },
+        Field {
+            field_type: FieldType::Normal,
+            ident:      "field2".to_string(),
+            query:      "field2".to_string(),
+        },
+        Field {
+            field_type: FieldType::Normal,
+            ident:      "field3".to_string(),
+            query:      "path/to/field3".to_string(),
+        },
+    ];
+
+    let expected_items = Some(vec![Iterator {
+        ident: "example".to_string(),
+        query: None,
+        iter_type: Some("csvperrow".parse().unwrap()),
+        fields,
+        nested_iterator: vec![],
+    }]);
+    assert_parse_expected(parsed_items, expected_items)
+}
 #[test]
 fn prefix_multiple_test() {
     let prefix_1 = r#"PREFIX ex: <https://example.com/>

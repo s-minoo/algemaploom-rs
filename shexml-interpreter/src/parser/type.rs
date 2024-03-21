@@ -22,28 +22,116 @@ pub struct ShExMLDocument {
     pub graph_shapes:     Vec<GraphShapes>,
 }
 
-pub fn get_shapes_from_expr_ident<'a>(
-    graph_shapes: &'a Vec<GraphShapes>,
-    expr_ident: &'a str,
-) -> Vec<&'a Shape> {
-    let mut result = Vec::new();
-    for graph in graph_shapes {
-        for shape in &graph.shapes {
-            let subj_expr_ident = match &shape.subject.expression {
-                ShapeExpression::Reference(reference) => &reference.expr_ident,
-                ShapeExpression::Matching {
-                    reference,
-                    matcher_ident: _,
-                } => &reference.expr_ident,
-                ShapeExpression::Conditional {
-                    reference,
-                    conditional_expr: _,
-                } => &reference.expr_ident,
-                _ => "",
-            };
+pub fn convert_graph_shape_to_quads(
+    graph_shapes: &GraphShapes,
+) -> Vec<(&Subject, &Predicate, &Object, &ShapeIdent)> {
+    let graph_ident = &graph_shapes.ident;
 
-            if subj_expr_ident == expr_ident {
-                result.push(shape);
+    let mut result = Vec::new();
+
+    for shape in &graph_shapes.shapes {
+        let quads = shape
+            .pred_obj_pairs
+            .iter()
+            .map(|(pred, obj)| (&shape.subject, pred, obj, graph_ident));
+        result.extend(quads);
+    }
+
+    result
+}
+
+fn check_subj_expr_ident(subj: &Subject, expr_idents: &HashSet<&str>) -> bool {
+    let subj_expr_ident = match &subj.expression {
+        ShapeExpression::Reference(reference) => &reference.expr_ident,
+        ShapeExpression::Matching {
+            reference,
+            matcher_ident: _,
+        } => &reference.expr_ident,
+        ShapeExpression::Conditional {
+            reference,
+            conditional_expr: _,
+        } => &reference.expr_ident,
+        _ => "",
+    };
+
+    expr_idents.contains(subj_expr_ident)
+}
+
+fn check_obj_expr_ident(obj: &Object, expr_idents: &HashSet<&str>) -> bool {
+    let obj_expr_bool =
+        check_obj_related_expression(&obj.expression, expr_idents);
+    if let Some(language_expr) = &obj.language {
+        obj_expr_bool
+            && check_obj_related_expression(language_expr, expr_idents)
+    } else if let Some(datatype) = &obj.datatype {
+        obj_expr_bool
+            && check_obj_related_expression(&datatype.local_expr, expr_idents)
+    } else {
+        obj_expr_bool
+    }
+}
+
+fn check_obj_related_expression(
+    expression: &ShapeExpression,
+    expr_idents: &HashSet<&str>,
+) -> bool {
+    match expression {
+        ShapeExpression::Reference(reference) => {
+            expr_idents.contains(reference.expr_ident.as_str())
+        }
+        ShapeExpression::Matching {
+            reference,
+            matcher_ident: _,
+        } => expr_idents.contains(reference.expr_ident.as_str()),
+        ShapeExpression::Conditional {
+            reference,
+            conditional_expr: _,
+        } => expr_idents.contains(reference.expr_ident.as_str()),
+        ShapeExpression::Static { value: _ } => true,
+        _ => false,
+    }
+}
+
+pub type ShExMLQuads<'a> =
+    Vec<(&'a Subject, &'a Predicate, &'a Object, &'a ShapeIdent)>;
+
+pub fn get_quads_from_same_source<'a>(
+    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
+    expr_idents: HashSet<&'a str>,
+) -> ShExMLQuads<'a> {
+    get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
+        subj_check && obj_check
+    })
+}
+
+pub fn get_quads_from_different_source<'a>(
+    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
+    expr_idents: HashSet<&'a str>,
+) -> ShExMLQuads<'a> {
+    get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
+        subj_check || obj_check
+    })
+}
+
+fn get_quads_from_shapes<'a, CheckerFn>(
+    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
+    expr_idents: HashSet<&'a str>,
+    source_checker: CheckerFn,
+) -> ShExMLQuads<'a>
+where
+    CheckerFn: Fn(bool, bool) -> bool,
+{
+    let mut result = Vec::new();
+
+    for graph in graph_shapes {
+        let quads = convert_graph_shape_to_quads(graph);
+        for quad in quads {
+            let (subj, _, obj, _) = quad;
+            if source_checker(
+                check_subj_expr_ident(subj, &expr_idents),
+                check_obj_expr_ident(obj, &expr_idents),
+            ) {
+                result.push(quad);
             }
         }
     }
@@ -163,7 +251,7 @@ pub struct Source {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Iterator {
     pub ident:           String,
-    pub query:           String,
+    pub query:           Option<String>,
     pub iter_type:       Option<IteratorType>,
     pub fields:          Vec<Field>,
     pub nested_iterator: Vec<Iterator>,
@@ -187,7 +275,7 @@ impl FromStr for IteratorType {
             "xpath:" => Ok(IteratorType::XPath),
             "sparql:" => Ok(IteratorType::SPARQL),
             "sql:" => Ok(IteratorType::SQL),
-            "csvperrow:" => Ok(IteratorType::CSVRows),
+            "csvperrow" => Ok(IteratorType::CSVRows),
             string => {
                 Err(ShExMLError::ParseError(format!(
                     "{} cannot be parsed to IteratorType",
@@ -313,7 +401,7 @@ pub struct Function {
     pub uri:       String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct ShapeIdent {
     pub prefix: PrefixNameSpace,
     pub local:  String,
@@ -334,10 +422,28 @@ impl ShapeIdent {
     }
 }
 
+pub type ShapeQuads<'a> =
+    (&'a Subject, &'a Predicate, &'a Object, &'a ShapeIdent);
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GraphShapes {
     pub ident:  ShapeIdent,
     pub shapes: Vec<Shape>,
+}
+
+impl GraphShapes {
+    pub fn convert_to_quads(&self) -> Vec<ShapeQuads<'_>> {
+        let mut result = Vec::new();
+        for (subj, pred, obj) in self
+            .shapes
+            .iter()
+            .flat_map(|shape| shape.convert_to_triples())
+        {
+            result.push((subj, pred, obj, &self.ident));
+        }
+
+        result
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -347,6 +453,20 @@ pub struct Shape {
 
     #[serde(serialize_with = "pred_obj_ser")]
     pub pred_obj_pairs: HashMap<Predicate, Object>,
+}
+
+pub type ShapeTriples<'a> = (&'a Subject, &'a Predicate, &'a Object);
+
+impl Shape {
+    pub fn convert_to_triples(&self) -> Vec<ShapeTriples<'_>> {
+        let mut result = Vec::new();
+
+        for (pred, obj) in self.pred_obj_pairs.iter() {
+            result.push((&self.subject, pred, obj));
+        }
+
+        result
+    }
 }
 
 fn pred_obj_ser<S>(
@@ -367,13 +487,23 @@ where
     seq.end()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct ShapeReference {
     pub expr_ident: String,
     pub field:      Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+impl Display for ShapeReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(field_str) = &self.field {
+            write!(f, "{}.{}", self.expr_ident, field_str)
+        } else {
+            write!(f, "{}", self.expr_ident)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "type")]
 pub enum ShapeExpression {
     #[serde(serialize_with = "shape_expr_ref_serialize")]
@@ -401,6 +531,44 @@ pub enum ShapeExpression {
         fun_method_ident: ShapeReference,
         params_idents:    Vec<ShapeReference>,
     },
+}
+
+impl ShapeExpression {
+    pub fn extract_expr_idents(&self) -> HashSet<&str> {
+        let mut result = HashSet::new();
+
+        match self {
+            ShapeExpression::Reference(reference) => {
+                result.insert(reference.expr_ident.as_str());
+            }
+            ShapeExpression::Matching {
+                reference,
+                matcher_ident: _,
+            } => {
+                result.insert(reference.expr_ident.as_str());
+            }
+            ShapeExpression::Conditional {
+                reference,
+                conditional_expr,
+            } => {
+                result.insert(reference.expr_ident.as_str());
+                result.extend(&conditional_expr.extract_expr_idents());
+            }
+            ShapeExpression::Function {
+                fun_method_ident: _,
+                params_idents,
+            } => {
+                result.extend(
+                    params_idents
+                        .iter()
+                        .map(|shape_ref| shape_ref.expr_ident.as_str()),
+                )
+            }
+            _ => {}
+        }
+
+        result
+    }
 }
 
 fn shape_expr_ref_serialize<S>(
@@ -436,7 +604,7 @@ pub struct Predicate {
     pub local:  String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Subject {
     pub prefix:     PrefixNameSpace,
     pub expression: ShapeExpression,

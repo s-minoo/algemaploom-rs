@@ -593,7 +593,7 @@ fn iterators() -> t!(Vec<Iterator>) {
                 unfold_token_value!(IteratorType)
                     .map(|iter| iter.parse::<IteratorType>().unwrap())
                     .or_not()
-                    .then(unfold_token_value!(IteratorQuery))
+                    .then(unfold_token_value!(IteratorQuery).or_not())
                     .delimited_by(
                         just(ShExMLToken::AngleStart),
                         just(ShExMLToken::AngleEnd),

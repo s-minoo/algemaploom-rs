@@ -15,9 +15,10 @@
         "rml-interpreter", 
         "translator/rml", 
         "translator/shexml", 
+        "plangenerator", 
         "vocab", 
         "operator", 
-        "bin"
+        "bin",""
     ]
     "Subject" = @
     "Body" = !@ # Multi-line input
@@ -32,9 +33,11 @@
     println = "chore: remove printlns"
     style =  "style: rustfmt file"
     vb = "chore: version bump"
+    todo = "chore: add todo"
     readme = "docs: updated readme"
     ignore = "docs: updated .gitignore"
     cmt = "chore: update .cmt"
+    testresource = "chore: add test resources"
 }
 
 # The output format

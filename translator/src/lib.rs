@@ -3,6 +3,9 @@ use plangenerator::plan::{Init, Plan};
 
 pub mod rmlalgebra;
 pub mod shexml;
+
+
+#[cfg(test)]
 mod test_macro;
 
 pub type LanguageTranslateResult = Result<Plan<Init>, PlanError>;
