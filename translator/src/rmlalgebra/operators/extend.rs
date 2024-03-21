@@ -22,10 +22,11 @@ impl<'a> OperatorTranslator<Operator> for ExtendTranslator<'a> {
     fn translate(&self) -> Operator {
         let mut extend_pairs = HashMap::new();
         for tm_info in &self.tms {
-            let (variable, function) = extract_extend_function_from_term_map_info(
-                self.variable_map,
-                tm_info,
-            );
+            let (variable, function) =
+                extract_extend_function_from_term_map_info(
+                    self.variable_map,
+                    tm_info,
+                );
             extend_pairs.insert(variable, function);
         }
 
@@ -40,10 +41,23 @@ pub fn extract_extend_function_from_term_map_info(
     tm_info: &TermMapInfo,
 ) -> (String, Function) {
     let term_value = tm_info.term_value.value().to_string();
+
     let value_function: RcExtendFunction = match tm_info.term_map_type {
-        TermMapType::Constant => Function::Constant { value: term_value },
-        TermMapType::Reference => Function::Reference { value: term_value },
-        TermMapType::Template => Function::TemplateString { value: term_value },
+        TermMapType::Constant => {
+            Function::Constant {
+                value: term_value.clone(),
+            }
+        }
+        TermMapType::Reference => {
+            Function::Reference {
+                value: term_value.clone(),
+            }
+        }
+        TermMapType::Template => {
+            Function::TemplateString {
+                value: term_value.clone(),
+            }
+        }
         TermMapType::Function => {
             let fn_map = tm_info.fun_map_opt.as_ref().unwrap();
             let fno_identifier = fn_map.function_iri.clone();
@@ -67,28 +81,37 @@ pub fn extract_extend_function_from_term_map_info(
     }
     .into();
 
-    let func = match tm_info.term_type.unwrap() {
-        sophia_api::term::TermKind::Iri => {
-            Function::Iri {
-                inner_function: Function::UriEncode {
+    let func = if term_value.contains("http") || term_value.contains("https") {
+        Function::Iri {
+            inner_function: Function::UriEncode {
+                inner_function: value_function,
+            }
+            .into(),
+        }
+    } else {
+        match tm_info.term_type.unwrap() {
+            sophia_api::term::TermKind::Iri => {
+                Function::Iri {
+                    inner_function: Function::UriEncode {
+                        inner_function: value_function,
+                    }
+                    .into(),
+                }
+            }
+            sophia_api::term::TermKind::Literal => {
+                Function::Literal {
+                    inner_function:    value_function,
+                    langtype_function: None,
+                    dtype_function:    None,
+                }
+            }
+            sophia_api::term::TermKind::BlankNode => {
+                Function::BlankNode {
                     inner_function: value_function,
                 }
-                .into(),
             }
+            typ => panic!("Unrecognized term kind {:?}", typ),
         }
-        sophia_api::term::TermKind::Literal => {
-            Function::Literal {
-                inner_function: value_function,
-                langtype_function: None, 
-                dtype_function: None,
-            }
-        }
-        sophia_api::term::TermKind::BlankNode => {
-            Function::BlankNode {
-                inner_function: value_function,
-            }
-        }
-        typ => panic!("Unrecognized term kind {:?}", typ),
     };
 
     (
@@ -106,7 +129,10 @@ pub fn translate_extend_pairs(
     tm_infos.push(&sm.tm_info);
     tm_infos.extend(extract_gm_tm_infos(sm, poms));
 
-    tm_infos.into_iter()
-        .map(|tm_info| extract_extend_function_from_term_map_info(variable_map, tm_info))
+    tm_infos
+        .into_iter()
+        .map(|tm_info| {
+            extract_extend_function_from_term_map_info(variable_map, tm_info)
+        })
         .collect()
 }
