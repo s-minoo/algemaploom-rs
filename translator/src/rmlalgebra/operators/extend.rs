@@ -22,7 +22,7 @@ impl<'a> OperatorTranslator<Operator> for ExtendTranslator<'a> {
     fn translate(&self) -> Operator {
         let mut extend_pairs = HashMap::new();
         for tm_info in &self.tms {
-            let (variable, function) = extract_extend_function_from_term_map(
+            let (variable, function) = extract_extend_function_from_term_map_info(
                 self.variable_map,
                 tm_info,
             );
@@ -35,7 +35,7 @@ impl<'a> OperatorTranslator<Operator> for ExtendTranslator<'a> {
     }
 }
 
-pub fn extract_extend_function_from_term_map(
+pub fn extract_extend_function_from_term_map_info(
     variable_map: &HashMap<String, String>,
     tm_info: &TermMapInfo,
 ) -> (String, Function) {
@@ -51,7 +51,7 @@ pub fn extract_extend_function_from_term_map(
                 .param_om_pairs
                 .iter()
                 .map(|(_param, om)| {
-                    extract_extend_function_from_term_map(
+                    extract_extend_function_from_term_map_info(
                         variable_map,
                         &om.tm_info,
                     )
@@ -102,11 +102,11 @@ pub fn translate_extend_pairs(
     sm: &SubjectMap,
     poms: &[PredicateObjectMap],
 ) -> HashMap<String, Function> {
-    let mut tms = extract_tm_infos_from_poms(poms);
-    tms.push(&sm.tm_info);
-    tms.extend(extract_gm_tm_infos(sm, poms));
+    let mut tm_infos = extract_tm_infos_from_poms(poms);
+    tm_infos.push(&sm.tm_info);
+    tm_infos.extend(extract_gm_tm_infos(sm, poms));
 
-    tms.into_iter()
-        .map(|tm| extract_extend_function_from_term_map(variable_map, tm))
+    tm_infos.into_iter()
+        .map(|tm_info| extract_extend_function_from_term_map_info(variable_map, tm_info))
         .collect()
 }

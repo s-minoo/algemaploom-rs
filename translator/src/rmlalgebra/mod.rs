@@ -151,12 +151,9 @@ fn add_non_join_related_ops(
     search_map: &SearchMap,
     plan: &RcRefCellPlan<Processed>,
 ) -> Result<(), PlanError> {
-
-    if no_join_poms.is_empty() & sm.classes.is_empty(){
-        return Ok(())
+    if no_join_poms.is_empty() & sm.classes.is_empty() {
+        return Ok(());
     }
-
-
 
     let variable_map = &search_map.variable_map;
     let target_map = &search_map.target_map;
@@ -196,7 +193,7 @@ fn add_non_join_related_ops(
 
         let _ = next_plan
             .serialize_with_fragment(serializer_op, &lt_id)?
-            .sink(&target)?;
+            .sink(target)?;
 
         //let _ = extended_plan.fragment(fragmenter)?.serialize(serializer_op);
     }
@@ -258,12 +255,10 @@ fn add_join_related_ops(
                 joined_plan = aliased_plan
                     .where_by(child_attributes.clone())?
                     .compared_to(parent_attributes.clone())?;
+            } else if tm.logical_source == ptm.logical_source {
+                joined_plan = aliased_plan.natural_join()?;
             } else {
-                if tm.logical_source == ptm.logical_source {
-                    joined_plan = aliased_plan.natural_join()?;
-                } else {
-                    joined_plan = aliased_plan.cross_join()?;
-                }
+                joined_plan = aliased_plan.cross_join()?;
             }
 
             // Prefix the attributes in the subject map with the alias of the PTM
@@ -272,7 +267,7 @@ fn add_join_related_ops(
             ptm_sm_info.prefix_attributes(&ptm_alias);
 
             // Pair the ptm subject iri function with an extended attribute
-            let (_, ptm_sub_function) = extract_extend_function_from_term_map(
+            let (_, ptm_sub_function) = extract_extend_function_from_term_map_info(
                 variable_map,
                 &ptm_sm_info,
             );
@@ -317,7 +312,6 @@ fn add_join_related_ops(
     Ok(())
 }
 fn translate_source_op(tm: &TriplesMap) -> Source {
-
     let reference_formulation =
         match tm.logical_source.reference_formulation.value().to_string() {
             iri if iri == vocab::query::CLASS::JSONPATH.to_string() => {
