@@ -584,7 +584,7 @@ where
     struct_serde.end()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Object {
     pub prefix:     Option<PrefixNameSpace>,
     pub expression: ShapeExpression,
@@ -592,7 +592,7 @@ pub struct Object {
     pub datatype:   Option<DataType>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct DataType {
     pub prefix:     Option<PrefixNameSpace>,
     pub local_expr: ShapeExpression,
