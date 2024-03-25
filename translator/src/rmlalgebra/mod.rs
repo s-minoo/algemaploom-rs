@@ -55,7 +55,7 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
         // Search dictionaries instantiations
         let variable_map = generate_variable_map(&doc);
         let target_map = generate_logtarget_map(&doc);
-        let lt_id_quad_group_map = generate_lt_quads_from_doc(&doc);
+        let lt_id_quad_map = generate_lt_quads_from_doc(&doc);
         let tm_projected_pairs = tm_projected_pairs_res?;
         let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
             .clone()
@@ -67,7 +67,7 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
             tm_rccellplan_map,
             variable_map,
             target_map,
-            lt_id_quad_map: lt_id_quad_group_map,
+            lt_id_quad_map,
         };
         // Finish search dictionaries instantiations
 
