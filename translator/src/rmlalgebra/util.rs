@@ -32,7 +32,10 @@ pub fn extract_tm_infos_from_poms(
             let mut tm_infos: Vec<_> =
                 pom.predicate_maps.iter().map(|pm| &pm.tm_info).collect();
             let om_infos = pom.object_maps.iter().map(|om| &om.tm_info);
+
+            let gm_infos = pom.graph_maps.iter().map(|gm| &gm.tm_info);
             tm_infos.extend(om_infos);
+            tm_infos.extend(gm_infos);
             tm_infos
         })
         .collect()
@@ -65,10 +68,9 @@ pub fn generate_lt_quads_from_spo<'a>(
             poms: poms.iter().map(|pom| pom.into()).collect(),
         };
 
-        let quads = Quads {
-            triples,
-            gms: sm.graph_maps.iter().collect(),
-        };
+        let gms = sm.graph_maps.iter().collect();
+
+        let quads = Quads { triples, gms };
 
         update_lt_map(&mut result, lt, quads);
     });
@@ -82,7 +84,7 @@ pub fn generate_lt_quads_from_spo<'a>(
             pm.tm_info.logical_targets.iter().for_each(|lt| {
                 let ref_pom = RefPOM {
                     pm: vec![pm],
-                    om: oms.iter().map(|om| om).collect(),
+                    om: oms.iter().collect(),
                 };
                 let pm_gms = pm.graph_maps.iter();
                 let gms = pm_gms.chain(pom_gms.clone()).collect();
@@ -101,7 +103,7 @@ pub fn generate_lt_quads_from_spo<'a>(
         for om in oms {
             om.tm_info.logical_targets.iter().for_each(|lt| {
                 let ref_pom = RefPOM {
-                    pm: pms.iter().map(|pm| pm).collect(),
+                    pm: pms.iter().collect(),
                     om: vec![om],
                 };
 
@@ -127,10 +129,13 @@ fn update_lt_map<'a>(
     lt: &LogicalTarget,
     quads: Quads<'a>,
 ) {
-    if let Some(mut existing_vec) =
-        result.insert(lt.identifier.clone(), vec![quads.clone()])
-    {
-        existing_vec.push(quads);
+    if result.get(&lt.identifier).is_some() {
+        let inserted_quads = result.get_mut(&lt.identifier).unwrap();
+        if !inserted_quads.contains(&quads) {
+            inserted_quads.push(quads);
+        }
+    } else {
+        result.insert(lt.identifier.clone(), vec![quads]);
     }
 }
 

@@ -4,10 +4,9 @@ mod util;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-
 use std::rc::Rc;
 
-use operator::formats::{ReferenceFormulation};
+use operator::formats::ReferenceFormulation;
 use operator::{Extend, Field, Iterator, Operator, Projection, Source};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{join, Plan, Processed, RcRefCellPlan};
@@ -56,7 +55,7 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
         // Search dictionaries instantiations
         let variable_map = generate_variable_map(&doc);
         let target_map = generate_logtarget_map(&doc);
-        let lt_id_tm_group_map = generate_lt_quads_from_doc(&doc);
+        let lt_id_quad_group_map = generate_lt_quads_from_doc(&doc);
         let tm_projected_pairs = tm_projected_pairs_res?;
         let tm_rccellplan_map: HashMap<_, _> = tm_projected_pairs
             .clone()
@@ -68,7 +67,7 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
             tm_rccellplan_map,
             variable_map,
             target_map,
-            lt_id_tm_group_map,
+            lt_id_tm_group_map: lt_id_quad_group_map,
         };
         // Finish search dictionaries instantiations
 
@@ -168,13 +167,13 @@ fn add_non_join_related_ops(
     let extended_plan = plan.apply(&extend_op, "ExtendOp")?;
     let mut next_plan = extended_plan;
 
-    let lt_triples_map = &generate_lt_quads_from_spo(sm, no_join_poms);
+    let lt_quads_map = &generate_lt_quads_from_spo(sm, no_join_poms);
     let fragment_translator = FragmentTranslator {
-        lt_quads_map: lt_triples_map,
+        lt_quads_map,
     };
     let fragmenter = fragment_translator.translate();
 
-    let mut lt_id_vec = vec![lt_triples_map.keys().next().unwrap().clone()];
+    let mut lt_id_vec = vec![lt_quads_map.keys().next().unwrap().clone()];
     if let Some(fragmenter) = fragmenter {
         next_plan = next_plan.fragment(fragmenter.clone())?;
         lt_id_vec = fragmenter.to;
@@ -183,10 +182,10 @@ fn add_non_join_related_ops(
     for lt_id in lt_id_vec {
         let target = target_map.get(&lt_id).unwrap();
         let serialize_format = &target.data_format;
-        let triples = lt_triples_map.get(&lt_id).unwrap();
+        let quads = lt_quads_map.get(&lt_id).unwrap();
 
         let serializer_op = serializer::translate_serializer_op(
-            triples,
+            quads,
             serialize_format,
             variable_map,
         );
@@ -267,10 +266,11 @@ fn add_join_related_ops(
             ptm_sm_info.prefix_attributes(&ptm_alias);
 
             // Pair the ptm subject iri function with an extended attribute
-            let (_, ptm_sub_function) = extract_extend_function_from_term_map_info(
-                variable_map,
-                &ptm_sm_info,
-            );
+            let (_, ptm_sub_function) =
+                extract_extend_function_from_term_map_info(
+                    variable_map,
+                    &ptm_sm_info,
+                );
             let om_extend_attr =
                 variable_map.get(&om.tm_info.identifier).unwrap().clone();
 
@@ -290,14 +290,15 @@ fn add_join_related_ops(
             };
             let mut extended_plan = joined_plan.apply(&extend_op, "Extend")?;
 
-            let lt_triples_map =
+            let lt_quads_map =
                 generate_lt_quads_from_spo(sm, &pom_with_joined_ptm);
 
-            for lt_id in lt_triples_map.keys() {
-                let triples = lt_triples_map.get(lt_id).unwrap();
+
+            for lt_id in lt_quads_map.keys() {
+                let quads = lt_quads_map.get(lt_id).unwrap();
                 let target = lt_target_map.get(lt_id).unwrap();
                 let serializer_op = translate_serializer_op(
-                    triples,
+                    quads,
                     &target.data_format,
                     variable_map,
                 );
