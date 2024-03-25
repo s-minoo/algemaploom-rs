@@ -39,13 +39,16 @@ pub struct TermMapInfo {
 
 impl Default for TermMapInfo {
     fn default() -> Self {
+        let mut logical_targets = HashSet::new();
+
+        logical_targets.insert(LogicalTarget::default());
         Self {
-            identifier:      Default::default(),
-            logical_targets: Default::default(),
-            term_map_type:   TermMapType::Constant,
-            term_value:      Term::new_bnode("qsdkfldsfj").unwrap(),
-            term_type:       Default::default(),
-            fun_map_opt:     Default::default(),
+            identifier: Default::default(),
+            term_map_type: TermMapType::Constant,
+            term_value: Term::new_bnode("qsdkfldsfj").unwrap(),
+            term_type: Default::default(),
+            fun_map_opt: Default::default(),
+            logical_targets,
         }
     }
 }
@@ -119,11 +122,11 @@ impl TermMapInfo {
 
         TermMapInfo {
             identifier,
-            logical_targets: HashSet::new(),
             term_map_type: TermMapType::Constant,
             term_value: const_value.map(|i| i.to_string()),
             term_type,
             fun_map_opt: None,
+            ..Default::default()
         }
     }
 }

@@ -102,7 +102,7 @@ pub trait TermMapExtractor<T: Debug> {
 pub trait Extractor<T> {
     fn extract_identifier(subj_ref: RcTerm) -> Result<TermString, ParseError> {
         let identifier =
-            subj_ref.to_owned().map(|i| i.to_string()).try_into()?;
+            subj_ref.to_owned().map(|i| i.to_string());
         Ok(identifier)
     }
 
