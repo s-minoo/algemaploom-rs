@@ -226,7 +226,7 @@ pub fn generate_variable_map(doc: &Document) -> HashMap<String, String> {
                         (
                             gm.tm_info.identifier.clone(),
                             format!(
-                                "{}_p{}_{}_gm{}",
+                                "{}_o{}_{}_gm{}",
                                 tm_prefix, pom_idx, om_idx, idx
                             ),
                         )
