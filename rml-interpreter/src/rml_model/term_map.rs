@@ -148,20 +148,21 @@ pub enum TermMapType {
     Function,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct SubjectMap {
     pub tm_info:    TermMapInfo,
     pub classes:    Vec<IriString>,
     pub graph_maps: Vec<GraphMap>,
 }
 
-#[derive(Debug, Clone)]
+
+#[derive(Debug, Clone, Hash)]
 pub struct PredicateMap {
     pub tm_info:    TermMapInfo,
     pub graph_maps: Vec<GraphMap>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct ObjectMap {
     pub tm_info:        TermMapInfo,
     pub parent_tm:      Option<IriString>,
@@ -178,7 +179,7 @@ pub struct FunctionMap {
     pub param_om_pairs: Vec<(String, ObjectMap)>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct GraphMap {
     pub tm_info: TermMapInfo,
 }
