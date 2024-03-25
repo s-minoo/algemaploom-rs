@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sophia_api::graph::Graph;
 use sophia_api::term::TermKind;
 use sophia_api::triple::Triple;
@@ -7,7 +9,7 @@ use sophia_term::RcTerm;
 
 use super::error::ParseError;
 use super::store::{get_object, get_objects};
-use super::{Extractor, ExtractorResult, FromVocab};
+use super::{logicaltarget_extractor, Extractor, ExtractorResult, FromVocab};
 use crate::rml_model::source_target::LogicalTarget;
 use crate::rml_model::term_map::{FunctionMap, TermMapInfo, TermMapType};
 
@@ -104,12 +106,17 @@ impl Extractor<TermMapInfo> for TermMapInfo {
             &vocab::rml::PROPERTY::LOGICALTARGET.to_rcterm(),
         );
 
-        let logical_targets = logical_target_iris
+        let mut logical_targets: HashSet<LogicalTarget> = logical_target_iris
             .into_iter()
             .flat_map(|log_targ_iri| {
                 LogicalTarget::extract_self(&log_targ_iri, graph_ref)
             })
             .collect();
+
+        // Add a default logical target if it is empty
+        if logical_targets.is_empty() {
+            logical_targets.insert(LogicalTarget::default());
+        }
 
         let identifier = subj_ref.to_string();
         let mut fun_map_opt = None;
@@ -157,9 +164,7 @@ mod tests {
         assert!(tm_info.term_type.is_none());
         assert!(tm_info.term_map_type == TermMapType::Template);
         println!("{:?}", tm_info);
-        assert!(
-            tm_info.term_value.value() == "example/{brand}"
-        );
+        assert!(tm_info.term_value.value() == "example/{brand}");
 
         Ok(())
     }
