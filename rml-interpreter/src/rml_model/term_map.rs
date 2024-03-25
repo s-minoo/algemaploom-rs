@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::hash::Hash;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -35,6 +36,15 @@ pub struct TermMapInfo {
     pub term_value:      TermString,
     pub term_type:       Option<TermKind>,
     pub fun_map_opt:     Option<FunctionMap>,
+}
+
+impl Hash for TermMapInfo {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.identifier.hash(state);
+        self.term_value.hash(state);
+        self.term_type.hash(state);
+        self.term_map_type.hash(state);
+    }
 }
 
 impl Default for TermMapInfo {
@@ -130,7 +140,7 @@ impl TermMapInfo {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub enum TermMapType {
     Constant,
     Reference,
