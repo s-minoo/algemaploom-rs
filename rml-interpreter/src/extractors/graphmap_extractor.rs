@@ -1,4 +1,5 @@
 use sophia_api::term::TermKind;
+use uuid::uuid;
 
 use super::{Extractor, ExtractorResult, FromVocab, TermMapExtractor};
 use crate::extractors::error::ParseError;
@@ -13,7 +14,6 @@ impl TermMapExtractor<GraphMap> for GraphMap {
         if tm_info.term_type == Some(TermKind::Literal) {
             panic!("Constant-valued GraphMap has to be either an IRI or a BlankNode");
         }
-
         Self { tm_info }
     }
 
@@ -26,7 +26,7 @@ impl TermMapExtractor<GraphMap> for GraphMap {
         tm_info = match tm_info.term_type{
             Some(ttype) if ttype == TermKind::Literal || ttype== TermKind::Variable => {
 
-                return Err(ParseError::GenericError(format!("GraphMap can only have either rr:Iri or rr:BNode as rr:termType!")))
+                return Err(ParseError::GenericError("GraphMap can only have either rr:Iri or rr:BNode as rr:termType!".to_string()))
             },
             Some(_) => tm_info,
             None => TermMapInfo{term_type: Some(TermKind::Iri), ..tm_info},

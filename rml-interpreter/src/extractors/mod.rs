@@ -41,13 +41,10 @@ pub trait TermMapExtractor<T: Debug> {
     fn extract_constant_term_map(
         map_const: &Term<Rc<str>>,
     ) -> ExtractorResult<T> {
-        match map_const {
-            Term::BNode(_) => {
-                return Err(ParseError::GenericError(format!(
-                    "Constant-valued term map cannot be a BlankNode"
-                )))
-            }
-            _ => (),
+        if let Term::BNode(_) = map_const {
+            return Err(ParseError::GenericError(format!(
+                "Constant-valued term map cannot be a BlankNode"
+            )))
         };
 
         let tm_info = TermMapInfo::from_constant_value(map_const.clone());
