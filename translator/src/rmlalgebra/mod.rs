@@ -67,7 +67,7 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
             tm_rccellplan_map,
             variable_map,
             target_map,
-            lt_id_tm_group_map: lt_id_quad_group_map,
+            lt_id_quad_map: lt_id_quad_group_map,
         };
         // Finish search dictionaries instantiations
 

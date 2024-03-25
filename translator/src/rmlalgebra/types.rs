@@ -76,5 +76,5 @@ pub struct SearchMap<'a> {
     pub tm_rccellplan_map:  HashMap<String, TMPlanPair<'a>>,
     pub variable_map:       HashMap<String, String>,
     pub target_map:         HashMap<String, Target>,
-    pub lt_id_tm_group_map: HashMap<String, Vec<Quads<'a>>>,
+    pub lt_id_quad_map: HashMap<String, Vec<Quads<'a>>>,
 }
