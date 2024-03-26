@@ -82,6 +82,7 @@ impl<'a> From<&'a Triple<'a>> for Triple<'a> {
         }
     }
 }
+impl<'a> Eq for Triple<'a> {}
 
 impl<'a> PartialEq for Triple<'a> {
     fn eq(&self, other: &Self) -> bool {

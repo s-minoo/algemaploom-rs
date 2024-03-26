@@ -107,19 +107,22 @@ pub fn generate_lt_quads_from_spo<'a>(
     sm: &'a SubjectMap,
     poms: &'a [PredicateObjectMap],
 ) -> HashMap<String, HashSet<Quad<'a>>> {
-    let mut result = HashMap::new();
+    let mut lt_quad_map = HashMap::new();
     let sm_lts = &sm.tm_info.logical_targets;
     if sm_lts.is_empty() {
         panic!("Subject map's logical target is empty! ");
     }
 
+    let mut triples_set = HashSet::new();
     sm_lts.iter().for_each(|lt| {
         let triples = generate_triples_from_poms(sm, poms);
+        triples_set.extend(triples.clone());
+
         let gms: Vec<_> = sm.graph_maps.iter().collect();
 
         let quads = generate_quads(triples, gms);
 
-        update_lt_map(&mut result, lt, quads);
+        update_lt_map(&mut lt_quad_map, lt, quads);
     });
 
     for pom in poms {
@@ -137,8 +140,9 @@ pub fn generate_lt_quads_from_spo<'a>(
                 let gms = pm_gms.chain(pom_gms.clone()).collect();
 
                 let triples = generate_triples_from_refpoms(sm, &[ref_pom]);
+                triples_set.extend(triples.clone());
                 let quads = generate_quads(triples, gms);
-                update_lt_map(&mut result, lt, quads);
+                update_lt_map(&mut lt_quad_map, lt, quads);
             });
         }
 
@@ -153,14 +157,36 @@ pub fn generate_lt_quads_from_spo<'a>(
                 let gms = om_gms.chain(pom_gms.clone()).collect();
 
                 let triples = generate_triples_from_refpoms(sm, &[ref_pom]);
+                triples_set.extend(triples.clone());
                 let quads = generate_quads(triples, gms);
 
-                update_lt_map(&mut result, lt, quads);
+                update_lt_map(&mut lt_quad_map, lt, quads);
             })
         }
     }
 
-    result
+    sanitize_quad_map(lt_quad_map)
+}
+
+pub type LTQuadMap<'a> = HashMap<String, HashSet<Quad<'a>>>;
+fn sanitize_quad_map(mut lt_quad_map: LTQuadMap) -> LTQuadMap {
+    for quads in lt_quad_map.values_mut() {
+        let cloned = quads.clone();
+        let (quads_no_gm, quads_with_gm): (HashSet<_>, HashSet<_>) =
+            cloned.iter().partition(|quad| quad.gm_opt.is_none());
+
+        let triples_with_gm: HashSet<_> =
+            quads_with_gm.iter().map(|q| &q.triple).collect();
+        let quads_to_remove: HashSet<_> = quads_no_gm
+            .into_iter()
+            .filter(|quad_no_gm| triples_with_gm.contains(&quad_no_gm.triple))
+            .collect();
+        if !quads_to_remove.is_empty() {
+            quads.retain(|quad| !quads_to_remove.contains(quad))
+        }
+    }
+
+    lt_quad_map
 }
 
 fn update_lt_map<'a>(
