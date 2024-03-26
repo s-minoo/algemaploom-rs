@@ -136,7 +136,7 @@ pub fn generate_lt_quads_from_spo<'a>(
                 let pm_gms = pm.graph_maps.iter();
                 let gms = pm_gms.chain(pom_gms.clone()).collect();
 
-                let triples = generate_triples_from_refpoms(sm, &vec![ref_pom]);
+                let triples = generate_triples_from_refpoms(sm, &[ref_pom]);
                 let quads = generate_quads(triples, gms);
                 update_lt_map(&mut result, lt, quads);
             });
@@ -152,7 +152,7 @@ pub fn generate_lt_quads_from_spo<'a>(
                 let om_gms = om.graph_maps.iter();
                 let gms = om_gms.chain(pom_gms.clone()).collect();
 
-                let triples = generate_triples_from_refpoms(sm, &vec![ref_pom]);
+                let triples = generate_triples_from_refpoms(sm, &[ref_pom]);
                 let quads = generate_quads(triples, gms);
 
                 update_lt_map(&mut result, lt, quads);
