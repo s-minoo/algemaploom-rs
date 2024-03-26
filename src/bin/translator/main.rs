@@ -84,25 +84,25 @@ fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
     output_prefix: O,
 ) -> Result<(), PlanError> {
     let document = parse_file(file.as_ref().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
+        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
 
     let output_prefix = output_prefix.as_ref().to_string();
     let mut mapping_plan =
         OptimizedRMLDocumentTranslator::translate_to_plan(document)?;
     let full_path = output_prefix.clone() + ".dot";
-    let _ = mapping_plan
-         .write(full_path.clone().into())
-         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
-     
+    mapping_plan
+        .write(full_path.clone().into())
+        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
+
     let pretty_path = output_prefix.clone() + "_pretty.dot";
-     let _ = mapping_plan
-         .write_pretty(pretty_path.clone().into())
-         .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
+    mapping_plan
+        .write_pretty(pretty_path.clone().into())
+        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
 
     let json_path = output_prefix + ".json";
-    let _ = mapping_plan
+    mapping_plan
         .write_json(json_path.clone().into())
-        .or_else(|err| Err(PlanError::GenericError(format!("{:?}", err))))?;
+        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
 
     println!(
         "{}: Translating {}",
