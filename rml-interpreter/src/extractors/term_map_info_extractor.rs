@@ -9,7 +9,7 @@ use sophia_term::RcTerm;
 
 use super::error::ParseError;
 use super::store::{get_object, get_objects};
-use super::{logicaltarget_extractor, Extractor, ExtractorResult, FromVocab};
+use super::{Extractor, ExtractorResult, FromVocab};
 use crate::rml_model::source_target::LogicalTarget;
 use crate::rml_model::term_map::{FunctionMap, TermMapInfo, TermMapType};
 

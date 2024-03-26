@@ -1,5 +1,5 @@
 use sophia_api::term::TermKind;
-use uuid::uuid;
+
 
 use super::{Extractor, ExtractorResult, FromVocab, TermMapExtractor};
 use crate::extractors::error::ParseError;

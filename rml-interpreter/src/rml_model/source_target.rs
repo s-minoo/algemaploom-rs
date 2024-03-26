@@ -3,8 +3,8 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 use operator::formats::DataFormat;
-use operator::{IOType, Iterator, Target};
-use serde::Serializer;
+use operator::{IOType, Target};
+
 use sophia_api::term::TTerm;
 use sophia_term::iri::Iri;
 use vocab::ToString;
