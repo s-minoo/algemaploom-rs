@@ -81,37 +81,28 @@ pub fn extract_extend_function_from_term_map_info(
     }
     .into();
 
-    let func = if term_value.contains("http") || term_value.contains("https") {
-        Function::Iri {
-            inner_function: Function::UriEncode {
-                inner_function: value_function,
-            }
-            .into(),
-        }
-    } else {
-        match tm_info.term_type.unwrap() {
-            sophia_api::term::TermKind::Iri => {
-                Function::Iri {
-                    inner_function: Function::UriEncode {
-                        inner_function: value_function,
-                    }
-                    .into(),
-                }
-            }
-            sophia_api::term::TermKind::Literal => {
-                Function::Literal {
-                    inner_function:    value_function,
-                    langtype_function: None,
-                    dtype_function:    None,
-                }
-            }
-            sophia_api::term::TermKind::BlankNode => {
-                Function::BlankNode {
+    let func = match tm_info.term_type.unwrap() {
+        sophia_api::term::TermKind::Iri => {
+            Function::Iri {
+                inner_function: Function::UriEncode {
                     inner_function: value_function,
                 }
+                .into(),
             }
-            typ => panic!("Unrecognized term kind {:?}", typ),
         }
+        sophia_api::term::TermKind::Literal => {
+            Function::Literal {
+                inner_function:    value_function,
+                langtype_function: None,
+                dtype_function:    None,
+            }
+        }
+        sophia_api::term::TermKind::BlankNode => {
+            Function::BlankNode {
+                inner_function: value_function,
+            }
+        }
+        typ => panic!("Unrecognized term kind {:?}", typ),
     };
 
     (
