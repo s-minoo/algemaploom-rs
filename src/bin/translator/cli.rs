@@ -18,7 +18,7 @@ impl Cli {
             .arg_required_else_help(true)
             .subcommand(Command::new("file")
                          .about("translate a single mapping document")
-                         .arg(arg!(<RML_DOCUMENT> "the mapping document to be translated"))
+                         .arg(arg!(<DOCUMENT> "the mapping document to be translated"))
                          .arg_required_else_help(true))
             .subcommand(Command::new("folder")
                          .about("translate all mapping documents under the given folder")

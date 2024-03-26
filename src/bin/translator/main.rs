@@ -26,7 +26,7 @@ pub fn main() -> Result<(), PlanError> {
 
     if let Some(file_matches) = matches.subcommand_matches("file") {
         let file_path_string: &String =
-            file_matches.get_one("RML_DOCUMENT").unwrap();
+            file_matches.get_one("DOCUMENT").unwrap();
 
         let file_path: PathBuf = file_path_string.into();
         let mut output_prefix = Some("output".to_string());
@@ -48,7 +48,7 @@ pub fn main() -> Result<(), PlanError> {
             .max_depth(4)
             .into_iter()
             .filter_map(|entry| entry.ok())
-            .filter(|entry| is_rml_file(entry));
+            .filter(is_rml_file);
 
         for rml_file in rml_files {
             let file = rml_file.path();
