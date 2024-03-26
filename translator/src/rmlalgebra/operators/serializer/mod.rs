@@ -2,24 +2,24 @@ mod nquads;
 mod ntriples;
 mod util;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use operator::formats::DataFormat;
 use operator::Serializer;
 
 use self::nquads::NQuadsSerializer;
 use self::ntriples::NTriplesSerializer;
-use crate::rmlalgebra::types::Quads;
+use crate::rmlalgebra::types::Quad;
 
 trait SerializeTranslator {
     fn translate(
-        quads: &[Quads],
+        quads: &HashSet<Quad>,
         variable_map: &HashMap<String, String>,
     ) -> Serializer;
 }
 
 pub fn translate_serializer_op(
-    quads: &[Quads],
+    quads: &HashSet<Quad>,
     serialize_format: &DataFormat,
     variable_map: &HashMap<String, String>,
 ) -> Serializer {

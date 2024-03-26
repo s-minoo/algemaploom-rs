@@ -1,14 +1,16 @@
+use std::collections::HashSet;
+
 use operator::formats::DataFormat;
 
 use super::SerializeTranslator;
-use crate::rmlalgebra::operators::serializer::util::unterminated_triple_strings;
+use crate::rmlalgebra::{operators::serializer::util::unterminated_triple_strings, types::Quad};
 
 #[derive(Debug, Clone)]
 pub struct NQuadsSerializer {}
 
 impl SerializeTranslator for NQuadsSerializer {
     fn translate(
-        quads: &[crate::rmlalgebra::types::Quads],
+        quads: &HashSet<Quad>,
         variable_map: &std::collections::HashMap<String, String>,
     ) -> operator::Serializer {
         let mut quad_strings: Vec<String> = vec![];
@@ -16,11 +18,11 @@ impl SerializeTranslator for NQuadsSerializer {
             let unterminated_triples =
                 unterminated_triple_strings(quad, variable_map).into_iter();
 
-            if quad.gms.is_empty() {
+            if quad.gm_opt.is_none() {
                 quad_strings
                     .extend(unterminated_triples.map(|trip| trip + " ."));
             } else {
-                for gm in &quad.gms {
+                for gm in &quad.gm_opt {
                     let gm_var =
                         variable_map.get(&gm.tm_info.identifier).unwrap();
 

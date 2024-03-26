@@ -3,10 +3,10 @@ use std::vec;
 
 use operator::Target;
 use rml_interpreter::rml_model::source_target::LogicalTarget;
-use rml_interpreter::rml_model::term_map::{SubjectMap, TermMapInfo};
+use rml_interpreter::rml_model::term_map::{GraphMap, SubjectMap, TermMapInfo};
 use rml_interpreter::rml_model::{Document, PredicateObjectMap};
 
-use super::types::{Quads, RefPOM, Triples};
+use super::types::{Quad, RefPOM, Triple};
 
 pub fn extract_gm_tm_infos<'a>(
     sm: &'a SubjectMap,
@@ -43,7 +43,7 @@ pub fn extract_tm_infos_from_poms(
 
 pub fn generate_lt_quads_from_doc(
     doc: &Document,
-) -> HashMap<String, Vec<Quads>> {
+) -> HashMap<String, HashSet<Quad>> {
     let mut result = HashMap::new();
     for tm in &doc.triples_maps {
         result.extend(generate_lt_quads_from_spo(&tm.subject_map, &tm.po_maps));
@@ -52,10 +52,61 @@ pub fn generate_lt_quads_from_doc(
     result
 }
 
+pub fn generate_triples_from_refpoms<'a>(
+    sm: &'a SubjectMap,
+    ref_poms: &[RefPOM<'a>],
+) -> Vec<Triple<'a>> {
+    ref_poms.iter().fold(Vec::new(), |mut acc, pom| {
+        let pms = pom.pms.iter();
+        let oms = pom.oms.iter();
+        let pm_om_pairs =
+            pms.flat_map(|pm| oms.clone().map(move |om| (pm, om)));
+        let triples = pm_om_pairs.map(|(pm, om)| Triple { sm, pm, om });
+        acc.extend(triples);
+        acc
+    })
+}
+
+pub fn generate_triples_from_poms<'a>(
+    sm: &'a SubjectMap,
+    poms: &'a [PredicateObjectMap],
+) -> Vec<Triple<'a>> {
+    let ref_poms: Vec<_> = poms.iter().map(|pom| pom.into()).collect();
+    generate_triples_from_refpoms(sm, &ref_poms)
+}
+
+pub fn generate_quads<'a>(
+    triples: Vec<Triple<'a>>,
+    gms: Vec<&'a GraphMap>,
+) -> HashSet<Quad<'a>> {
+    if gms.is_empty() {
+        triples
+            .into_iter()
+            .map(|triple| {
+                Quad {
+                    triple,
+                    gm_opt: None,
+                }
+            })
+            .collect()
+    } else {
+        let mut result = HashSet::new();
+        for gm in gms {
+            result.extend(triples.clone().into_iter().map(|triple| {
+                Quad {
+                    triple,
+                    gm_opt: Some(gm),
+                }
+            }));
+        }
+        result
+    }
+}
+
 pub fn generate_lt_quads_from_spo<'a>(
     sm: &'a SubjectMap,
     poms: &'a [PredicateObjectMap],
-) -> HashMap<String, Vec<Quads<'a>>> {
+) -> HashMap<String, HashSet<Quad<'a>>> {
     let mut result = HashMap::new();
     let sm_lts = &sm.tm_info.logical_targets;
     if sm_lts.is_empty() {
@@ -63,14 +114,10 @@ pub fn generate_lt_quads_from_spo<'a>(
     }
 
     sm_lts.iter().for_each(|lt| {
-        let triples = Triples {
-            sm,
-            poms: poms.iter().map(|pom| pom.into()).collect(),
-        };
+        let triples = generate_triples_from_poms(sm, poms);
+        let gms: Vec<_> = sm.graph_maps.iter().collect();
 
-        let gms = sm.graph_maps.iter().collect();
-
-        let quads = Quads { triples, gms };
+        let quads = generate_quads(triples, gms);
 
         update_lt_map(&mut result, lt, quads);
     });
@@ -83,19 +130,14 @@ pub fn generate_lt_quads_from_spo<'a>(
         for pm in pms {
             pm.tm_info.logical_targets.iter().for_each(|lt| {
                 let ref_pom = RefPOM {
-                    pm: vec![pm],
-                    om: oms.iter().collect(),
+                    pms: vec![pm],
+                    oms: oms.iter().collect(),
                 };
                 let pm_gms = pm.graph_maps.iter();
                 let gms = pm_gms.chain(pom_gms.clone()).collect();
 
-                let triples = Triples {
-                    sm,
-                    poms: vec![ref_pom],
-                };
-
-                let quads = Quads { triples, gms };
-
+                let triples = generate_triples_from_refpoms(sm, &vec![ref_pom]);
+                let quads = generate_quads(triples, gms);
                 update_lt_map(&mut result, lt, quads);
             });
         }
@@ -103,18 +145,15 @@ pub fn generate_lt_quads_from_spo<'a>(
         for om in oms {
             om.tm_info.logical_targets.iter().for_each(|lt| {
                 let ref_pom = RefPOM {
-                    pm: pms.iter().collect(),
-                    om: vec![om],
+                    pms: pms.iter().collect(),
+                    oms: vec![om],
                 };
 
-                let triples = Triples {
-                    sm,
-                    poms: vec![ref_pom],
-                };
                 let om_gms = om.graph_maps.iter();
                 let gms = om_gms.chain(pom_gms.clone()).collect();
 
-                let quads = Quads { triples, gms };
+                let triples = generate_triples_from_refpoms(sm, &vec![ref_pom]);
+                let quads = generate_quads(triples, gms);
 
                 update_lt_map(&mut result, lt, quads);
             })
@@ -125,17 +164,17 @@ pub fn generate_lt_quads_from_spo<'a>(
 }
 
 fn update_lt_map<'a>(
-    result: &mut HashMap<String, Vec<Quads<'a>>>,
+    result: &mut HashMap<String, HashSet<Quad<'a>>>,
     lt: &LogicalTarget,
-    quads: Quads<'a>,
+    quads: HashSet<Quad<'a>>,
 ) {
     if result.get(&lt.identifier).is_some() {
         let inserted_quads = result.get_mut(&lt.identifier).unwrap();
-        if !inserted_quads.contains(&quads) {
-            inserted_quads.push(quads);
+        if inserted_quads.is_disjoint(&quads) {
+            inserted_quads.extend(quads);
         }
     } else {
-        result.insert(lt.identifier.clone(), vec![quads]);
+        result.insert(lt.identifier.clone(), quads);
     }
 }
 

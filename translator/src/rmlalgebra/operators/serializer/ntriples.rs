@@ -1,17 +1,17 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use operator::formats::DataFormat;
 
 use super::util::unterminated_triple_strings;
 use super::SerializeTranslator;
-use crate::rmlalgebra::types::Quads;
+use crate::rmlalgebra::types::Quad;
 
 #[derive(Debug, Clone)]
 pub struct NTriplesSerializer {}
 
 impl SerializeTranslator for NTriplesSerializer {
     fn translate(
-        quads: &[Quads],
+        quads: &HashSet<Quad>,
         variable_map: &HashMap<String, String>,
     ) -> operator::Serializer {
         let mut triples_string: Vec<String> = Vec::new();
