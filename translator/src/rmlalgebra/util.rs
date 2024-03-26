@@ -4,9 +4,40 @@ use std::vec;
 use operator::Target;
 use rml_interpreter::rml_model::source_target::LogicalTarget;
 use rml_interpreter::rml_model::term_map::{GraphMap, SubjectMap, TermMapInfo};
-use rml_interpreter::rml_model::{Document, PredicateObjectMap};
+use rml_interpreter::rml_model::{Document, PredicateObjectMap, TriplesMap};
 
 use super::types::{Quad, RefPOM, Triple};
+
+pub fn extract_ptm_conditions_attributes<'a>(
+    tms: impl std::iter::Iterator<Item = &'a TriplesMap>,
+    target_ptm: &'a str,
+) -> HashSet<String> {
+    let mut result = HashSet::new();
+    for tm in tms {
+        for pom in &tm.po_maps {
+            for om in &pom.object_maps {
+                if let Some(ptm_iri) = &om.parent_tm {
+                    let key = ptm_iri.to_string();
+                    let value = om
+                        .join_condition
+                        .as_ref()
+                        .map(|jc| {
+                            HashSet::from_iter(
+                                jc.parent_attributes.clone().into_iter(),
+                            )
+                        })
+                        .unwrap_or(HashSet::new());
+
+                    if key == target_ptm {
+                        result.extend(value);
+                    }
+                }
+            }
+        }
+    }
+
+    result
+}
 
 pub fn extract_gm_tm_infos<'a>(
     sm: &'a SubjectMap,

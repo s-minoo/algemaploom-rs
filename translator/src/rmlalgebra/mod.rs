@@ -20,7 +20,8 @@ use self::operators::extend::*;
 use self::operators::fragment::FragmentTranslator;
 use self::operators::serializer::{self, translate_serializer_op};
 use self::util::{
-    extract_gm_tm_infos, extract_tm_infos_from_poms, generate_lt_quads_from_spo,
+    extract_gm_tm_infos, extract_ptm_conditions_attributes,
+    extract_tm_infos_from_poms, generate_lt_quads_from_spo,
 };
 use crate::rmlalgebra::types::SearchMap;
 use crate::rmlalgebra::util::{
@@ -39,7 +40,8 @@ impl LanguageTranslator<Document> for OptimizedRMLDocumentTranslator {
             .iter()
             .map(|tm| {
                 let source_op = translate_source_op(tm);
-                let projection_op = translate_projection_op(tm);
+                let projection_op =
+                    translate_projection_op(tm, doc.triples_maps.iter());
                 let result = (
                     tm,
                     Rc::new(RefCell::new(
@@ -168,9 +170,7 @@ fn add_non_join_related_ops(
     let mut next_plan = extended_plan;
 
     let lt_quads_map = &generate_lt_quads_from_spo(sm, no_join_poms);
-    let fragment_translator = FragmentTranslator {
-        lt_quads_map,
-    };
+    let fragment_translator = FragmentTranslator { lt_quads_map };
     let fragmenter = fragment_translator.translate();
 
     let mut lt_id_vec = vec![lt_quads_map.keys().next().unwrap().clone()];
@@ -293,7 +293,6 @@ fn add_join_related_ops(
             let lt_quads_map =
                 generate_lt_quads_from_spo(sm, &pom_with_joined_ptm);
 
-
             for lt_id in lt_quads_map.keys() {
                 let quads = lt_quads_map.get(lt_id).unwrap();
                 let target = lt_target_map.get(lt_id).unwrap();
@@ -357,8 +356,19 @@ fn translate_source_op(tm: &TriplesMap) -> Source {
     }
 }
 
-fn translate_projection_op(tm: &TriplesMap) -> Operator {
-    let projection_attributes = extract_references_in_tm(tm);
+fn translate_projection_op<'a>(
+    tm: &'a TriplesMap,
+    all_tms: impl std::iter::Iterator<Item = &'a TriplesMap>,
+) -> Operator {
+    let tm_identifier = &tm.identifier;
+    let other_related_tms = all_tms
+        .filter(|tm| &tm.identifier != tm_identifier && tm.contains_ptm());
+    let jc_attributes =
+        extract_ptm_conditions_attributes(other_related_tms, tm_identifier);
+
+    let mut projection_attributes = extract_references_in_tm(tm);
+
+    projection_attributes.extend(jc_attributes);
 
     Operator::ProjectOp {
         config: Projection {
@@ -469,7 +479,10 @@ mod tests {
 
         let triples_map = triples_map_vec.pop().unwrap();
         let _source_op = translate_source_op(&triples_map);
-        let projection_ops = translate_projection_op(&triples_map);
+        let projection_ops = translate_projection_op(
+            &triples_map,
+            &mut [triples_map.clone()].iter(),
+        );
 
         let projection = match projection_ops.borrow() {
             Operator::ProjectOp { config: proj } => proj,
@@ -500,7 +513,10 @@ mod tests {
         assert_eq!(triples_map_vec.len(), 1);
         let triples_map = triples_map_vec.pop().unwrap();
         let _source_op = translate_source_op(&triples_map);
-        let _projection_ops = translate_projection_op(&triples_map);
+        let _projection_ops = translate_projection_op(
+            &triples_map,
+            &mut [triples_map.clone()].iter(),
+        );
 
         let variable_map = &generate_variable_map(&Document {
             triples_maps: triples_map_vec,
