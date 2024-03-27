@@ -1,21 +1,21 @@
 mod cli;
+mod handler;
+mod rml;
+mod shexml;
+mod util;
 
 use std::path::PathBuf;
 
 use colored::Colorize;
+use handler::FileTranslatorHandler;
 use plangenerator::error::PlanError;
-use rml_interpreter::extractors::io::parse_file;
-use translator::rmlalgebra::OptimizedRMLDocumentTranslator;
-use translator::LanguageTranslator;
+use util::serialize_and_log_msg;
 use walkdir::{DirEntry, WalkDir};
 
-fn is_rml_file(entry: &DirEntry) -> bool {
-    entry.file_type().is_file()
-        && entry
-            .file_name()
-            .to_str()
-            .map(|str_path| str_path.ends_with(".ttl"))
-            .unwrap_or(false)
+use crate::rml::RMLFileHandler;
+
+fn init_handlers() -> Vec<Box<dyn FileTranslatorHandler>> {
+    vec![Box::new(RMLFileHandler)]
 }
 
 pub fn main() -> Result<(), PlanError> {
@@ -23,6 +23,7 @@ pub fn main() -> Result<(), PlanError> {
 
     let matches = cli.cmd.get_matches();
     let mut err_vec = Vec::new();
+    let handlers = init_handlers();
 
     if let Some(file_matches) = matches.subcommand_matches("file") {
         let file_path_string: &String =
@@ -34,35 +35,39 @@ pub fn main() -> Result<(), PlanError> {
             let derived_string = derived_prefix.to_string_lossy();
             let _ = output_prefix.insert(derived_string.to_string());
         }
-        if let Err(err) = translate_rml_file(
-            file_path.to_string_lossy(),
-            output_prefix.unwrap(),
-        ) {
-            err_vec.push((file_path.to_string_lossy().to_string(), err));
-        }
+
+        process_one_file(&handlers, file_path, &mut err_vec, output_prefix)?;
     } else if let Some(folder_matches) = matches.subcommand_matches("folder") {
         let folder_path_string: &String =
             folder_matches.get_one("FOLDER").unwrap();
         let folder_path: PathBuf = folder_path_string.into();
-        let rml_files = WalkDir::new(folder_path)
+        let files = WalkDir::new(folder_path)
             .max_depth(4)
             .into_iter()
             .filter_map(|entry| entry.ok())
-            .filter(is_rml_file);
+            .filter(|dentry| dentry.file_type().is_file())
+            .filter(|file| {
+                handlers.iter().any(|handler| {
+                    handler.can_handle(&file.path().to_string_lossy())
+                })
+            });
 
-        for rml_file in rml_files {
-            let file = rml_file.path();
+        for file in files {
+            let input_path = file.path();
 
-            let output_dir = file
+            let output_dir = input_path
                 .parent()
                 .map_or("".to_string(), |p| p.to_string_lossy().to_string());
-            let output_prefix =
-                output_dir + "/" + &file.file_stem().unwrap().to_string_lossy();
-            if let Err(err) =
-                translate_rml_file(file.to_string_lossy(), output_prefix)
-            {
-                err_vec.push((file.to_string_lossy().to_string(), err));
-            }
+            let output_prefix = output_dir
+                + "/"
+                + &input_path.file_stem().unwrap().to_string_lossy();
+
+            process_one_file(
+                &handlers,
+                input_path.to_path_buf(),
+                &mut err_vec,
+                Some(output_prefix),
+            )?;
         }
     }
 
@@ -79,41 +84,32 @@ pub fn main() -> Result<(), PlanError> {
     Ok(())
 }
 
-fn translate_rml_file<F: AsRef<str>, O: AsRef<str>>(
-    file: F,
-    output_prefix: O,
+fn process_one_file(
+    handlers: &[Box<dyn FileTranslatorHandler>],
+    file_path: PathBuf,
+    err_vec: &mut Vec<(String, PlanError)>,
+    output_prefix: Option<String>,
 ) -> Result<(), PlanError> {
-    let document = parse_file(file.as_ref().into())
-        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
+    let (generated_plans, generated_errors_res): (Vec<_>, Vec<_>) = handlers
+        .iter()
+        .map(|handler| handler.translate(&file_path.to_string_lossy()))
+        .partition(|plan| plan.is_ok());
+    if generated_plans.is_empty() {
+        let generated_errors = generated_errors_res
+            .into_iter()
+            .flat_map(|pe| pe.err())
+            .map(|err| (file_path.to_string_lossy().to_string(), err));
 
-    let output_prefix = output_prefix.as_ref().to_string();
-    let mut mapping_plan =
-        OptimizedRMLDocumentTranslator::translate_to_plan(document)?;
-    let full_path = output_prefix.clone() + ".dot";
-    mapping_plan
-        .write(full_path.clone().into())
-        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
-
-    let pretty_path = output_prefix.clone() + "_pretty.dot";
-    mapping_plan
-        .write_pretty(pretty_path.clone().into())
-        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
-
-    let json_path = output_prefix + ".json";
-    mapping_plan
-        .write_json(json_path.clone().into())
-        .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
-
-    println!(
-        "{}: Translating {}",
-        "Success".green(),
-        file.as_ref().yellow(),
-    );
-    println!("Generated dot file: {}", full_path.yellow());
-    println!(
-        "The pretty dot file version for visualization is: {}",
-        pretty_path.yellow()
-    );
-    println!("Generated json file: {}", json_path.yellow());
+        err_vec.extend(generated_errors);
+    } else {
+        for mut plan in generated_plans.into_iter().flat_map(|p_res| p_res.ok())
+        {
+            serialize_and_log_msg(
+                output_prefix.clone().unwrap(),
+                &mut plan,
+                file_path.to_string_lossy(),
+            )?;
+        }
+    };
     Ok(())
 }
