@@ -10,10 +10,14 @@ use crate::rmlalgebra::types::Quad;
 pub struct NQuadsSerializer {}
 
 impl SerializeTranslator for NQuadsSerializer {
-    fn translate(
+    fn data_format() -> DataFormat {
+        DataFormat::NQuads
+    }
+
+    fn generate_template(
         quads: &HashSet<Quad>,
         variable_map: &std::collections::HashMap<String, String>,
-    ) -> operator::Serializer {
+    ) -> HashSet<String> {
         let mut quad_strings: HashSet<String> = HashSet::new();
         for quad in quads {
             let unterminated_triples =
@@ -34,13 +38,6 @@ impl SerializeTranslator for NQuadsSerializer {
                 }
             }
         }
-
-        let template = quad_strings.into_iter().collect::<Vec<_>>().join("\n");
-
-        operator::Serializer {
-            template,
-            options: None,
-            format: DataFormat::NQuads,
-        }
+        quad_strings
     }
 }

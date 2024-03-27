@@ -10,10 +10,10 @@ use crate::rmlalgebra::types::Quad;
 pub struct NTriplesSerializer {}
 
 impl SerializeTranslator for NTriplesSerializer {
-    fn translate(
+    fn generate_template(
         quads: &HashSet<Quad>,
         variable_map: &HashMap<String, String>,
-    ) -> operator::Serializer {
+    ) -> HashSet<String> {
         let mut triples_strings: HashSet<String> = HashSet::new();
         for quad in quads {
             let terminated_triples =
@@ -23,13 +23,10 @@ impl SerializeTranslator for NTriplesSerializer {
 
             triples_strings.extend(terminated_triples);
         }
+        triples_strings
+    }
 
-        let template = triples_strings.into_iter().collect::<Vec<_>>().join("\n");
-
-        operator::Serializer {
-            template,
-            options: None,
-            format: DataFormat::NTriples,
-        }
+    fn data_format() -> DataFormat {
+        DataFormat::NTriples
     }
 }

@@ -12,10 +12,27 @@ use self::ntriples::NTriplesSerializer;
 use crate::rmlalgebra::types::Quad;
 
 trait SerializeTranslator {
+    fn data_format() -> DataFormat;
+    fn generate_template(
+        quads: &HashSet<Quad>,
+        variable_map: &HashMap<String, String>,
+    ) -> HashSet<String>;
     fn translate(
         quads: &HashSet<Quad>,
         variable_map: &HashMap<String, String>,
-    ) -> Serializer;
+    ) -> Serializer{
+        let template_set = Self::generate_template(quads, variable_map);
+        let mut template_vec = template_set.into_iter().collect::<Vec<_>>();
+        template_vec.sort();
+
+        Serializer{
+            template: template_vec.join("\n"),
+            //TODO: Check for serializer depdendent options configuration
+            options: None,
+            format: Self::data_format(),
+        }
+
+    }
 }
 
 pub fn translate_serializer_op(
