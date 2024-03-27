@@ -506,6 +506,7 @@ dependencies = [
  "regex",
  "rml-interpreter",
  "serde_json",
+ "shexml-interpreter",
  "thiserror",
  "translator",
  "urlencoding",

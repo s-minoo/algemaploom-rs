@@ -35,6 +35,7 @@ thiserror.workspace = true
 clap.workspace = true
 
 rml-interpreter = {path = "./rml-interpreter/"}
+shexml-interpreter = {path = "./shexml-interpreter/"}
 operator = {path = "./operator/"}
 plangenerator = {path = "./plangenerator/"}
 translator = {path = "./translator/"}
