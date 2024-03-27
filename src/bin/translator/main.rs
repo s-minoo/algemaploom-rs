@@ -12,10 +12,10 @@ use plangenerator::error::PlanError;
 use util::serialize_and_log_msg;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::rml::RMLFileHandler;
+use crate::{rml::RMLFileHandler, shexml::ShExMLFileHandler};
 
 fn init_handlers() -> Vec<Box<dyn FileTranslatorHandler>> {
-    vec![Box::new(RMLFileHandler)]
+    vec![Box::new(RMLFileHandler), Box::new(ShExMLFileHandler)]
 }
 
 pub fn main() -> Result<(), PlanError> {
