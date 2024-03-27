@@ -12,18 +12,6 @@ use crate::handler::FileTranslatorHandler;
 pub struct RMLFileHandler;
 
 impl FileTranslatorHandler for RMLFileHandler {
-    fn can_handle(&self, file_path: &dyn AsRef<str>) -> bool {
-        let pbuf: PathBuf = file_path.as_ref().into();
-
-        let extension_opt = pbuf.extension();
-
-        if let Some(extension) = extension_opt {
-            extension == "ttl"
-        } else {
-            false
-        }
-    }
-
     fn translate(
         &self,
         file_path: &dyn AsRef<str>,
@@ -33,5 +21,8 @@ impl FileTranslatorHandler for RMLFileHandler {
 
         OptimizedRMLDocumentTranslator::translate_to_plan(document)
     }
-}
 
+    fn supported_extension(&self) -> String {
+        "ttl".to_string()
+    }
+}

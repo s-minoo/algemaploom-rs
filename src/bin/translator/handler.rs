@@ -1,10 +1,22 @@
 use std::fmt::Debug;
+use std::path::PathBuf;
 
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan};
 
-pub trait FileTranslatorHandler:Debug {
-    fn can_handle(&self, file_path: &dyn AsRef<str>) -> bool;
+pub trait FileTranslatorHandler: Debug {
+    fn supported_extension(&self) -> String;
+    fn can_handle(&self, file_path: &dyn AsRef<str>) -> bool {
+        let pbuf: PathBuf = file_path.as_ref().into();
+
+        let extension_opt = pbuf.extension();
+
+        if let Some(extension) = extension_opt {
+            extension.to_string_lossy() == self.supported_extension()
+        } else {
+            false
+        }
+    }
     fn translate(
         &self,
         file_path: &dyn AsRef<str>,
@@ -17,11 +29,10 @@ pub trait FileTranslatorHandler:Debug {
         if !self.can_handle(file_path) {
             return Err(PlanError::GenericError(format!(
                 "{:?} do not support handling the file: {}",
-                self, 
+                self,
                 file_path.as_ref()
             )));
         }
         self.translate(file_path)
     }
 }
-
