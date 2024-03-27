@@ -40,8 +40,16 @@ pub fn extract_extend_function_from_term_map_info(
     variable_map: &HashMap<String, String>,
     tm_info: &TermMapInfo,
 ) -> (String, Function) {
-    let term_value = tm_info.term_value.value().to_string();
+    let func = extract_function(tm_info);
 
+    (
+        variable_map.get(&tm_info.identifier).unwrap().to_string(),
+        func,
+    )
+}
+
+fn extract_function(tm_info: &TermMapInfo) -> Function {
+    let term_value = tm_info.term_value.value().to_string();
     let value_function: RcExtendFunction = match tm_info.term_map_type {
         TermMapType::Constant => {
             Function::Constant {
@@ -64,13 +72,9 @@ pub fn extract_extend_function_from_term_map_info(
             let param_func_pairs = fn_map
                 .param_om_pairs
                 .iter()
-                .map(|(_param, om)| {
-                    extract_extend_function_from_term_map_info(
-                        variable_map,
-                        &om.tm_info,
-                    )
+                .map(|(param, om)| {
+                    (param.to_string(), extract_function(&om.tm_info).into())
                 })
-                .map(|(param, func)| (param, func.into()))
                 .collect();
 
             Function::FnO {
@@ -81,7 +85,7 @@ pub fn extract_extend_function_from_term_map_info(
     }
     .into();
 
-    let func = match tm_info.term_type.unwrap() {
+    match tm_info.term_type.unwrap() {
         sophia_api::term::TermKind::Iri => {
             Function::Iri {
                 inner_function: Function::UriEncode {
@@ -103,12 +107,7 @@ pub fn extract_extend_function_from_term_map_info(
             }
         }
         typ => panic!("Unrecognized term kind {:?}", typ),
-    };
-
-    (
-        variable_map.get(&tm_info.identifier).unwrap().to_string(),
-        func,
-    )
+    }
 }
 
 pub fn translate_extend_pairs(
