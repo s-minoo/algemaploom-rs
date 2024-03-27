@@ -14,17 +14,17 @@ impl SerializeTranslator for NTriplesSerializer {
         quads: &HashSet<Quad>,
         variable_map: &HashMap<String, String>,
     ) -> operator::Serializer {
-        let mut triples_string: Vec<String> = Vec::new();
+        let mut triples_strings: HashSet<String> = HashSet::new();
         for quad in quads {
             let terminated_triples =
                 unterminated_triple_strings(quad, variable_map)
                     .into_iter()
                     .map(|str| format!("{} .", str));
 
-            triples_string.extend(terminated_triples);
+            triples_strings.extend(terminated_triples);
         }
 
-        let template = triples_string.join("\n");
+        let template = triples_strings.into_iter().collect::<Vec<_>>().join("\n");
 
         operator::Serializer {
             template,
