@@ -114,7 +114,7 @@ pub struct Source {
 impl PrettyDisplay for Source {
     fn pretty_string(&self) -> Result<String> {
         let result = format!(
-            "type: {:?} \nreference iterator: {:?} \nconfig: {}
+            "type: {:?} \nreference iterator: {:#?} \nconfig: {}
              ",
             self.source_type,
             self.root_iterator,
