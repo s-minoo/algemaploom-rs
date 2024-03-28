@@ -44,4 +44,5 @@ csv = "1.2.2"
 urlencoding = "2.1.2"
 walkdir = "2.4.0"
 colored = "2.0.4"
+log4rs.workspace = true
 

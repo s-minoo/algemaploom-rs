@@ -500,6 +500,7 @@ dependencies = [
  "colored",
  "csv",
  "lazy_static",
+ "log4rs",
  "operator",
  "petgraph",
  "plangenerator",
