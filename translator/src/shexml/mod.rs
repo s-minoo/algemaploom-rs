@@ -6,9 +6,8 @@ use operator::{Extend, Function, Rename, Serializer, Target};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Plan, Processed, RcRefCellPlan, Serialized, Sunk};
 use shexml_interpreter::{
-    get_quads_from_same_source, IndexedShExMLDocument, Object,
-    PrefixNameSpace, ShExMLDocument, ShExMLQuads, ShapeIdent,
-    Subject,
+    get_quads_from_same_source, IndexedShExMLDocument, Object, PrefixNameSpace,
+    ShExMLDocument, ShExMLQuads, ShapeIdent, Subject,
 };
 
 use self::util::IndexVariableTerm;
@@ -18,6 +17,8 @@ use crate::shexml::util::variablelize_quads;
 use crate::{LanguageTranslator, OperatorTranslator};
 
 mod operators;
+#[cfg(test)]
+mod tests;
 mod util;
 
 pub struct ShExMLTranslator;
@@ -61,7 +62,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
                 &indexed_document,
                 &filtered_same_source_quads,
                 sourced_plan.clone(),
-            );
+            )?;
         }
 
         // TODO: Also try to handle joins across different sources in ShExML  <21-03-24, Min Oo> //
@@ -259,23 +260,4 @@ fn add_rename_extend_op_from_quads(
         },
         "Extend_for_Serializer",
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use plangenerator::error::PlanError;
-
-    use super::*;
-    use crate::test_case;
-
-    #[ignore]
-    #[test]
-    fn translate_to_plan_test() -> Result<(), PlanError> {
-        let input_shexml = test_case!("shexml/sample.shexml");
-        let shexml_document =
-            shexml_interpreter::parse_file(input_shexml).unwrap();
-
-        ShExMLTranslator::translate_to_plan(shexml_document)?;
-        Ok(())
-    }
 }

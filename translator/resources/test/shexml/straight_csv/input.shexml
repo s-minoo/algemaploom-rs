@@ -15,14 +15,13 @@ ITERATOR film_second_csv <csvperrow> {
     FIELD directors <director>
     FIELD comment <comment>
 }
-EXPRESSION films <films_csv_file.film_csv UNION films_second_csv_file.film_second_csv>
+EXPRESSION films <films_csv_file.film_csv >
 EXPRESSION films_name_csv <films_csv_file.film_csv.name> 
 EXPRESSION films_name_year <films_csv_file.film_csv.name + "_" + films_csv_file.film_csv.year>
-EXPRESSION films_concate <films_csv_file.film_csv + "_" + films_csv_file.film_second_csv>
 
 :Films :[films.id] {
     :type :Film ;
-    :name [films.name] @en ;
+    :name [films_name_csv] @en ;
     :year [films.year]  xsd:gYear ;
     :concate [films_name_year] xsd:gYear ;
     :country [films.country] ;
