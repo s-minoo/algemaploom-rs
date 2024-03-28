@@ -1,4 +1,5 @@
 use colored::Colorize;
+use log::info;
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Init, Plan};
 
@@ -19,16 +20,15 @@ pub fn serialize_and_log_msg<F: AsRef<str>>(
     mapping_plan
         .write_json(json_path.clone().into())
         .map_err(|err| PlanError::GenericError(format!("{:?}", err)))?;
-    println!(
-        "{}: Translating {}",
-        "Success".green(),
+    info!(
+        "Translated file: {}",
         file.as_ref().yellow(),
     );
-    println!("Generated dot file: {}", full_path.yellow());
-    println!(
+    info!("Generated dot file: {}", full_path.yellow());
+    info!(
         "The pretty dot file version for visualization is: {}",
         pretty_path.yellow()
     );
-    println!("Generated json file: {}", json_path.yellow());
+    info!("Generated json file: {}", json_path.yellow());
     Ok(())
 }
