@@ -1007,6 +1007,7 @@ dependencies = [
  "clap",
  "either",
  "lazy_static",
+ "log",
  "operator",
  "plangenerator",
  "regex",
