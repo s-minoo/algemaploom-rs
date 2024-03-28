@@ -8,11 +8,13 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 use handler::FileTranslatorHandler;
+use meamer_rs::logger::init_logger;
 use plangenerator::error::PlanError;
 use util::serialize_and_log_msg;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
-use crate::{rml::RMLFileHandler, shexml::ShExMLFileHandler};
+use crate::rml::RMLFileHandler;
+use crate::shexml::ShExMLFileHandler;
 
 fn init_handlers() -> Vec<Box<dyn FileTranslatorHandler>> {
     vec![Box::new(RMLFileHandler), Box::new(ShExMLFileHandler)]
@@ -20,6 +22,7 @@ fn init_handlers() -> Vec<Box<dyn FileTranslatorHandler>> {
 
 pub fn main() -> Result<(), PlanError> {
     let cli = cli::Cli::new();
+    init_logger().map_err(|err| PlanError::GenericError(err.to_string()))?;
 
     let matches = cli.cmd.get_matches();
     let mut err_vec = Vec::new();
