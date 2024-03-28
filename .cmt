@@ -37,6 +37,7 @@
     readme = "docs: updated readme"
     ignore = "docs: updated .gitignore"
     cmt = "chore: update .cmt"
+    cargo = "chore: update cargo.toml"
     testresource = "chore: add test resources"
 }
 
