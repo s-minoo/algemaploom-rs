@@ -34,7 +34,7 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
 
         let ident_iterators_map: &HashMap<_, _> = &self.document.iterators;
 
-        let sourceIter_exprIdent: Vec<((&str, &str), &str)> = self
+        let sourceid_iterid_pair_exprid: Vec<((&str, &str), &str)> = self
             .document
             .expression_stmts
             .values()
@@ -46,7 +46,7 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
             .collect();
 
         let mut source_expr_idents_map = HashMap::new();
-        for ((source_ident, iter_ident), expr_ident) in sourceIter_exprIdent {
+        for ((source_ident, iter_ident), expr_ident) in sourceid_iterid_pair_exprid {
             let key = format!("{}.{}", source_ident, iter_ident);
             if let Some(source_exprs_pair) =
                 source_expr_idents_map.get_mut(&key)
