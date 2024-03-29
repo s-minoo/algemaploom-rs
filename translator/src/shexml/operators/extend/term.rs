@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use log::warn;
 use operator::Function;
 use shexml_interpreter::{
     IndexedShExMLDocument, Object, PrefixNameSpace, ShapeExpression,
@@ -68,8 +69,14 @@ pub fn rdf_term_function(
             })
         }
 
+        ShapeExpression::Static { value } => {
+            Some(Function::Constant {
+                value: value.to_string(),
+            })
+        }
+
         shape_expression => {
-            println!(
+            warn!(
                 "Extracting functions from shape expression: {:#?} is not supported",
                 shape_expression
             );
