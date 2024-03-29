@@ -13,7 +13,7 @@ fn update_rename_map_iterator(
         .filter(|field| field.field_type == FieldType::Normal);
 
     normal_fields.for_each(|field| {
-        let from = field.ident.to_string();
+        let from = format!("{}.{}", iterator.ident, field.ident);
         let to = format!("{}.{}", prefix, field.ident);
         rename_pairs.insert(from, to);
     });
@@ -39,7 +39,7 @@ pub fn translate_rename_pairs_map(
         let expr_ident = &expr_stmt.ident;
 
         if let Some(field) = &reference.field {
-            let from = field.to_string();
+            let from = format!("{}.{}", iter_ident, field);
             let to = format!("{}.{}", expr_ident, field);
 
             rename_pairs.insert(from, to);
