@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use log::{debug, trace};
 use operator::{Extend, Function, Rename, Serializer, Target};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Plan, Processed, RcRefCellPlan, Serialized, Sunk};
@@ -28,12 +29,15 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
         model: ShExMLDocument,
     ) -> crate::LanguageTranslateResult {
         let mut plan = Plan::new();
+        debug!("Indexing shexml document");
         let indexed_document = model.convert_to_indexed();
 
+        trace!("Indexed document: {:#?}", indexed_document);
         let source_translator = ShExMLSourceTranslator {
             document: &indexed_document,
         };
 
+        debug!("Translating all source operators"); 
         let scidentkey_sourcedplan_exprident_pairval_map: HashMap<
             String,
             (RcRefCellPlan<Processed>, Vec<String>),
@@ -76,6 +80,8 @@ fn add_non_join_related_op(
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
 ) -> Result<Plan<Sunk>, PlanError> {
+    debug!("Variabelizing quads"); 
+    trace!("Quads: {:#?}", quads);
     let variablized_terms = variablelize_quads(quads);
     let mut renamed_extended_plan = add_rename_extend_op_from_quads(
         doc,

@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use log::{debug, trace};
 use operator::formats::ReferenceFormulation;
 use operator::{IOType, Source};
 use shexml_interpreter::{ExpressionStmtEnum, IndexedShExMLDocument, Iterator};
@@ -32,6 +33,13 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
             })
             .collect();
 
+        trace!(
+            "Generated ident config iotype map: {:#?}",
+            ident_config_iotype_map
+        );
+
+        debug!("Starting translation of shexml iterators to iterators for source operator.");
+        debug!("Starting pairing of (source id, iterator id) with the associated (expression id)");
         let ident_iterators_map: &HashMap<_, _> = &self.document.iterators;
 
         let sourceid_iterid_pair_exprid: Vec<((&str, &str), &str)> = self
@@ -44,9 +52,11 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
                     .map(|pair| (pair, expr_stmt.ident.as_str()))
             })
             .collect();
-
+        trace!("((Source id + iterator id), expr id) pairs:\n {:#?}", sourceid_iterid_pair_exprid);
         let mut source_expr_idents_map = HashMap::new();
-        for ((source_ident, iter_ident), expr_ident) in sourceid_iterid_pair_exprid {
+        for ((source_ident, iter_ident), expr_ident) in
+            sourceid_iterid_pair_exprid
+        {
             let key = format!("{}.{}", source_ident, iter_ident);
             if let Some(source_exprs_pair) =
                 source_expr_idents_map.get_mut(&key)
