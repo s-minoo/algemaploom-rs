@@ -8,6 +8,7 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 use handler::FileTranslatorHandler;
+use log::info;
 use meamer_rs::logger::init_logger;
 use plangenerator::error::PlanError;
 use util::serialize_and_log_msg;
@@ -22,9 +23,15 @@ fn init_handlers() -> Vec<Box<dyn FileTranslatorHandler>> {
 
 pub fn main() -> Result<(), PlanError> {
     let cli = cli::Cli::new();
-    init_logger().map_err(|err| PlanError::GenericError(err.to_string()))?;
 
     let matches = cli.cmd.get_matches();
+    let debug_flag_count = *matches.get_one::<u8>("debug").unwrap();
+    init_logger(debug_flag_count >= 1)
+        .map_err(|err| PlanError::GenericError(err.to_string()))?;
+
+
+    info!("kmllqdkjsf");
+
     let mut err_vec = Vec::new();
     let handlers = init_handlers();
 
