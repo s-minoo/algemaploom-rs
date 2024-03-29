@@ -341,6 +341,7 @@ fn translate_source_op(tm: &TriplesMap) -> Source {
         reference: tm.logical_source.iterator.clone(),
         reference_formulation,
         fields,
+        alias: None, 
     };
 
     let config = tm.logical_source.source.config.clone();

@@ -94,6 +94,7 @@ pub struct Iterator {
     pub reference:             Option<String>,
     pub reference_formulation: ReferenceFormulation,
     pub fields:                Vec<Field>,
+    pub alias:                 Option<String>,
 }
 
 impl Hash for Iterator {

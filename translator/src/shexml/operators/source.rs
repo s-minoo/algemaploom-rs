@@ -52,7 +52,10 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
                     .map(|pair| (pair, expr_stmt.ident.as_str()))
             })
             .collect();
-        trace!("((Source id + iterator id), expr id) pairs:\n {:#?}", sourceid_iterid_pair_exprid);
+        trace!(
+            "((Source id + iterator id), expr id) pairs:\n {:#?}",
+            sourceid_iterid_pair_exprid
+        );
         let mut source_expr_idents_map = HashMap::new();
         for ((source_ident, iter_ident), expr_ident) in
             sourceid_iterid_pair_exprid
@@ -131,6 +134,7 @@ fn translate_to_operator_iterator(
         translate_to_operator_fields(shexml_iter, &reference_formulation);
 
     operator::Iterator {
+        alias: Some(shexml_iter.ident.to_string()),
         reference: shexml_iter.query.clone(),
         reference_formulation,
         fields,
@@ -165,7 +169,7 @@ fn translate_to_operator_fields(
     let flat_fields: Vec<operator::Field> = parent_shex_iter
         .fields
         .iter()
-        .filter_map(|f| translate_to_flat_fields(f, ref_formulation))
+        .filter_map(|field| translate_to_flat_fields(field, ref_formulation))
         .collect();
     result.extend(flat_fields);
 
