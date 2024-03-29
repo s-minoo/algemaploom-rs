@@ -1,7 +1,7 @@
       PREFIX : <http://example.com/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-SOURCE films_xml_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23170/src/test/resources/filmsWithReviews.xml>
-SOURCE films_json_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23170/src/test/resources/filmsWithReviews.json>
+SOURCE films_xml_file <data/filmsWithReviews.xml>
+SOURCE films_json_file <data/filmsWithReviews.json>
 ITERATOR film_xml <xpath: //film> {
     FIELD id <@id>
     FIELD name <name>

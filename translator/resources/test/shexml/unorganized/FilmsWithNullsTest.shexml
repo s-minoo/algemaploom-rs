@@ -1,8 +1,8 @@
 PREFIX : <http://example.com/>
 PREFIX xs: <http://www.w3.org/2001/XMLSchema#>
-SOURCE films_xml_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23107/src/test/resources/filmsWithNulls.xml>
-SOURCE films_json_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23107/src/test/resources/filmsWithNulls.json>
-SOURCE films_csv_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23107/src/test/resources/filmsWithNulls.csv>
+SOURCE films_xml_file <data/filmsWithNulls.xml>
+SOURCE films_json_file <data/filmsWithNulls.json>
+SOURCE films_csv_file <data/filmsWithNulls.csv>
 ITERATOR film_xml <xpath: //film> {
     FIELD id <@id>
     FIELD name <name>

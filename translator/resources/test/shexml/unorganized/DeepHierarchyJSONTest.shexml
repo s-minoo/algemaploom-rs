@@ -1,5 +1,5 @@
-      PREFIX : <http://example.com/>
-SOURCE test_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23113/src/test/resources/deepHierarchy.json>
+PREFIX : <http://example.com/>
+SOURCE test_file <data/deepHierarchy.json>
 ITERATOR first_tag <jsonpath: $.tags[*]> {
     FIELD id <id>
     ITERATOR tag <tag[*]> {

@@ -1,5 +1,5 @@
       PREFIX : <http://example.com/>
-SOURCE test_file <https://raw.githubusercontent.com/herminiogg/ShExML/bug-%23113/src/test/resources/deepHierarchy.xml>
+SOURCE test_file <data/deepHierarchy.xml>
 ITERATOR first_tag <xpath: /tags/tag> {
     FIELD id <id>
     ITERATOR tag <tag> {

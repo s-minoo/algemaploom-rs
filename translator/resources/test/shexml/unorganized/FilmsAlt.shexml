@@ -1,6 +1,6 @@
       PREFIX : <http://example.com/>
-SOURCE films_xml_file <https://raw.githubusercontent.com/herminiogg/ShExML/develop/src/test/resources/filmsAlt.xml>
-SOURCE films_json_file <https://raw.githubusercontent.com/herminiogg/ShExML/develop/src/test/resources/filmsAlt.json>
+SOURCE films_xml_file <data/filmsAlt.xml>
+SOURCE films_json_file <data/filmsAlt.json>
 ITERATOR film_xml <xpath: //film> {
     FIELD name <name>
     FIELD year <year>
