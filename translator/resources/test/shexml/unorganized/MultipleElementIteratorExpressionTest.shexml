@@ -2,7 +2,6 @@ PREFIX : <http://example.com/>
 PREFIX xs: <http://www.w3.org/2001/XMLSchema#>
 SOURCE films_xml_file <data/films.xml>
 SOURCE films_json_file <data/films.json>
-AUTOINCREMENT my_code <1 to 10 by 2>
 ITERATOR film_xml <xpath: //film> {
     FIELD id <@id>
     FIELD name <name>
@@ -17,6 +16,8 @@ ITERATOR film_json <jsonpath: $.films[*]> {
     FIELD country <country>
     FIELD directors <director>
 }
+
+AUTOINCREMENT my_code <1 to 10 by 2>
 EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
 
 :Films :[films.id] {
