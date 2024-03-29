@@ -4,7 +4,7 @@ mod rml;
 mod shexml;
 mod util;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use colored::Colorize;
 use handler::FileTranslatorHandler;
@@ -29,7 +29,6 @@ pub fn main() -> Result<(), PlanError> {
     init_logger(debug_flag_count >= 1)
         .map_err(|err| PlanError::GenericError(err.to_string()))?;
 
-    let mut err_vec = Vec::new();
     let handlers = init_handlers();
 
     if let Some(file_matches) = matches.subcommand_matches("file") {
@@ -43,7 +42,7 @@ pub fn main() -> Result<(), PlanError> {
             let _ = output_prefix.insert(derived_string.to_string());
         }
 
-        process_one_file(&handlers, file_path, &mut err_vec, output_prefix);
+        process_one_file(&handlers, file_path, output_prefix);
     } else if let Some(folder_matches) = matches.subcommand_matches("folder") {
         let folder_path_string: &String =
             folder_matches.get_one("FOLDER").unwrap();
@@ -76,16 +75,10 @@ pub fn main() -> Result<(), PlanError> {
             process_one_file(
                 &handlers,
                 input_path.to_path_buf(),
-                &mut err_vec,
                 Some(output_prefix),
             );
         }
     }
-
-    err_vec.iter().for_each(|(file, err)| {
-        error!("Errored while translating {}", file.yellow());
-        error!("{}", err);
-    });
 
     Ok(())
 }
@@ -93,7 +86,6 @@ pub fn main() -> Result<(), PlanError> {
 fn process_one_file(
     handlers: &[Box<dyn FileTranslatorHandler>],
     file_path: PathBuf,
-    err_vec: &mut Vec<(String, PlanError)>,
     output_prefix: Option<String>,
 ) {
     let (generated_plans, generated_errors_res): (Vec<_>, Vec<_>) = handlers
@@ -101,12 +93,20 @@ fn process_one_file(
         .map(|handler| handler.handle_file(&file_path.to_string_lossy()))
         .partition(|plan| plan.is_ok());
     if generated_plans.is_empty() {
-        let generated_errors = generated_errors_res
+        if !generated_errors_res.is_empty() {
+            error!(
+                "Errored while translating: {}",
+                file_path.to_string_lossy()
+            );
+        }
+        generated_errors_res
             .into_iter()
             .flat_map(|pe| pe.err())
-            .map(|err| (file_path.to_string_lossy().to_string(), err));
-
-        err_vec.extend(generated_errors);
+            .enumerate()
+            .for_each(|(id, err)| {
+                error!("Handler is: {:?} ", handlers[id]);
+                error!("{}", err);
+            });
     } else {
         for mut plan in generated_plans.into_iter().flat_map(|p_res| p_res.ok())
         {
@@ -115,7 +115,11 @@ fn process_one_file(
                 &mut plan,
                 file_path.to_string_lossy(),
             ) {
-                err_vec.push((file_path.to_string_lossy().to_string(), err));
+                error!(
+                    "Errored while serializing mapping plan for: {}",
+                    file_path.to_string_lossy()
+                );
+                error!("{}", err);
             }
         }
     };
