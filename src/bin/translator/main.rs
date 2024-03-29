@@ -94,7 +94,7 @@ fn process_one_file(
 ) {
     let (generated_plans, generated_errors_res): (Vec<_>, Vec<_>) = handlers
         .iter()
-        .map(|handler| handler.translate(&file_path.to_string_lossy()))
+        .map(|handler| handler.handle_file(&file_path.to_string_lossy()))
         .partition(|plan| plan.is_ok());
     if generated_plans.is_empty() {
         let generated_errors = generated_errors_res
