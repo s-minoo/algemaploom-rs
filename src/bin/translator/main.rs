@@ -30,7 +30,6 @@ pub fn main() -> Result<(), PlanError> {
         .map_err(|err| PlanError::GenericError(err.to_string()))?;
 
 
-    info!("kmllqdkjsf");
 
     let mut err_vec = Vec::new();
     let handlers = init_handlers();
