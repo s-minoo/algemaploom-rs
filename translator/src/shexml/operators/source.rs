@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use log::{debug, trace};
 use operator::formats::ReferenceFormulation;
 use operator::{IOType, Source};
+use plangenerator::error::PlanError;
 use shexml_interpreter::{ExpressionStmtEnum, IndexedShExMLDocument, Iterator};
 
 use crate::OperatorTranslator;
@@ -13,25 +14,37 @@ pub struct ShExMLSourceTranslator<'a> {
 }
 
 pub type SourceExprIdentVecPair = (Source, Vec<String>);
+pub type ShExMLSourceTranslatorOutput =
+    Result<HashMap<String, SourceExprIdentVecPair>, PlanError>;
 
-impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
+impl<'a> OperatorTranslator<ShExMLSourceTranslatorOutput>
     for ShExMLSourceTranslator<'a>
 {
-    fn translate(&self) -> HashMap<String, SourceExprIdentVecPair> {
-        let ident_config_iotype_map: HashMap<_, _> = self
+    fn translate(&self) -> ShExMLSourceTranslatorOutput {
+        let ident_config_iotyperes_iter: Vec<_> = self
             .document
             .sources
             .values()
             .map(|source| {
                 let mut config = HashMap::new();
                 config.insert("url".to_string(), source.uri.clone());
-                let source_type = match source.source_type {
-                    shexml_interpreter::SourceType::File => IOType::File,
-                    _ => unimplemented!(),
+                let source_type_res = match &source.source_type {
+                    shexml_interpreter::SourceType::File => Ok(IOType::File),
+                    unsupported_type => {
+                        Err(PlanError::GenericError(format!(
+                            "Unsupported ShExML source type {:?}",
+                            unsupported_type
+                        )))
+                    }
                 };
-                (source.ident.as_str(), (config, source_type))
+                source_type_res.map(|source_type| {
+                    (source.ident.as_str(), (config, source_type))
+                })
             })
-            .collect();
+            .collect::<Result<_, PlanError>>()?;
+
+        let ident_config_iotype_map: HashMap<_, _> =
+            ident_config_iotyperes_iter.into_iter().collect();
 
         trace!(
             "Generated ident config iotype map: {:#?}",
@@ -84,7 +97,7 @@ impl<'a> OperatorTranslator<HashMap<String, SourceExprIdentVecPair>>
             }
         }
 
-        source_expr_idents_map
+        Ok(source_expr_idents_map)
     }
 }
 
@@ -216,7 +229,7 @@ fn translate_to_flat_fields(
 
 #[cfg(test)]
 mod tests {
-    use shexml_interpreter::errors::ShExMLResult;
+    use shexml_interpreter::errors::{ShExMLError, ShExMLErrorType, ShExMLResult};
 
     use super::*;
     use crate::test_case;
@@ -230,7 +243,11 @@ mod tests {
             document: &shexml_doc,
         };
 
-        let alge_source = source_translator.translate();
+        let alge_source = source_translator.translate().map_err(|err| ShExMLError{
+            dbg_msg: err.to_string(),
+            msg: err.to_string(),
+            err: ShExMLErrorType::IOError,
+        })?;
         let expected_source_ids = vec![
             "films_csv_file.film_csv",
             "films_second_csv_file.film_second_csv",

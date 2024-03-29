@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 use handler::FileTranslatorHandler;
-use log::info;
+use log::{error, info};
 use meamer_rs::logger::init_logger;
 use plangenerator::error::PlanError;
 use util::serialize_and_log_msg;
@@ -29,8 +29,6 @@ pub fn main() -> Result<(), PlanError> {
     init_logger(debug_flag_count >= 1)
         .map_err(|err| PlanError::GenericError(err.to_string()))?;
 
-
-
     let mut err_vec = Vec::new();
     let handlers = init_handlers();
 
@@ -45,7 +43,7 @@ pub fn main() -> Result<(), PlanError> {
             let _ = output_prefix.insert(derived_string.to_string());
         }
 
-        process_one_file(&handlers, file_path, &mut err_vec, output_prefix)?;
+        process_one_file(&handlers, file_path, &mut err_vec, output_prefix);
     } else if let Some(folder_matches) = matches.subcommand_matches("folder") {
         let folder_path_string: &String =
             folder_matches.get_one("FOLDER").unwrap();
@@ -76,18 +74,13 @@ pub fn main() -> Result<(), PlanError> {
                 input_path.to_path_buf(),
                 &mut err_vec,
                 Some(output_prefix),
-            )?;
+            );
         }
     }
 
     err_vec.iter().for_each(|(file, err)| {
-        eprintln!(
-            "{}: Errored while translating {}",
-            "Error".red(),
-            file.yellow()
-        );
-        let err_string = format!("{}", err);
-        eprintln!("{}\n", err_string.red());
+        error!("Errored while translating {}", file.yellow());
+        error!("{}", err);
     });
 
     Ok(())
@@ -98,7 +91,7 @@ fn process_one_file(
     file_path: PathBuf,
     err_vec: &mut Vec<(String, PlanError)>,
     output_prefix: Option<String>,
-) -> Result<(), PlanError> {
+) {
     let (generated_plans, generated_errors_res): (Vec<_>, Vec<_>) = handlers
         .iter()
         .map(|handler| handler.translate(&file_path.to_string_lossy()))
@@ -113,12 +106,13 @@ fn process_one_file(
     } else {
         for mut plan in generated_plans.into_iter().flat_map(|p_res| p_res.ok())
         {
-            serialize_and_log_msg(
+            if let Err(err) = serialize_and_log_msg(
                 output_prefix.clone().unwrap(),
                 &mut plan,
                 file_path.to_string_lossy(),
-            )?;
+            ) {
+                err_vec.push((file_path.to_string_lossy().to_string(), err));
+            }
         }
     };
-    Ok(())
 }

@@ -37,12 +37,12 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             document: &indexed_document,
         };
 
-        debug!("Translating all source operators"); 
+        debug!("Translating all source operators");
         let scidentkey_sourcedplan_exprident_pairval_map: HashMap<
             String,
             (RcRefCellPlan<Processed>, Vec<String>),
         > = source_translator
-            .translate()
+            .translate()?
             .into_iter()
             .map(|(key, value)| {
                 (key, (Rc::new(RefCell::new(plan.source(value.0))), value.1))
@@ -80,7 +80,7 @@ fn add_non_join_related_op(
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
 ) -> Result<Plan<Sunk>, PlanError> {
-    debug!("Variabelizing quads"); 
+    debug!("Variabelizing quads");
     trace!("Quads: {:#?}", quads);
     let variablized_terms = variablelize_quads(quads);
     let mut renamed_extended_plan = add_rename_extend_op_from_quads(
