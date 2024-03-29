@@ -39,6 +39,7 @@
     cmt = "chore: update .cmt"
     cargo = "chore: update cargo.toml"
     testresource = "chore: add test resources"
+    logging = "chore: add more log statements"
 }
 
 # The output format
