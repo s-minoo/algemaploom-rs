@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 use handler::FileTranslatorHandler;
-use log::{error, info};
+use log::{debug, error, info};
 use meamer_rs::logger::init_logger;
 use plangenerator::error::PlanError;
 use util::serialize_and_log_msg;
@@ -60,6 +60,10 @@ pub fn main() -> Result<(), PlanError> {
             });
 
         for file in files {
+            debug!(
+                "Attempting to translate {}:",
+                file.path().to_string_lossy()
+            );
             let input_path = file.path();
 
             let output_dir = input_path

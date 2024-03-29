@@ -23,8 +23,12 @@ pub fn init_logger(debug_enabled: bool) -> anyhow::Result<()> {
 }
 
 pub fn build_log_config(debug_enabled: bool) -> Config {
-    let info_threshold = ThresholdFilter::new(LevelFilter::Info);
-    let console_appender = Appender::builder().filter(Box::new(info_threshold)).build(
+    let mut console_threshold = ThresholdFilter::new(LevelFilter::Info);
+    if debug_enabled {
+        console_threshold = ThresholdFilter::new(LevelFilter::Debug);
+    }
+
+    let console_appender = Appender::builder().filter(Box::new(console_threshold)).build(
         "console",
         Box::new(
         ConsoleAppender::builder()
