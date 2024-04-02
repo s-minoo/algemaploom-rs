@@ -4,11 +4,11 @@ mod rml;
 mod shexml;
 mod util;
 
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
-use colored::Colorize;
+
 use handler::FileTranslatorHandler;
-use log::{debug, error, info};
+use log::{debug, error};
 use meamer_rs::logger::init_logger;
 use plangenerator::error::PlanError;
 use util::serialize_and_log_msg;
