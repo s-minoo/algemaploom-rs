@@ -187,22 +187,41 @@ fn add_rename_extend_op_from_quads(
 
     // Add concatenate extend functions as one extend operation
 
-    let mut sourced_plan_mut = sourced_plan.borrow_mut();
-    let extend_pairs = expression_extend_func_pairs.into_iter().collect();
-    let extend_op = operator::Operator::ExtendOp {
-        config: Extend { extend_pairs },
+    let mut next_plan = sourced_plan.clone();
+    next_plan = match !expression_extend_func_pairs.is_empty() {
+        true => {
+            let extend_pairs: HashMap<_, _> =
+                expression_extend_func_pairs.into_iter().collect();
+
+            let extend_op = operator::Operator::ExtendOp {
+                config: Extend { extend_pairs },
+            };
+            Rc::new(
+                (*next_plan)
+                    .borrow_mut()
+                    .apply(&extend_op, "Extend_Concatenate")?
+                    .into(),
+            )
+        }
+        false => next_plan,
     };
 
-    let mut extended_concated_plan =
-        sourced_plan_mut.apply(&extend_op, "Extend_Concatenate")?;
+    next_plan = match !rename_pairs.is_empty() {
+        true => {
+            // Add rename operator to the extended plan
+            let rename_op = operator::Operator::RenameOp {
+                config: Rename { rename_pairs },
+            };
 
-    // Add rename operator to the extended plan
-    let rename_op = operator::Operator::RenameOp {
-        config: Rename { rename_pairs },
+            Rc::new(
+                (*next_plan)
+                    .borrow_mut()
+                    .apply(&rename_op, "Rename_expression")?
+                    .into(),
+            )
+        }
+        false => next_plan,
     };
-
-    let mut renamed_plan =
-        extended_concated_plan.apply(&rename_op, "Rename_expression")?;
 
     // Add extend operator with the final values for triples serialization
     let sub_obj_map: HashMap<&Subject, Vec<(&Object, &ShapeIdent)>> =
@@ -220,7 +239,7 @@ fn add_rename_extend_op_from_quads(
     let mut triples_extend_func_pairs: HashMap<String, Function> =
         HashMap::new();
 
-    for (_subj_idx, (subj, obj_shape_pairs)) in sub_obj_map.iter().enumerate() {
+    for (subj, obj_shape_pairs) in sub_obj_map.iter() {
         if let Some(subj_term_func) = extend::term::rdf_term_function(
             doc,
             Some(&subj.prefix),
@@ -230,9 +249,7 @@ fn add_rename_extend_op_from_quads(
                 inner_function: subj_term_func.into(),
             };
 
-            for (_obj_idx, (obj, _shape_ident)) in
-                obj_shape_pairs.iter().enumerate()
-            {
+            for (obj, _shape_ident) in obj_shape_pairs.iter() {
                 let subj_variable =
                     variablized_terms.subject_variable_index.get(subj).unwrap();
 
@@ -258,12 +275,15 @@ fn add_rename_extend_op_from_quads(
         }
     }
 
-    renamed_plan.apply(
+    //Let next_plan live a little longer
+    let result = (*next_plan).borrow_mut().apply(
         &operator::Operator::ExtendOp {
             config: Extend {
                 extend_pairs: triples_extend_func_pairs,
             },
         },
         "Extend_for_Serializer",
-    )
+    );
+
+    result
 }
