@@ -6,7 +6,7 @@ use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
-use log4rs::{Config, Logger};
+use log4rs::Config;
 
 pub fn init_logger(debug_enabled: bool) -> anyhow::Result<()> {
     let mut log_config_file = env::current_dir()?;
