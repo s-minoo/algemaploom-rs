@@ -430,9 +430,23 @@ fn iterator_header() -> t!(Vec<ShExMLToken>) {
     let iterator_name = ident().padded();
 
     let iterator_type = protocol().padded().map(ShExMLToken::IteratorType);
-    let csv_iterator_type = just("csvperrow".to_string())
+    let csv_iterator_type = pn_char()
+        .repeated()
+        .at_least(1)
         .padded()
-        .map(ShExMLToken::IteratorType);
+        .map(|chars| chars.into_iter().collect::<String>())
+        .map(|iter_string| iter_string.to_lowercase())
+        .try_map(|lowered_string, span| {
+            if lowered_string == "csvperrow" {
+                Ok(ShExMLToken::IteratorType(lowered_string))
+            } else {
+                Err(Simple::custom(
+                    span,
+                    format!("Not csvperrow iterator: {}", lowered_string),
+                ))
+            }
+        });
+
     let iterator_query =
         within_angled_brackets().map(ShExMLToken::IteratorQuery);
 
