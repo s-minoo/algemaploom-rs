@@ -214,18 +214,14 @@ fn object() -> t!(Object) {
 
     //Literal object parsing
 
-    let literal_obj =
-        prefix
-            .clone()
-            .then(namespace_ln)
-            .map(|(prefix, ln)| {
-                Object {
-                    prefix:     Some(prefix),
-                    expression: ShapeExpression::Static { value: ln },
-                    language:   None,
-                    datatype:   None,
-                }
-            });
+    let literal_obj = prefix.clone().then(namespace_ln).map(|(prefix, ln)| {
+        Object {
+            prefix:     Some(prefix),
+            expression: ShapeExpression::Static { value: ln },
+            language:   None,
+            datatype:   None,
+        }
+    });
 
     // Literal object with shape expression
     let literal_obj_expr = shape_expr.clone().map(|expr| {
@@ -518,11 +514,10 @@ fn expression_stmt() -> t!(ExpressionEnum) {
         .labelled("parser:expression_stmt")
 }
 
-
-fn exp() -> t!(ExpressionStmtEnum){
-    exp_reference_ident().map(|reference| ExpressionStmtEnum::Basic { reference })
+fn exp() -> t!(ExpressionStmtEnum) {
+    exp_reference_ident()
+        .map(|reference| ExpressionStmtEnum::Basic { reference })
 }
-
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
     let basic_expression = exp_reference_ident()
@@ -602,7 +597,14 @@ fn iterators() -> t!(Vec<Iterator>) {
             .then_ignore(just(ShExMLToken::BrackStart))
             .then(fields)
             .map(|((ident, (iter_type, query)), fields)| {
-                (ident, iter_type, query, fields)
+
+                // Edge case handling for csvperrow iterator
+                if query == Some("csvperrow".to_string()) && iter_type.is_none()
+                {
+                    (ident, Some(IteratorType::CSVRows), query, fields)
+                } else {
+                    (ident, iter_type, query, fields)
+                }
             })
             .then(recurs.repeated())
             .then_ignore(just(ShExMLToken::BrackEnd).or_not())
