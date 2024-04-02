@@ -4,8 +4,7 @@ mod rml;
 mod shexml;
 mod util;
 
-use std::path::{PathBuf};
-
+use std::path::PathBuf;
 
 use handler::FileTranslatorHandler;
 use log::{debug, error};
@@ -35,6 +34,7 @@ pub fn main() -> Result<(), PlanError> {
         let file_path_string: &String =
             file_matches.get_one("DOCUMENT").unwrap();
 
+        debug!("Attempting to translate: {:?}", file_path_string);
         let file_path: PathBuf = file_path_string.into();
         let mut output_prefix = Some("output".to_string());
         if let Some(derived_prefix) = file_path.file_stem() {
@@ -60,7 +60,7 @@ pub fn main() -> Result<(), PlanError> {
 
         for file in files {
             debug!(
-                "Attempting to translate {}:",
+                "Attempting to translate: {}",
                 file.path().to_string_lossy()
             );
             let input_path = file.path();
