@@ -49,7 +49,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             })
             .collect();
 
-        for (_source_ident, (sourced_plan, expr_idents)) in
+        for (source_ident, (sourced_plan, expr_idents)) in
             scidentkey_sourcedplan_exprident_pairval_map.iter()
         {
             let expr_idents_hashset =
@@ -62,6 +62,11 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
                 expr_idents_hashset,
             );
 
+            debug!(
+                "Adding non join related ops for source: {:?}",
+                source_ident
+            );
+            trace!("Quads: {:#?}", filtered_same_source_quads);
             add_non_join_related_op(
                 &indexed_document,
                 &filtered_same_source_quads,
@@ -81,7 +86,6 @@ fn add_non_join_related_op(
     sourced_plan: RcRefCellPlan<Processed>,
 ) -> Result<Plan<Sunk>, PlanError> {
     debug!("Variabelizing quads");
-    trace!("Quads: {:#?}", quads);
     let variablized_terms = variablelize_quads(quads);
     let mut renamed_extended_plan = add_rename_extend_op_from_quads(
         doc,
@@ -188,8 +192,13 @@ fn add_rename_extend_op_from_quads(
     // Add concatenate extend functions as one extend operation
 
     let mut next_plan = sourced_plan.clone();
+    trace!(
+        "Extend function pairs for concatenation: {:#?}",
+        expression_extend_func_pairs
+    );
     next_plan = match !expression_extend_func_pairs.is_empty() {
         true => {
+            debug!("Adding rename operator since it is not empty");
             let extend_pairs: HashMap<_, _> =
                 expression_extend_func_pairs.into_iter().collect();
 
@@ -206,9 +215,11 @@ fn add_rename_extend_op_from_quads(
         false => next_plan,
     };
 
+    trace!("Rename pairs: {:#?}", rename_pairs);
     next_plan = match !rename_pairs.is_empty() {
         true => {
             // Add rename operator to the extended plan
+            debug!("Adding rename operator since it is not empty");
             let rename_op = operator::Operator::RenameOp {
                 config: Rename { rename_pairs },
             };
