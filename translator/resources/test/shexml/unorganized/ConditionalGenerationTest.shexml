@@ -3,7 +3,6 @@ PREFIX dbr: <http://dbpedia.org/resource/>
 PREFIX schema: <http://schema.org/>
 SOURCE films_xml_file <data/films.xml>
 SOURCE films_json_file <data/films.json>
-FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23122/src/test/resources/functions.scala>
 ITERATOR film_xml <xpath: //film> {
     FIELD id <@id>
     FIELD name <name>
@@ -24,6 +23,7 @@ ITERATOR film_json <jsonpath: $.films[*]> {
     FIELD music <crew.music>
     FIELD photography <crew.cinematography>
 }
+FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23122/src/test/resources/functions.scala>
 EXPRESSION films <films_xml_file.film_xml UNION films_json_file.film_json>
 
 :Films :[films.id IF helper.isBefore2010(films.year)] {
