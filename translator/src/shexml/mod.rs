@@ -60,7 +60,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             //filter out quads that could be generated from the same source
 
             let filtered_same_source_quads = get_quads_from_same_source(
-                &indexed_document, 
+                &indexed_document,
                 indexed_document.graph_shapes.values(),
                 expr_idents_hashset,
             );
@@ -172,7 +172,7 @@ fn add_rename_extend_op_from_quads(
         expr_ident_set.extend(obj.expression.extract_expr_idents());
     }
 
-    trace!("Expression identifier set: {:#?}", expr_ident_set); 
+    trace!("Expression identifier set: {:#?}", expr_ident_set);
     for expr_ident in expr_ident_set {
         if let Some(expression_stmt) = expression_stmts_map.get(expr_ident) {
             //Add string concatentation extend functions
@@ -275,16 +275,25 @@ fn add_rename_extend_op_from_quads(
                     );
                 }
 
-                if let Some(obj_func) =
-                    extend::term::obj_lang_datatype_function(doc, obj)
-                {
-                    let obj_variable = variablized_terms
-                        .object_variable_index
-                        .get(obj)
-                        .unwrap();
+                match &obj.expression {
+                    // Since it is a shape link just ignore the generation of obj function and
+                    // reuse the linked target's subject variable during BGP generation
+                    shexml_interpreter::ShapeExpression::Link { .. } => {
+                        continue;
+                    }
+                    _ => {
+                        if let Some(obj_func) =
+                            extend::term::obj_lang_datatype_function(doc, obj)
+                        {
+                            let obj_variable = variablized_terms
+                                .object_variable_index
+                                .get(obj)
+                                .unwrap();
 
-                    triples_extend_func_pairs
-                        .insert(obj_variable.to_string(), obj_func);
+                            triples_extend_func_pairs
+                                .insert(obj_variable.to_string(), obj_func);
+                        }
+                    }
                 }
             }
         }
