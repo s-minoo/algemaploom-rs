@@ -1101,7 +1101,7 @@ fn expressions_test() {
 
         FUNCTIONS helper <scala: https://raw.githubusercontent.com/herminiogg/ShExML/enhancement-%23121/src/test/resources/functions.scala>
 
-        EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
+        EXPRESSION exp <file.it1.name UNION file.it2.name JOIN file.it3.name>
         ";
 
     let expressions_lexer = lexer::expressions();
@@ -1120,7 +1120,7 @@ fn expressions_test() {
     let source_ident = "file".to_string();
     let field_ident = Some("name".to_string());
 
-    let union_exp = Box::new(ExpressionStmtEnum::Union(
+    let union_exp = Box::new(ExpressionStmtEnum::Join(
         Box::new(ExpressionStmtEnum::Basic {
             reference: ExpressionReferenceIdent {
                 source_ident:   source_ident.clone(),
@@ -1136,7 +1136,7 @@ fn expressions_test() {
             },
         }),
     ));
-    let expr_enum = ExpressionStmtEnum::Join(
+    let expr_enum = ExpressionStmtEnum::Union(
         Box::new(ExpressionStmtEnum::Basic {
             reference: ExpressionReferenceIdent {
                 source_ident:   source_ident.clone(),
@@ -1405,7 +1405,7 @@ fn matcher_single_test() {
 #[test]
 fn expression_join_union_test() {
     let exp_str = "
-        EXPRESSION exp <file.it1.name JOIN file.it2.name UNION file.it3.name>
+        EXPRESSION exp <file.it1.name UNION file.it2.name JOIN file.it3.name>
         ";
 
     let (tokens_opt, errors) = lexer::expression_stmt()
@@ -1422,7 +1422,7 @@ fn expression_join_union_test() {
     let source_ident = "file".to_string();
     let field_ident = Some("name".to_string());
 
-    let union_exp = Box::new(ExpressionStmtEnum::Union(
+    let union_exp = Box::new(ExpressionStmtEnum::Join(
         Box::new(ExpressionStmtEnum::Basic {
             reference: ExpressionReferenceIdent {
                 source_ident:   source_ident.clone(),
@@ -1438,7 +1438,7 @@ fn expression_join_union_test() {
             },
         }),
     ));
-    let expr_enum = ExpressionStmtEnum::Join(
+    let expr_enum = ExpressionStmtEnum::Union(
         Box::new(ExpressionStmtEnum::Basic {
             reference: ExpressionReferenceIdent {
                 source_ident:   source_ident.clone(),
@@ -1484,50 +1484,6 @@ fn expression_simple_test() {
             field: field_ident,
         },
     };
-
-    let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
-        ident: "exp".to_string(),
-        expr_enum,
-    }));
-
-    assert_parse_expected(parsed_items, expected_items);
-}
-#[test]
-fn expression_join_test() {
-    let exp_str = "
-        EXPRESSION exp <file.it1.name JOIN file.it2.name>
-        ";
-
-    let (tokens_opt, errors) = lexer::expression_stmt()
-        .padded()
-        .then_ignore(end())
-        .parse_recovery(exp_str);
-    assert!(errors.len() == 0, "{:?}", errors);
-
-    println!("{:?}", tokens_opt);
-    let (parsed_items, errors) =
-        parser::expression_stmt().parse_recovery(tokens_opt.unwrap());
-
-    assert!(errors.len() == 0, "{:?}", errors);
-
-    let source_ident = "file".to_string();
-    let field_ident = Some("name".to_string());
-    let expr_enum = ExpressionStmtEnum::Join(
-        Box::new(ExpressionStmtEnum::Basic {
-            reference: ExpressionReferenceIdent {
-                source_ident:   source_ident.clone(),
-                iterator_ident: "it1".to_string(),
-                field:          field_ident.clone(),
-            },
-        }),
-        Box::new(ExpressionStmtEnum::Basic {
-            reference: ExpressionReferenceIdent {
-                source_ident:   source_ident.clone(),
-                iterator_ident: "it2".to_string(),
-                field:          field_ident.clone(),
-            },
-        }),
-    );
 
     let expected_items = Some(ExpressionEnum::ExpressionStmt(ExpressionStmt {
         ident: "exp".to_string(),

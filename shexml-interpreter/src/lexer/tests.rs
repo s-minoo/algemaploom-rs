@@ -1036,17 +1036,14 @@ fn single_matcher_test() {
 }
 
 // TODO: Lex string concatenation + union operation properly <12-03-24, yourname> //
-#[ignore]
 #[test]
 fn string_op_union_expression_test() {
-    let exp_str = "
-        EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name  UNION file.it3.union>
-        ";
+    let exp_str = "EXPRESSION exp <file.it1.id + \"-seper-\" +  file.it2.name  UNION file.it3.union>";
 
     let (tokens_opt, errors) = expression_stmt()
         .padded()
         .then_ignore(end())
-        .parse_recovery(exp_str);
+        .parse_recovery_verbose(exp_str);
 
     assert!(errors.len() == 0, "{:?}", errors);
     println!("{:?}", tokens_opt);
@@ -1160,7 +1157,7 @@ fn iterator_expression_test() {
 #[test]
 fn join_union_expression_test() {
     let exp_str = "
-        EXPRESSION exp <file.it1.id UNION file.it2.name UNION file.it1.name>
+        EXPRESSION exp <file.it1.id UNION file.it2.name JOIN file.it1.name>
         ";
 
     let (tokens_opt, errors) = expression_stmt()
@@ -1185,7 +1182,7 @@ fn join_union_expression_test() {
         ShExMLToken::Ident("it2".to_string()),
         ShExMLToken::Dot,
         ShExMLToken::Ident("name".to_string()),
-        ShExMLToken::Union,
+        ShExMLToken::Join,
         file_ident.clone(),
         ShExMLToken::Dot,
         ShExMLToken::Ident("it1".to_string()),
