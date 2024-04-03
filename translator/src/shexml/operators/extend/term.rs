@@ -77,7 +77,7 @@ pub fn rdf_term_function(
 
         shape_expression => {
             warn!(
-                "Extracting functions from shape expression: {:#?} is not supported",
+                "Extracting external functions from shape expression: {:#?} is not supported",
                 shape_expression
             );
 
