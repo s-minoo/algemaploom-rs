@@ -44,7 +44,7 @@ pub fn translate_rename_pairs_map(
     expr_stmt: &ExpressionStmt,
 ) -> HashMap<String, String> {
     let mut rename_pairs = HashMap::new();
-    debug!("Translating rename pari maps for expression statement");
+    debug!("Translating rename pair maps for expression statement");
     trace!("Expression statement is: {:#?}", expr_stmt);
     if let shexml_interpreter::ExpressionStmtEnum::Basic { reference } =
         &expr_stmt.expr_enum
