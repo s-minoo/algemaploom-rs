@@ -21,4 +21,4 @@ if [[ "$PREV_STATUS" -eq 1 ]]; then
     echo "Cargo build failed!"
     exit 1
 fi
-cat ./sample.shexml | ../target/debug/shexml_parser
+../target/debug/shexml_parser  -f $1
