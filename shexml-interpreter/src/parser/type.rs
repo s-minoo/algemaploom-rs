@@ -21,123 +21,6 @@ pub struct ShExMLDocument {
     pub matchers:         Vec<Matcher>,
     pub graph_shapes:     Vec<GraphShapes>,
 }
-
-pub fn convert_graph_shape_to_quads(
-    graph_shapes: &GraphShapes,
-) -> Vec<(&Subject, &Predicate, &Object, &ShapeIdent)> {
-    let graph_ident = &graph_shapes.ident;
-
-    let mut result = Vec::new();
-
-    for shape in &graph_shapes.shapes {
-        let quads = shape
-            .pred_obj_pairs
-            .iter()
-            .map(|(pred, obj)| (&shape.subject, pred, obj, graph_ident));
-        result.extend(quads);
-    }
-
-    result
-}
-
-fn check_subj_expr_ident(subj: &Subject, expr_idents: &HashSet<&str>) -> bool {
-    let subj_expr_ident = match &subj.expression {
-        ShapeExpression::Reference(reference) => &reference.expr_ident,
-        ShapeExpression::Matching {
-            reference,
-            matcher_ident: _,
-        } => &reference.expr_ident,
-        ShapeExpression::Conditional {
-            reference,
-            conditional_expr: _,
-        } => &reference.expr_ident,
-        _ => "",
-    };
-
-    expr_idents.contains(subj_expr_ident)
-}
-
-fn check_obj_expr_ident(obj: &Object, expr_idents: &HashSet<&str>) -> bool {
-    let obj_expr_bool =
-        check_obj_related_expression(&obj.expression, expr_idents);
-    if let Some(language_expr) = &obj.language {
-        obj_expr_bool
-            && check_obj_related_expression(language_expr, expr_idents)
-    } else if let Some(datatype) = &obj.datatype {
-        obj_expr_bool
-            && check_obj_related_expression(&datatype.local_expr, expr_idents)
-    } else {
-        obj_expr_bool
-    }
-}
-
-fn check_obj_related_expression(
-    expression: &ShapeExpression,
-    expr_idents: &HashSet<&str>,
-) -> bool {
-    match expression {
-        ShapeExpression::Reference(reference) => {
-            expr_idents.contains(reference.expr_ident.as_str())
-        }
-        ShapeExpression::Matching {
-            reference,
-            matcher_ident: _,
-        } => expr_idents.contains(reference.expr_ident.as_str()),
-        ShapeExpression::Conditional {
-            reference,
-            conditional_expr: _,
-        } => expr_idents.contains(reference.expr_ident.as_str()),
-        ShapeExpression::Static { value: _ } => true,
-        _ => false,
-    }
-}
-
-pub type ShExMLQuads<'a> =
-    Vec<(&'a Subject, &'a Predicate, &'a Object, &'a ShapeIdent)>;
-
-pub fn get_quads_from_same_source<'a>(
-    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
-    expr_idents: HashSet<&'a str>,
-) -> ShExMLQuads<'a> {
-    get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
-        subj_check && obj_check
-    })
-}
-
-pub fn get_quads_from_different_source<'a>(
-    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
-    expr_idents: HashSet<&'a str>,
-) -> ShExMLQuads<'a> {
-    get_quads_from_shapes(graph_shapes, expr_idents, |subj_check, obj_check| {
-        subj_check || obj_check
-    })
-}
-
-fn get_quads_from_shapes<'a, CheckerFn>(
-    graph_shapes: impl std::iter::Iterator<Item = &'a GraphShapes>,
-    expr_idents: HashSet<&'a str>,
-    source_checker: CheckerFn,
-) -> ShExMLQuads<'a>
-where
-    CheckerFn: Fn(bool, bool) -> bool,
-{
-    let mut result = Vec::new();
-
-    for graph in graph_shapes {
-        let quads = convert_graph_shape_to_quads(graph);
-        for quad in quads {
-            let (subj, _, obj, _) = quad;
-            if source_checker(
-                check_subj_expr_ident(subj, &expr_idents),
-                check_obj_expr_ident(obj, &expr_idents),
-            ) {
-                result.push(quad);
-            }
-        }
-    }
-    result
-}
-
 impl ShExMLDocument {
     pub fn convert_to_indexed(self) -> IndexedShExMLDocument {
         let prefixes = self
@@ -184,10 +67,17 @@ impl ShExMLDocument {
 
         let graph_shapes = self
             .graph_shapes
+            .clone()
             .into_iter()
             .map(|graph_shape| (graph_shape.ident.to_string(), graph_shape))
             .collect();
 
+        let shapes = self
+            .graph_shapes
+            .into_iter()
+            .flat_map(|graph_shape| graph_shape.shapes)
+            .map(|shape| (shape.ident.to_string(), shape))
+            .collect();
         IndexedShExMLDocument {
             prefixes,
             sources,
@@ -197,6 +87,7 @@ impl ShExMLDocument {
             functions,
             matchers,
             graph_shapes,
+            shapes,
         }
     }
 }
@@ -211,6 +102,7 @@ pub struct IndexedShExMLDocument {
     pub functions:        HashMap<String, Function>,
     pub matchers:         HashMap<String, Matcher>,
     pub graph_shapes:     HashMap<String, GraphShapes>,
+    pub shapes:           HashMap<String, Shape>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

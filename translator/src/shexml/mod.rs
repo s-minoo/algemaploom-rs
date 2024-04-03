@@ -7,14 +7,16 @@ use operator::{Extend, Function, Rename, Serializer, Target};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Plan, Processed, RcRefCellPlan, Serialized, Sunk};
 use shexml_interpreter::{
-    get_quads_from_same_source, IndexedShExMLDocument, Object, PrefixNameSpace,
-    ShExMLDocument, ShExMLQuads, ShapeIdent, Subject,
+    IndexedShExMLDocument, Object, PrefixNameSpace, ShExMLDocument, ShapeIdent,
+    Subject,
 };
 
 use self::util::IndexVariableTerm;
 use crate::shexml::operators::source::ShExMLSourceTranslator;
 use crate::shexml::operators::{extend, rename};
-use crate::shexml::util::variablelize_quads;
+use crate::shexml::util::{
+    get_quads_from_same_source, variablelize_quads, ShExMLQuads,
+};
 use crate::{LanguageTranslator, OperatorTranslator};
 
 mod operators;
@@ -58,6 +60,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             //filter out quads that could be generated from the same source
 
             let filtered_same_source_quads = get_quads_from_same_source(
+                &indexed_document, 
                 indexed_document.graph_shapes.values(),
                 expr_idents_hashset,
             );
