@@ -36,13 +36,13 @@ pub fn main() -> ShExMLResult<()> {
 
     let shexml_doc = parse_string(shexml_doc_string)?;
     let shexml_json =
-        serde_json::to_string_pretty(&shexml_doc).or_else(|err| {
-            Err(ShExMLError {
+        serde_json::to_string_pretty(&shexml_doc).map_err(|err| {
+            ShExMLError {
                 dbg_msg: format!("{:?}", err),
                 msg:     format!("{}", err),
                 err:
                     shexml_interpreter::errors::ShExMLErrorType::SerdeError,
-            })
+            }
         })?;
 
     println!("{}", shexml_json);
