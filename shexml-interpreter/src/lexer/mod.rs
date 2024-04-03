@@ -144,12 +144,12 @@ fn shape_object() -> t!(Vec<ShExMLToken>) {
 fn shape_node_expression() -> t!(Vec<ShExMLToken>) {
     let matching = shape_sub_ident()
         .padded()
-        .chain(token("MATCHING ", ShExMLToken::Matching))
+        .chain(token("MATCHING", ShExMLToken::Matching))
         .chain(ident());
 
     let if_block = shape_sub_ident()
         .padded()
-        .chain(token("IF ", ShExMLToken::If))
+        .chain(token("IF", ShExMLToken::If))
         .chain::<ShExMLToken, _, _>(shape_function_application());
 
     token("[", ShExMLToken::SqBrackStart)
@@ -200,13 +200,14 @@ pub fn expressions() -> t!(Vec<ShExMLToken>) {
 }
 
 pub fn function() -> t!(Vec<ShExMLToken>) {
-    let function_tag = token("FUNCTIONS", ShExMLToken::Function);
+    let function_tag = token("FUNCTIONS", ShExMLToken::Function).padded();
     let function_ident = ident().padded();
 
     let protocol = protocol().padded().map(ShExMLToken::FunctionLang);
-    let uri = protocol_iri_ref().or(path().map(|st| ShExMLToken::URI(st)));
+    let uri = protocol_iri_ref().or(path().map(ShExMLToken::URI));
 
     let function_exp = token("<", ShExMLToken::AngleStart)
+        .padded()
         .chain(protocol.chain(uri))
         .chain(token(">", ShExMLToken::AngleEnd).padded());
 
@@ -216,7 +217,8 @@ pub fn function() -> t!(Vec<ShExMLToken>) {
 }
 
 pub fn autoincrement() -> t!(Vec<ShExMLToken>) {
-    let aut_inc_tag = token("AUTOINCREMENT", ShExMLToken::AutoIncrement);
+    let aut_inc_tag =
+        token("AUTOINCREMENT", ShExMLToken::AutoIncrement).padded();
     let ident = ident().padded();
     let prefix_str = text::ident::<char, _>()
         .map(|chars: String| ShExMLToken::AutoIncPrefix(chars))
@@ -329,18 +331,6 @@ pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
         .flatten()
         .chain(ident());
 
-    let join_ident = token("JOIN", ShExMLToken::Join)
-        .chain(sub_ident.clone())
-        .padded();
-
-    let union_ident = token("UNION", ShExMLToken::Union)
-        .chain(sub_ident.clone())
-        .padded();
-
-    let join_union = sub_ident.clone().chain::<ShExMLToken, _, _>(
-        join_ident.or(union_ident).repeated().at_least(1).flatten(),
-    );
-
     let str_op_right = just('+')
         .padded()
         .ignored()
@@ -364,11 +354,36 @@ pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
 
     let str_operation = sub_ident
         .clone()
-        .chain(str_op_right.repeated().at_least(1).flatten());
+        .chain(str_op_right.repeated().at_least(1).flatten())
+        .labelled("lexer:string_op");
+
+    let basic_expression = str_operation
+        .clone()
+        .or(sub_ident.clone())
+        .labelled("lexer:basic_expression");
+
+    let union_tok = token("UNION", ShExMLToken::Union);
+    let join_tok = token("JOIN", ShExMLToken::Join);
+
+    let join = basic_expression
+        .clone()
+        .chain(union_tok.clone())
+        .chain::<ShExMLToken, _, _>(basic_expression.clone())
+        .chain(join_tok.clone())
+        .chain(basic_expression.clone())
+        .padded()
+        .labelled("lexer:join");
+
+    let union = basic_expression
+        .clone()
+        .chain(union_tok.clone())
+        .chain(basic_expression.clone())
+        .padded()
+        .labelled("lexer:union");
 
     let exp_inner = token("<", ShExMLToken::AngleStart)
         .chain(
-            join_union
+            join.or(union)
                 .or(str_operation)
                 .or(sub_ident.clone())
                 .repeated()
