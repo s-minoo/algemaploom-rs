@@ -172,6 +172,7 @@ fn add_rename_extend_op_from_quads(
         expr_ident_set.extend(obj.expression.extract_expr_idents());
     }
 
+    trace!("Expression identifier set: {:#?}", expr_ident_set); 
     for expr_ident in expr_ident_set {
         if let Some(expression_stmt) = expression_stmts_map.get(expr_ident) {
             //Add string concatentation extend functions
