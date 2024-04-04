@@ -43,7 +43,10 @@ pub fn shexml() -> t!(ShExMLDocument) {
         .then(expressions())
         .then(graph_shapes())
         .map(
-            |(((prefixes, sources, iterators), expressions), graph_shapes)| {
+            |(
+                ((mut prefixes, sources, iterators), expressions),
+                graph_shapes,
+            )| {
                 let mut matchers = Vec::new();
                 let mut auto_increments = Vec::new();
                 let mut expression_stmts = Vec::new();
@@ -66,6 +69,13 @@ pub fn shexml() -> t!(ShExMLDocument) {
                     }
                 }
 
+                // Add a default rdf prefix
+                prefixes.push(Prefix {
+                    prefix: PrefixNameSpace::NamedPrefix(
+                        vocab::rdf::PREFIX.to_string(),
+                    ),
+                    uri:    vocab::rdf::IRI.to_string(),
+                });
                 ShExMLDocument {
                     prefixes,
                     sources,
@@ -128,6 +138,21 @@ fn graph_shapes() -> t!(Vec<GraphShapes>) {
         .labelled("parser:graph_shapes")
 }
 
+fn shape_term() -> t!((PrefixNameSpace, String)) {
+    select! {
+            ShExMLToken::ShapeTerm{prefix, local} =>{
+                let mut p_ns = PrefixNameSpace::BasePrefix;
+                if !prefix.is_empty(){
+
+                    p_ns = PrefixNameSpace::NamedPrefix(prefix);
+                }
+                (p_ns, local)
+
+            }
+
+    }
+}
+
 fn shapes() -> t!(Vec<Shape>) {
     let shape_expr = just(ShExMLToken::SqBrackStart)
         .ignore_then(shape_expression())
@@ -141,27 +166,44 @@ fn shapes() -> t!(Vec<Shape>) {
     let prefix_shape_pair =
         shape_expr_prefix.then_ignore(just(ShExMLToken::PrefixSep));
 
-    let subj_prefix = prefix_shape_pair.clone().then(shape_expr.clone());
+    //Subject prefix shape expression parser
+    let subj_prefix = prefix_shape_pair.clone().then(shape_expr.clone()).map(
+        |(pn, local)| {
+            Subject {
+                prefix:     pn,
+                expression: local,
+            }
+        },
+    );
+    let subj_fixed_iri = shape_term().map(|(pn, local)| {
+        Subject {
+            prefix:     pn,
+            expression: ShapeExpression::Static { value: local },
+        }
+    });
+
+    let subj = subj_prefix.or(subj_fixed_iri);
+
+    // constant iri subject
 
     let shape_ident = shape_ident();
-    let predicate = select! {
-        ShExMLToken::ShapeTerm{prefix, local} =>{
-            let mut p_ns = PrefixNameSpace::BasePrefix;
-            if !prefix.is_empty(){
-
-                p_ns = PrefixNameSpace::NamedPrefix(prefix);
+    let predicate = shape_term()
+        .map(|(p_ns, local)| {
+            Predicate {
+                prefix: p_ns,
+                local,
             }
-        Predicate{ prefix: p_ns, local}
-        }
-    };
+        })
+        .or(just(ShExMLToken::Type).map(|_| {
+            Predicate {
+                prefix: PrefixNameSpace::NamedPrefix("rdf".to_string()),
+                local:  "type".to_string(),
+            }
+        }));
 
     shape_ident
         .clone()
-        .then(
-            subj_prefix
-                .clone()
-                .map(|(prefix, expression)| Subject { prefix, expression }),
-        )
+        .then(subj)
         .then_ignore(just(ShExMLToken::CurlStart))
         .then(
             predicate
@@ -212,9 +254,8 @@ fn object() -> t!(Object) {
         ShExMLToken::PrefixLN(ln) => ln
     };
 
-    //Literal object parsing
-
-    let literal_obj = prefix.clone().then(namespace_ln).map(|(prefix, ln)| {
+    //Fixed IRI object parsing
+    let fixed_iri_obj = shape_term().map(|(prefix, ln)| {
         Object {
             prefix:     Some(prefix),
             expression: ShapeExpression::Static { value: ln },
@@ -302,7 +343,11 @@ fn object() -> t!(Object) {
     //
 
     choice((datatyped, language_tagged, linked_obj))
-        .or(choice((prefixed_obj_parsed, literal_obj_expr, literal_obj)))
+        .or(choice((
+            prefixed_obj_parsed,
+            literal_obj_expr,
+            fixed_iri_obj,
+        )))
         .labelled("parser:object")
 }
 
