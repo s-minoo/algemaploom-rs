@@ -52,8 +52,9 @@ pub enum ShExMLToken {
     /// Identifier used by source, matcher, function, expression
     Ident(String),
 
-    /// Expression ident
-    ExpressionIdent(String),
+
+    /// class type a
+    Type,
 
     /// values used in matcher
     Value(String),

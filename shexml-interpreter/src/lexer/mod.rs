@@ -52,7 +52,7 @@ pub fn shexml() -> t!(Vec<ShExMLToken>) {
 
 pub fn shapes() -> t!(Vec<ShExMLToken>) {
     let shape_node = shape_node!(ShapeNode);
-    let predicate = shape_node!(ShapeTerm);
+    let predicate = shape_node!(ShapeTerm).or(token("a ", ShExMLToken::Type));
     let graph_node = shape_node!(ShapeNode);
 
     let pred_object = predicate
@@ -61,8 +61,9 @@ pub fn shapes() -> t!(Vec<ShExMLToken>) {
         .padded()
         .chain(token(";", ShExMLToken::PredicateSplit));
 
-    let subject =
-        prefix_namespace().chain::<ShExMLToken, _, _>(shape_node_expression());
+    let subject = prefix_namespace()
+        .chain::<ShExMLToken, _, _>(shape_node_expression())
+        .or(shape_node!(ShapeTerm).map(|term| vec![term]));
 
     let single_shape = shape_node
         .padded()
@@ -124,7 +125,7 @@ fn shape_object() -> t!(Vec<ShExMLToken>) {
 
     let shape_link =
         token("@", ShExMLToken::AtSymb).chain(shape_node!(ShapeNode));
-    let object_literal = data_type_static.clone();
+    let object_literal = shape_node!(ShapeTerm).map(|t| vec![t]);
 
     let object = choice((
         shape_link,
@@ -377,6 +378,8 @@ pub fn expression_stmt() -> t!(Vec<ShExMLToken>) {
     let union = basic_expression
         .clone()
         .chain(union_tok.clone())
+        .repeated()
+        .flatten()
         .chain(basic_expression.clone())
         .padded()
         .labelled("lexer:union");
