@@ -510,7 +510,7 @@ fn simple_single_shape_object_literal() {
     let shape_str = "
 
 :Films :[films.id] {
-    :name :Jackie;
+    :name ex:Jackie;
 }
         ";
 
@@ -539,9 +539,10 @@ fn simple_single_shape_object_literal() {
             prefix: "".to_string(),
             local:  "name".to_string(),
         },
-        ShExMLToken::BasePrefix,
-        ShExMLToken::PrefixSep,
-        ShExMLToken::PrefixLN("Jackie".to_string()),
+        ShExMLToken::ShapeTerm {
+            prefix: "ex".to_string(),
+            local:  "Jackie".to_string(),
+        },
         ShExMLToken::PredicateSplit,
         ShExMLToken::CurlEnd,
     ]);
@@ -763,6 +764,101 @@ fn simple_single_shape_languagetag_test() {
         tokens_opt
     )
 }
+
+#[test]
+fn simple_single_shape_subject_fixed_test() {
+    let shape_str = "
+
+:Films :film1 {
+    a :Film;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "film1".to_string(),
+        },
+        ShExMLToken::CurlStart,
+        ShExMLToken::Type,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "Film".to_string(),
+        },
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
+fn simple_single_shape_class_type_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    a :Film;
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+
+    let expected = Some(vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::Type,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "Film".to_string(),
+        },
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ]);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
 #[test]
 fn simple_single_shape_test() {
     let shape_str = "
@@ -1058,13 +1154,13 @@ fn string_op_union_expression_test() {
         ShExMLToken::Ident("it1".to_string()),
         ShExMLToken::Dot,
         ShExMLToken::Ident("id".to_string()),
-        ShExMLToken::StringSep("-seper-".to_string()), 
+        ShExMLToken::StringSep("-seper-".to_string()),
         file_ident.clone(),
         ShExMLToken::Dot,
         ShExMLToken::Ident("it2".to_string()),
         ShExMLToken::Dot,
         ShExMLToken::Ident("name".to_string()),
-        ShExMLToken::Union, 
+        ShExMLToken::Union,
         file_ident.clone(),
         ShExMLToken::Dot,
         ShExMLToken::Ident("it3".to_string()),
@@ -1104,7 +1200,7 @@ fn string_op_expression_test() {
         ShExMLToken::Ident("it1".to_string()),
         ShExMLToken::Dot,
         ShExMLToken::Ident("id".to_string()),
-        ShExMLToken::StringSep("-seper-".to_string()), 
+        ShExMLToken::StringSep("-seper-".to_string()),
         file_ident.clone(),
         ShExMLToken::Dot,
         ShExMLToken::Ident("it2".to_string()),
