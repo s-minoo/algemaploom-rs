@@ -453,6 +453,89 @@ fn simple_single_shape_matching() {
 }
 
 #[test]
+fn simple_two_shape_linking_test() {
+    let shape_str = "
+
+:Films :[films.id] {
+    :name @:Names;
+}
+
+:Names  :[films.name]{
+    :review :good; 
+}
+        ";
+
+    let (tokens_opt, errors) = shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    let film_exp = ShExMLToken::Ident("films".to_string());
+    let mut first_shape = vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Films".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("id".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "name".to_string(),
+        },
+        ShExMLToken::AtSymb,
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Names".to_string(),
+        },
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ];
+
+    let second_shape = vec![
+        ShExMLToken::ShapeNode {
+            prefix: "".to_string(),
+            local:  "Names".to_string(),
+        },
+        ShExMLToken::BasePrefix,
+        ShExMLToken::PrefixSep,
+        ShExMLToken::SqBrackStart,
+        film_exp.clone(),
+        ShExMLToken::Dot,
+        ShExMLToken::Ident("name".to_string()),
+        ShExMLToken::SqBrackEnd,
+        ShExMLToken::CurlStart,
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "review".to_string(),
+        },
+        ShExMLToken::ShapeTerm {
+            prefix: "".to_string(),
+            local:  "good".to_string(),
+        },
+        ShExMLToken::PredicateSplit,
+        ShExMLToken::CurlEnd,
+    ];
+    first_shape.extend(second_shape);
+    let expected = Some(first_shape);
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    assert!(
+        tokens_opt == expected,
+        "Expected output is: {:#?}\nGenerated output was: {:#?}",
+        expected,
+        tokens_opt
+    )
+}
+
+#[test]
 fn simple_single_shape_linking() {
     let shape_str = "
 
