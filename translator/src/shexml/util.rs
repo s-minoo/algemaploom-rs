@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use log::debug;
+use log::{debug, trace};
 use shexml_interpreter::{
     GraphShapes, IndexedShExMLDocument, Object, Predicate, ShapeExpression,
     ShapeIdent, Subject,
@@ -102,6 +102,7 @@ fn check_obj_related_expression(
     expression: &ShapeExpression,
     expr_idents: &HashSet<&str>,
 ) -> bool {
+
     match expression {
         ShapeExpression::Reference(reference) => {
             expr_idents.contains(reference.expr_ident.as_str())
@@ -116,7 +117,10 @@ fn check_obj_related_expression(
         } => expr_idents.contains(reference.expr_ident.as_str()),
         ShapeExpression::Static { value: _ } => true,
         ShapeExpression::Link { other_shape_ident } => {
+            debug!("Object is a shape link!"); 
+            trace!("Other shape ident is: {:?}", other_shape_ident); 
             let shape_map = &indexed_document.shapes;
+            trace!("Shape map is: {:#?}", shape_map); 
             let shape_opt = shape_map.get(&other_shape_ident.to_string());
             if let Some(shape) = shape_opt {
                 check_subj_expr_ident(&shape.subject, expr_idents)

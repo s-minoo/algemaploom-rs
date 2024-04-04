@@ -58,7 +58,11 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
                 expr_idents.iter().map(|ident| ident.as_str()).collect();
 
             //filter out quads that could be generated from the same source
+            
 
+            debug!("Processing for source: {}", source_ident);
+            debug!("With expir_idents: {:#?}", expr_idents_hashset);
+            debug!("Generating quads from same source"); 
             let filtered_same_source_quads = get_quads_from_same_source(
                 &indexed_document,
                 indexed_document.graph_shapes.values(),
