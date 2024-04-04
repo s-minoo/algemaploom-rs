@@ -502,7 +502,7 @@ fn expression_stmt() -> t!(ExpressionEnum) {
     just::<ShExMLToken, _, Simple<ShExMLToken>>(ShExMLToken::Expression)
         .ignore_then(unfold_token_value!(Ident))
         .then_ignore(just(ShExMLToken::AngleStart))
-        .then(exp_string_op().or(exp_join_union()).or(exp()))
+        .then(exp_join_union().or(exp_string_op()).or(exp()))
         .then_ignore(just(ShExMLToken::AngleEnd))
         .map(|(ident, expression)| {
             let stmt = ExpressionStmt {
@@ -520,8 +520,8 @@ fn exp() -> t!(ExpressionStmtEnum) {
 }
 
 fn exp_join_union() -> t!(ExpressionStmtEnum) {
-    let basic_expression = exp_reference_ident()
-        .map(|path| ExpressionStmtEnum::Basic { reference: path });
+    let basic_expression = exp_string_op().or(exp());
+
     basic_expression
         .clone()
         .then(
@@ -597,7 +597,6 @@ fn iterators() -> t!(Vec<Iterator>) {
             .then_ignore(just(ShExMLToken::BrackStart))
             .then(fields)
             .map(|((ident, (iter_type, query)), fields)| {
-
                 // Edge case handling for csvperrow iterator
                 if query == Some("csvperrow".to_string()) && iter_type.is_none()
                 {
