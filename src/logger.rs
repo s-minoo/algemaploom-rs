@@ -42,6 +42,8 @@ pub fn build_log_config(debug_enabled: bool) -> Config {
 
     let mut appenders = Vec::new();
     appenders.push(console_appender);
+    let mut root_builder = Root::builder();
+    root_builder = root_builder.appender("console");
 
     if debug_enabled {
         let debug_threshold = ThresholdFilter::new(LevelFilter::Trace);
@@ -62,15 +64,11 @@ pub fn build_log_config(debug_enabled: bool) -> Config {
             .build("file", Box::new(file_appender));
 
         appenders.push(file_sink);
+        root_builder = root_builder.appender("file");
     }
 
     Config::builder()
         .appenders(appenders)
-        .build(
-            Root::builder()
-                .appender("console")
-                .appender("file")
-                .build(LevelFilter::Trace),
-        )
+        .build(root_builder.build(LevelFilter::Trace))
         .unwrap()
 }
