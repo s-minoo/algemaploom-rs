@@ -38,6 +38,7 @@ pub fn convert_graph_shape_to_quads(
 ) -> Vec<(&Subject, &Predicate, &Object, &ShapeIdent)> {
     let graph_ident = &graph_shapes.ident;
 
+    debug!("Converting graph shape to quads");
     let mut result = Vec::new();
 
     for shape in &graph_shapes.shapes {
@@ -48,24 +49,30 @@ pub fn convert_graph_shape_to_quads(
         result.extend(quads);
     }
 
+    trace!("Converted quads without filter: {:#?}", result);
+
     result
 }
 
 fn check_subj_expr_ident(subj: &Subject, expr_idents: &HashSet<&str>) -> bool {
-    let subj_expr_ident = match &subj.expression {
-        ShapeExpression::Reference(reference) => &reference.expr_ident,
+    debug!("Checking subj expr_ident");
+    trace!("Subject: {:#?}", subj);
+    match &subj.expression {
+        ShapeExpression::Reference(reference) => {
+            expr_idents.contains(reference.expr_ident.as_str())
+        }
         ShapeExpression::Matching {
             reference,
             matcher_ident: _,
-        } => &reference.expr_ident,
+        } => expr_idents.contains(reference.expr_ident.as_str()),
         ShapeExpression::Conditional {
             reference,
             conditional_expr: _,
-        } => &reference.expr_ident,
-        _ => "",
-    };
+        } => expr_idents.contains(reference.expr_ident.as_str()),
+        ShapeExpression::Static { value: _ } => true,
 
-    expr_idents.contains(subj_expr_ident)
+        _ => false,
+    }
 }
 
 fn check_obj_expr_ident(
