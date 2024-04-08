@@ -61,7 +61,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             
 
             debug!("Processing for source: {}", source_ident);
-            debug!("With expir_idents: {:#?}", expr_idents_hashset);
+            trace!("With expir_idents: {:#?}", expr_idents_hashset);
             debug!("Generating quads from same source"); 
             let filtered_same_source_quads = get_quads_from_same_source(
                 &indexed_document,
