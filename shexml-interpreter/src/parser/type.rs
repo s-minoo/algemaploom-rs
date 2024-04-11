@@ -80,7 +80,7 @@ impl ShExMLDocument {
                 shape.into_iter().map(move |s| (graph_ident.clone(), s))
             })
             .map(|(graph_ident, shape)| {
-                (format!("{}_{}", graph_ident, shape.ident), shape)
+                ((graph_ident, shape.ident.clone()), shape)
             })
             .collect();
         IndexedShExMLDocument {
@@ -107,7 +107,7 @@ pub struct IndexedShExMLDocument {
     pub functions:        HashMap<String, Function>,
     pub matchers:         HashMap<String, Matcher>,
     pub graph_shapes:     HashMap<String, GraphShapes>,
-    pub shapes:           HashMap<String, Shape>,
+    pub shapes:           HashMap<(ShapeIdent, ShapeIdent), Shape>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
