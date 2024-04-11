@@ -6,6 +6,7 @@ use shexml_interpreter::{
     ShapeIdent, Subject,
 };
 
+#[derive(Debug, Clone)]
 pub struct IndexVariableTerm<'a> {
     pub subject_variable_index: HashMap<&'a Subject, String>,
     pub object_variable_index:  HashMap<&'a Object, String>,
@@ -22,9 +23,11 @@ pub fn variablelize_quads<'a>(
             let subject_variable = format!("{}_sm_{}", graph.local, idx);
             subject_variable_index.insert(*subj, subject_variable);
         }
-        let object_variable = format!("{}_om_{}", graph.local, idx);
 
-        object_variable_index.insert(*obj, object_variable);
+        if !object_variable_index.contains_key(obj) {
+            let object_variable = format!("{}_om_{}", graph.local, idx);
+            object_variable_index.insert(*obj, object_variable);
+        }
     }
 
     IndexVariableTerm {

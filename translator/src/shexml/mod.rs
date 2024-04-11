@@ -58,11 +58,10 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
                 expr_idents.iter().map(|ident| ident.as_str()).collect();
 
             //filter out quads that could be generated from the same source
-            
 
             debug!("Processing for source: {}", source_ident);
             trace!("With expir_idents: {:#?}", expr_idents_hashset);
-            debug!("Generating quads from same source"); 
+            debug!("Generating quads from same source");
             let filtered_same_source_quads = get_quads_from_same_source(
                 &indexed_document,
                 indexed_document.graph_shapes.values(),
@@ -93,19 +92,20 @@ fn add_non_join_related_op(
     sourced_plan: RcRefCellPlan<Processed>,
 ) -> Result<Plan<Sunk>, PlanError> {
     debug!("Variabelizing quads");
-    let variablized_terms = variablelize_quads(quads);
+    let variabelized_terms = variablelize_quads(quads);
+    trace!("Variabelized quads: {:#?}", variabelized_terms);
     let mut renamed_extended_plan = add_rename_extend_op_from_quads(
         doc,
         quads,
         sourced_plan.clone(),
-        &variablized_terms,
+        &variabelized_terms,
     )?;
 
     let mut serialized_plan = add_serializer_op_from_quads(
         doc,
         quads,
         &mut renamed_extended_plan,
-        &variablized_terms,
+        &variabelized_terms,
     )?;
 
     serialized_plan.sink(&Target {
@@ -149,7 +149,7 @@ fn add_serializer_op_from_quads(
             doc.prefixes.get(&pred.prefix.to_string())
         {
             let pred_prefix_uri = &pred_prefix_value.uri;
-            let graph_value = if graph.prefix == PrefixNameSpace::BasePrefix {
+            let graph_value = if graph.local == *"" {
                 "".to_string()
             } else {
                 let graph_prefix_uri =
@@ -260,7 +260,7 @@ fn add_rename_extend_op_from_quads(
     };
 
     // Add extend operator with the final values for triples serialization
-    let sub_obj_map: HashMap<&Subject, Vec<(&Object, &ShapeIdent)>> =
+    let sub_objgraph_map: HashMap<&Subject, Vec<(&Object, &ShapeIdent)>> =
         quads.iter().fold(HashMap::new(), |mut acc, quad| {
             let subj = quad.0;
             let pair = (quad.2, quad.3);
@@ -275,7 +275,7 @@ fn add_rename_extend_op_from_quads(
     let mut triples_extend_func_pairs: HashMap<String, Function> =
         HashMap::new();
 
-    for (subj, obj_shape_pairs) in sub_obj_map.iter() {
+    for (subj, obj_graph_pairs) in sub_objgraph_map.iter() {
         if let Some(subj_term_func) = extend::term::rdf_term_function(
             doc,
             Some(&subj.prefix),
@@ -285,7 +285,7 @@ fn add_rename_extend_op_from_quads(
                 inner_function: subj_term_func.into(),
             };
 
-            for (obj, _shape_ident) in obj_shape_pairs.iter() {
+            for (obj, graph_shape_ident) in obj_graph_pairs.iter() {
                 let subj_variable =
                     variablized_terms.subject_variable_index.get(subj).unwrap();
 
