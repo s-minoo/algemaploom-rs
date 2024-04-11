@@ -115,68 +115,6 @@ fn add_non_join_related_op(
     })
 }
 
-fn add_serializer_op_from_quads(
-    doc: &IndexedShExMLDocument,
-    quads: &ShExMLQuads<'_>,
-    extended_plan: &mut Plan<Processed>,
-    variablized_terms: &IndexVariableTerm<'_>,
-) -> Result<Plan<Serialized>, PlanError> {
-    let mut bgp_patterns = Vec::new();
-    debug!("Generating BGPs for serialization");
-    for (subj, pred, obj, graph) in quads {
-        let subj_variable =
-            variablized_terms.subject_variable_index.get(*subj).unwrap();
-
-        let obj_variable = match &obj.expression {
-            shexml_interpreter::ShapeExpression::Link { other_shape_ident } => {
-                trace!("Object has a shape link expression: {:?}", obj);
-                let link_subj = &doc
-                    .shapes
-                    .get(&other_shape_ident.to_string())
-                    .unwrap()
-                    .subject;
-
-                trace!("Linked subject is: {:?}", link_subj);
-                variablized_terms
-                    .subject_variable_index
-                    .get(&link_subj)
-                    .unwrap()
-            }
-            _ => variablized_terms.object_variable_index.get(*obj).unwrap(),
-        };
-
-        if let Some(pred_prefix_value) =
-            doc.prefixes.get(&pred.prefix.to_string())
-        {
-            let pred_prefix_uri = &pred_prefix_value.uri;
-            let graph_value = if graph.local == *"" {
-                "".to_string()
-            } else {
-                let graph_prefix_uri =
-                    &doc.prefixes.get(&graph.prefix.to_string()).unwrap().uri;
-                format!("{}{}", graph_prefix_uri, graph.local)
-            };
-
-            let single_bgp = format!(
-                "?{} <{}{}> ?{} {}.",
-                subj_variable,
-                pred_prefix_uri,
-                pred.local,
-                obj_variable,
-                graph_value
-            );
-
-            bgp_patterns.push(single_bgp);
-        };
-    }
-    let serializer = Serializer {
-        template: bgp_patterns.join("\n"),
-        options:  None,
-        format:   operator::formats::DataFormat::NQuads,
-    };
-
-    extended_plan.serialize(serializer)
-}
 
 fn add_rename_extend_op_from_quads(
     doc: &IndexedShExMLDocument,
@@ -331,4 +269,67 @@ fn add_rename_extend_op_from_quads(
     );
 
     result
+}
+
+fn add_serializer_op_from_quads(
+    doc: &IndexedShExMLDocument,
+    quads: &ShExMLQuads<'_>,
+    extended_plan: &mut Plan<Processed>,
+    variablized_terms: &IndexVariableTerm<'_>,
+) -> Result<Plan<Serialized>, PlanError> {
+    let mut bgp_patterns = Vec::new();
+    debug!("Generating BGPs for serialization");
+    for (subj, pred, obj, graph) in quads {
+        let subj_variable =
+            variablized_terms.subject_variable_index.get(*subj).unwrap();
+
+        let obj_variable = match &obj.expression {
+            shexml_interpreter::ShapeExpression::Link { other_shape_ident } => {
+                trace!("Object has a shape link expression: {:?}", obj);
+                let link_subj = &doc
+                    .shapes
+                    .get(&other_shape_ident.to_string())
+                    .unwrap()
+                    .subject;
+
+                trace!("Linked subject is: {:?}", link_subj);
+                variablized_terms
+                    .subject_variable_index
+                    .get(&link_subj)
+                    .unwrap()
+            }
+            _ => variablized_terms.object_variable_index.get(*obj).unwrap(),
+        };
+
+        if let Some(pred_prefix_value) =
+            doc.prefixes.get(&pred.prefix.to_string())
+        {
+            let pred_prefix_uri = &pred_prefix_value.uri;
+            let graph_value = if graph.local == *"" {
+                "".to_string()
+            } else {
+                let graph_prefix_uri =
+                    &doc.prefixes.get(&graph.prefix.to_string()).unwrap().uri;
+                format!("{}{}", graph_prefix_uri, graph.local)
+            };
+
+            let single_bgp = format!(
+                "?{} <{}{}> ?{} {}.",
+                subj_variable,
+                pred_prefix_uri,
+                pred.local,
+                obj_variable,
+                graph_value
+            );
+
+            bgp_patterns.push(single_bgp);
+        };
+    }
+    let serializer = Serializer {
+        template: bgp_patterns.join("\n"),
+        options:  None,
+        format:   operator::formats::DataFormat::NQuads,
+    };
+
+    extended_plan.serialize(serializer)
 }
