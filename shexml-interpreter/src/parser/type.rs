@@ -75,8 +75,13 @@ impl ShExMLDocument {
         let shapes = self
             .graph_shapes
             .into_iter()
-            .flat_map(|graph_shape| graph_shape.shapes)
-            .map(|shape| (shape.ident.to_string(), shape))
+            .map(|graph_shape| (graph_shape.ident, graph_shape.shapes))
+            .flat_map(|(graph_ident, shape)| {
+                shape.into_iter().map(move |s| (graph_ident.clone(), s))
+            })
+            .map(|(graph_ident, shape)| {
+                (format!("{}_{}", graph_ident, shape.ident), shape)
+            })
             .collect();
         IndexedShExMLDocument {
             prefixes,
