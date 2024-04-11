@@ -45,7 +45,7 @@ fn update_rename_map_iterator(
 pub fn translate_rename_pairs_map(
     iterators_map: &HashMap<String, Iterator>,
     expr_stmt: &ExpressionStmt,
-    source_ident: &str,
+    source_iter_ident: &str,
 ) -> HashMap<String, String> {
     let mut rename_pairs = HashMap::new();
     debug!("Translating rename pair maps for expression statement");
@@ -54,7 +54,7 @@ pub fn translate_rename_pairs_map(
         .into_iter()
         .filter(|reference| {
             format!("{}.{}", reference.source_ident, reference.iterator_ident)
-                == source_ident
+                == source_iter_ident
         });
 
     for reference in references {

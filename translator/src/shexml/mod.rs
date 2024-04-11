@@ -51,7 +51,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             })
             .collect();
 
-        for (source_ident, (sourced_plan, expr_idents)) in
+        for (source_iter_ident, (sourced_plan, expr_idents)) in
             scidentkey_sourcedplan_exprident_pairval_map.iter()
         {
             let expr_idents_hashset =
@@ -59,7 +59,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
 
             //filter out quads that could be generated from the same source
 
-            debug!("Processing for source: {}", source_ident);
+            debug!("Processing for source: {}", source_iter_ident);
             trace!("With expr_idents: {:#?}", expr_idents_hashset);
             debug!("Generating quads from same source");
             let filtered_same_source_quads = get_quads_from_same_source(
@@ -70,14 +70,14 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
 
             debug!(
                 "Adding non join related ops for source: {:?}",
-                source_ident
+                source_iter_ident
             );
             trace!("Quads: {:#?}", filtered_same_source_quads);
             add_non_join_related_op(
                 &indexed_document,
                 &filtered_same_source_quads,
                 sourced_plan.clone(),
-                source_ident,
+                source_iter_ident,
             )?;
         }
 
@@ -91,7 +91,7 @@ fn add_non_join_related_op(
     doc: &IndexedShExMLDocument,
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
-    source_ident: &str,
+    source_iter_ident: &str,
 ) -> Result<Plan<Sunk>, PlanError> {
     debug!("Variabelizing quads");
     let variabelized_terms = variablelize_quads(quads);
@@ -101,7 +101,7 @@ fn add_non_join_related_op(
         quads,
         sourced_plan.clone(),
         &variabelized_terms,
-        source_ident,
+        source_iter_ident,
     )?;
 
     let mut serialized_plan = add_serializer_op_from_quads(
@@ -123,7 +123,7 @@ fn add_rename_extend_op_from_quads(
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
     variablized_terms: &IndexVariableTerm<'_>,
-    source_ident: &str,
+    source_iter_ident: &str,
 ) -> Result<Plan<Processed>, PlanError> {
     let mut expression_extend_func_pairs: Vec<(String, Function)> = Vec::new();
     let expression_stmts_map = &doc.expression_stmts;
@@ -143,6 +143,7 @@ fn add_rename_extend_op_from_quads(
                     expr_ident,
                     &doc.iterators,
                     &expression_stmt.expr_enum,
+                    source_iter_ident, 
                 );
             expression_extend_func_pairs.extend(concate_extend_pairs);
 
@@ -150,7 +151,7 @@ fn add_rename_extend_op_from_quads(
             let rename_pairs_translated = rename::translate_rename_pairs_map(
                 &doc.iterators,
                 expression_stmt,
-                source_ident,
+                source_iter_ident,
             );
             rename_pairs.extend(rename_pairs_translated);
         }
