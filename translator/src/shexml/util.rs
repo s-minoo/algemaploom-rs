@@ -58,8 +58,6 @@ pub fn convert_graph_shape_to_quads(
 }
 
 fn check_subj_expr_ident(subj: &Subject, expr_idents: &HashSet<&str>) -> bool {
-    debug!("Checking subj expr_ident");
-    trace!("Subject: {:#?}", subj);
     match &subj.expression {
         ShapeExpression::Reference(reference) => {
             expr_idents.contains(reference.expr_ident.as_str())
@@ -189,10 +187,13 @@ where
         let quads = convert_graph_shape_to_quads(graph);
         for quad in quads {
             let (subj, _, obj, _) = quad;
-            if source_checker(
-                check_subj_expr_ident(subj, &expr_idents),
-                check_obj_expr_ident(indexed_document, obj, &expr_idents),
-            ) {
+            let subj_is_in_source = check_subj_expr_ident(subj, &expr_idents);
+            let obj_is_in_source =
+                check_obj_expr_ident(indexed_document, obj, &expr_idents);
+            trace!("Subject check: {}", subj_is_in_source);
+            trace!("Object check: {}", obj_is_in_source);
+
+            if source_checker(subj_is_in_source, obj_is_in_source) {
                 result.push(quad);
             }
         }

@@ -191,7 +191,7 @@ pub enum ExpressionEnum {
     FunctionExp(Function),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ExpressionReferenceIdent {
     pub source_ident:   String,
     pub iterator_ident: String,

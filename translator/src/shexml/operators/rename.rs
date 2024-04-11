@@ -1,7 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use log::{debug, trace};
-use shexml_interpreter::{ExpressionStmt, FieldType, Iterator};
+use shexml_interpreter::{
+    ExpressionReferenceIdent, ExpressionStmt, ExpressionStmtEnum, FieldType,
+    Iterator, ShapeReference,
+};
+use sophia_api::dataset::MutableDataset;
 
 fn update_rename_map_iterator(
     parent: &str,
@@ -18,7 +22,6 @@ fn update_rename_map_iterator(
         true => iterator.ident.clone(),
         false => format!("{}.{}", parent, iterator.ident),
     };
-
 
     normal_fields.for_each(|field| {
         let from = format!("{}.{}", from_prefix, field.ident);
@@ -42,13 +45,19 @@ fn update_rename_map_iterator(
 pub fn translate_rename_pairs_map(
     iterators_map: &HashMap<String, Iterator>,
     expr_stmt: &ExpressionStmt,
+    source_ident: &str,
 ) -> HashMap<String, String> {
     let mut rename_pairs = HashMap::new();
     debug!("Translating rename pair maps for expression statement");
     trace!("Expression statement is: {:#?}", expr_stmt);
-    if let shexml_interpreter::ExpressionStmtEnum::Basic { reference } =
-        &expr_stmt.expr_enum
-    {
+    let references = extract_reference_expr_enum(&expr_stmt.expr_enum)
+        .into_iter()
+        .filter(|reference| {
+            format!("{}.{}", reference.source_ident, reference.iterator_ident)
+                == source_ident
+        });
+
+    for reference in references {
         let iter_ident = &reference.iterator_ident;
         let expr_ident = &expr_stmt.ident;
 
@@ -72,4 +81,23 @@ pub fn translate_rename_pairs_map(
         }
     }
     rename_pairs
+}
+
+fn extract_reference_expr_enum(
+    expr_enum: &ExpressionStmtEnum,
+) -> HashSet<ExpressionReferenceIdent> {
+    match expr_enum {
+        ExpressionStmtEnum::Join(left_enum, right_enum)
+        | ExpressionStmtEnum::Union(left_enum, right_enum) => {
+            let mut left_references = extract_reference_expr_enum(left_enum);
+            let right_references = extract_reference_expr_enum(right_enum);
+
+            left_references.extend(right_references);
+            left_references
+        }
+        ExpressionStmtEnum::Basic { reference } => {
+            HashSet::from([reference.clone()])
+        }
+        _ => HashSet::new(),
+    }
 }

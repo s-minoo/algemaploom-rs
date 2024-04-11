@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use log::{debug, trace};
+use log::{debug, error, trace};
 use operator::{Extend, Function, Rename, Serializer, Target};
 use plangenerator::error::PlanError;
 use plangenerator::plan::{Plan, Processed, RcRefCellPlan, Serialized, Sunk};
@@ -60,7 +60,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
             //filter out quads that could be generated from the same source
 
             debug!("Processing for source: {}", source_ident);
-            trace!("With expir_idents: {:#?}", expr_idents_hashset);
+            trace!("With expr_idents: {:#?}", expr_idents_hashset);
             debug!("Generating quads from same source");
             let filtered_same_source_quads = get_quads_from_same_source(
                 &indexed_document,
@@ -77,6 +77,7 @@ impl LanguageTranslator<ShExMLDocument> for ShExMLTranslator {
                 &indexed_document,
                 &filtered_same_source_quads,
                 sourced_plan.clone(),
+                source_ident,
             )?;
         }
 
@@ -90,6 +91,7 @@ fn add_non_join_related_op(
     doc: &IndexedShExMLDocument,
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
+    source_ident: &str,
 ) -> Result<Plan<Sunk>, PlanError> {
     debug!("Variabelizing quads");
     let variabelized_terms = variablelize_quads(quads);
@@ -99,6 +101,7 @@ fn add_non_join_related_op(
         quads,
         sourced_plan.clone(),
         &variabelized_terms,
+        source_ident, 
     )?;
 
     let mut serialized_plan = add_serializer_op_from_quads(
@@ -115,12 +118,12 @@ fn add_non_join_related_op(
     })
 }
 
-
 fn add_rename_extend_op_from_quads(
     doc: &IndexedShExMLDocument,
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
     variablized_terms: &IndexVariableTerm<'_>,
+    source_ident: &str, 
 ) -> Result<Plan<Processed>, PlanError> {
     let mut expression_extend_func_pairs: Vec<(String, Function)> = Vec::new();
     let expression_stmts_map = &doc.expression_stmts;
@@ -147,6 +150,7 @@ fn add_rename_extend_op_from_quads(
             let rename_pairs_translated = rename::translate_rename_pairs_map(
                 &doc.iterators,
                 expression_stmt,
+                source_ident, 
             );
             rename_pairs.extend(rename_pairs_translated);
         }
@@ -179,6 +183,12 @@ fn add_rename_extend_op_from_quads(
     };
 
     trace!("Rename pairs: {:#?}", rename_pairs);
+    if rename_pairs.is_empty() {
+        return Err(PlanError::GenericError(
+            "Rename operator cannot be generated".to_string(),
+        ));
+    }
+
     next_plan = match !rename_pairs.is_empty() {
         true => {
             // Add rename operator to the extended plan
