@@ -101,7 +101,7 @@ fn add_non_join_related_op(
         quads,
         sourced_plan.clone(),
         &variabelized_terms,
-        source_ident, 
+        source_ident,
     )?;
 
     let mut serialized_plan = add_serializer_op_from_quads(
@@ -123,7 +123,7 @@ fn add_rename_extend_op_from_quads(
     quads: &ShExMLQuads<'_>,
     sourced_plan: RcRefCellPlan<Processed>,
     variablized_terms: &IndexVariableTerm<'_>,
-    source_ident: &str, 
+    source_ident: &str,
 ) -> Result<Plan<Processed>, PlanError> {
     let mut expression_extend_func_pairs: Vec<(String, Function)> = Vec::new();
     let expression_stmts_map = &doc.expression_stmts;
@@ -150,7 +150,7 @@ fn add_rename_extend_op_from_quads(
             let rename_pairs_translated = rename::translate_rename_pairs_map(
                 &doc.iterators,
                 expression_stmt,
-                source_ident, 
+                source_ident,
             );
             rename_pairs.extend(rename_pairs_translated);
         }
@@ -292,13 +292,14 @@ fn add_serializer_op_from_quads(
     for (subj, pred, obj, graph) in quads {
         let subj_variable =
             variablized_terms.subject_variable_index.get(*subj).unwrap();
+        let graph = * graph; 
 
         let obj_variable = match &obj.expression {
             shexml_interpreter::ShapeExpression::Link { other_shape_ident } => {
                 trace!("Object has a shape link expression: {:?}", obj);
                 let link_subj = &doc
                     .shapes
-                    .get(&other_shape_ident.to_string())
+                    .get(&(graph.clone(), other_shape_ident.clone()))
                     .unwrap()
                     .subject;
 

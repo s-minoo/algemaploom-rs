@@ -80,11 +80,13 @@ fn check_obj_expr_ident(
     indexed_document: &IndexedShExMLDocument,
     obj: &Object,
     expr_idents: &HashSet<&str>,
+    graph_ident: &ShapeIdent,
 ) -> bool {
     let obj_expr_bool = check_obj_related_expression(
         indexed_document,
         &obj.expression,
         expr_idents,
+        graph_ident,
     );
     if let Some(language_expr) = &obj.language {
         obj_expr_bool
@@ -92,6 +94,7 @@ fn check_obj_expr_ident(
                 indexed_document,
                 language_expr,
                 expr_idents,
+                graph_ident,
             )
     } else if let Some(datatype) = &obj.datatype {
         obj_expr_bool
@@ -99,6 +102,7 @@ fn check_obj_expr_ident(
                 indexed_document,
                 &datatype.local_expr,
                 expr_idents,
+                graph_ident,
             )
     } else {
         obj_expr_bool
@@ -109,6 +113,7 @@ fn check_obj_related_expression(
     indexed_document: &IndexedShExMLDocument,
     expression: &ShapeExpression,
     expr_idents: &HashSet<&str>,
+    graph_ident: &ShapeIdent,
 ) -> bool {
     match expression {
         ShapeExpression::Reference(reference) => {
@@ -125,10 +130,11 @@ fn check_obj_related_expression(
         ShapeExpression::Static { value: _ } => true,
         ShapeExpression::Link { other_shape_ident } => {
             debug!("Object is a shape link!");
-            trace!("Other shape ident is: {:?}", other_shape_ident);
+            trace!("Other shape ident is: {}", other_shape_ident);
             let shape_map = &indexed_document.shapes;
             trace!("Shape map is: {:#?}", shape_map);
-            let shape_opt = shape_map.get(&other_shape_ident.to_string());
+            let shape_opt = shape_map
+                .get(&(graph_ident.clone(), other_shape_ident.clone()));
             if let Some(shape) = shape_opt {
                 trace!("Other Shape map is: {:#?}", shape);
                 check_subj_expr_ident(&shape.subject, expr_idents)
@@ -186,10 +192,14 @@ where
     for graph in graph_shapes {
         let quads = convert_graph_shape_to_quads(graph);
         for quad in quads {
-            let (subj, _, obj, _) = quad;
+            let (subj, _, obj, graph_ident) = quad;
             let subj_is_in_source = check_subj_expr_ident(subj, &expr_idents);
-            let obj_is_in_source =
-                check_obj_expr_ident(indexed_document, obj, &expr_idents);
+            let obj_is_in_source = check_obj_expr_ident(
+                indexed_document,
+                obj,
+                &expr_idents,
+                graph_ident,
+            );
             trace!("Subject check: {}", subj_is_in_source);
             trace!("Object check: {}", obj_is_in_source);
 
