@@ -501,6 +501,12 @@ pub struct Predicate {
     pub local:  String,
 }
 
+impl Display for Predicate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.prefix, self.local)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Subject {
     pub prefix:     PrefixNameSpace,
@@ -513,13 +519,15 @@ pub enum PrefixNameSpace {
     #[serde(serialize_with = "ns_serialize")]
     NamedPrefix(String),
     BasePrefix,
+    BNodePrefix,
 }
 
 impl Display for PrefixNameSpace {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PrefixNameSpace::NamedPrefix(prefix) => write!(f, "{}", prefix),
+            PrefixNameSpace::NamedPrefix(prefix) => write!(f, "{}:", prefix),
             PrefixNameSpace::BasePrefix => write!(f, ":"),
+            PrefixNameSpace::BNodePrefix => write!(f, "_:"),
         }
     }
 }
