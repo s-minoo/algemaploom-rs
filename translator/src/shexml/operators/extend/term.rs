@@ -14,10 +14,16 @@ pub fn obj_lang_datatype_function(
         rdf_term_function(doc, obj.prefix.as_ref(), &obj.expression);
 
     let obj_inner_function = obj_function_opt?;
-    if obj.prefix.is_some() {
-        Some(Function::Iri {
-            inner_function: obj_inner_function.into(),
-        })
+    if let Some(obj_prefix) = &obj.prefix {
+        if obj_prefix == &PrefixNameSpace::BNodePrefix {
+            Some(Function::BlankNode {
+                inner_function: obj_inner_function.into(),
+            })
+        } else {
+            Some(Function::Iri {
+                inner_function: obj_inner_function.into(),
+            })
+        }
     } else {
         let dtype_function = obj.datatype.as_ref().and_then(|dtype| {
             rdf_term_function(doc, dtype.prefix.as_ref(), &dtype.local_expr)
@@ -98,6 +104,8 @@ pub fn rdf_term_function(
                         Rc::new(new_func),
                     )],
                 });
+            } else if prefix_ns == &PrefixNameSpace::BNodePrefix {
+                return Some(new_func);
             }
         } else {
             return Some(new_func);

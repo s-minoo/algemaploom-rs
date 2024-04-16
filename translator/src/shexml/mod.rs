@@ -143,7 +143,7 @@ fn add_rename_extend_op_from_quads(
                     expr_ident,
                     &doc.iterators,
                     &expression_stmt.expr_enum,
-                    source_iter_ident, 
+                    source_iter_ident,
                 );
             expression_extend_func_pairs.extend(concate_extend_pairs);
 
@@ -230,9 +230,16 @@ fn add_rename_extend_op_from_quads(
             Some(&subj.prefix),
             &subj.expression,
         ) {
-            let subj_term_iri_func = Function::Iri {
-                inner_function: subj_term_func.into(),
-            };
+            let subj_term_iri_func =
+                if subj.prefix == PrefixNameSpace::BNodePrefix {
+                    Function::BlankNode {
+                        inner_function: subj_term_func.into(),
+                    }
+                } else {
+                    Function::Iri {
+                        inner_function: subj_term_func.into(),
+                    }
+                };
 
             for (obj, graph_shape_ident) in obj_graph_pairs.iter() {
                 let subj_variable =
@@ -293,7 +300,7 @@ fn add_serializer_op_from_quads(
     for (subj, pred, obj, graph) in quads {
         let subj_variable =
             variablized_terms.subject_variable_index.get(*subj).unwrap();
-        let graph = * graph; 
+        let graph = *graph;
 
         let obj_variable = match &obj.expression {
             shexml_interpreter::ShapeExpression::Link { other_shape_ident } => {
