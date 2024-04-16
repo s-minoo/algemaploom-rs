@@ -493,7 +493,7 @@ dependencies = [
 
 [[package]]
 name = "meamer-rs"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -544,7 +544,7 @@ checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "operator"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "petgraph",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "plangenerator"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "operator",
@@ -711,7 +711,7 @@ dependencies = [
 
 [[package]]
 name = "rml-interpreter"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -817,7 +817,7 @@ dependencies = [
 
 [[package]]
 name = "shexml-interpreter"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chumsky",
@@ -1001,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "translator"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1076,7 +1076,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vocab"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "walkdir"
