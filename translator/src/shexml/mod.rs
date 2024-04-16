@@ -322,7 +322,7 @@ fn add_serializer_op_from_quads(
             } else {
                 let graph_prefix_uri =
                     &doc.prefixes.get(&graph.prefix.to_string()).unwrap().uri;
-                format!("{}{}", graph_prefix_uri, graph.local)
+                format!("<{}{}>", graph_prefix_uri, graph.local)
             };
 
             let single_bgp = format!(
