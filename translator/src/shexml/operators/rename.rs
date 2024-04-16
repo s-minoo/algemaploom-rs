@@ -63,7 +63,7 @@ pub fn translate_rename_pairs_map(
 
         if let Some(field) = &reference.field {
             let from = format!("{}.{}", iter_ident, field);
-            let to = format!("{}.{}", expr_ident, field);
+            let to = expr_ident.to_string();
 
             rename_pairs.insert(from, to);
         } else if let Some(iterator) = iterators_map.get(iter_ident) {
