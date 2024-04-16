@@ -1266,6 +1266,80 @@ fn shape_simple_class_type_test() {
 }
 
 #[test]
+fn shape_simple_bnode_test() {
+    let shape_str = "
+
+:Films _:[films.id] {
+    :name [films.name] ;
+    :year _:[films.year] ;
+}
+        ";
+
+    let (tokens_opt, errors) = lexer::shapes()
+        .padded()
+        .then_ignore(end())
+        .parse_recovery(shape_str);
+
+    println!("{:#?}", tokens_opt);
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let (parsed_items, errors) =
+        parser::shapes().parse_recovery(tokens_opt.unwrap());
+
+    assert!(errors.len() == 0, "{:?}", errors);
+
+    let pred_obj_pairs = vec![
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local:  "name".to_string(),
+            },
+            Object {
+                language:   None,
+                datatype:   None,
+                prefix:     None,
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("name".to_string()),
+                }),
+            },
+        ),
+        (
+            Predicate {
+                prefix: PrefixNameSpace::BasePrefix,
+                local:  "year".to_string(),
+            },
+            Object {
+                language:   None,
+                datatype:   None,
+                prefix:     Some(PrefixNameSpace::BNodePrefix),
+                expression: ShapeExpression::Reference(ShapeReference {
+                    expr_ident: "films".to_string(),
+                    field:      Some("year".to_string()),
+                }),
+            },
+        ),
+    ];
+
+    let expected_items = Some(vec![Shape {
+        ident:          ShapeIdent {
+            prefix: PrefixNameSpace::BasePrefix,
+            local:  "Films".to_string(),
+        },
+        subject:        Subject {
+            prefix:     PrefixNameSpace::BNodePrefix,
+            expression: ShapeExpression::Reference(ShapeReference {
+                expr_ident: "films".to_string(),
+                field:      Some("id".to_string()),
+            }),
+        },
+        pred_obj_pairs: pred_obj_pairs.into_iter().collect(),
+    }]);
+
+    assert_parse_expected(parsed_items, expected_items)
+}
+
+#[test]
 fn shape_simple_test() {
     let shape_str = "
 

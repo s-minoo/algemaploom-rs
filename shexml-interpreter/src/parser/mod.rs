@@ -35,6 +35,14 @@ fn token_string<T: AsRef<str> + Clone>(
     just(tok).map(move |_| target.as_ref().to_string())
 }
 
+fn token_prefix_shex_pns() -> t!(PrefixNameSpace) {
+    select! {
+        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
+        ShExMLToken::PrefixNS(prefix) => prefix.parse().unwrap(),
+    }
+    .labelled("parser:token_prefix_shex_pns")
+}
+
 pub fn shexml() -> t!(ShExMLDocument) {
     prefixes()
         .then(sources())
@@ -97,11 +105,7 @@ fn shape_ident() -> t!(ShapeIdent) {
 
     pn_ln
         .map(|(prefix, local)| {
-            let prefix = if prefix.is_empty() {
-                PrefixNameSpace::BasePrefix
-            } else {
-                PrefixNameSpace::NamedPrefix(prefix)
-            };
+            let prefix = prefix.parse().unwrap();
 
             ShapeIdent { prefix, local }
         })
@@ -141,13 +145,8 @@ fn graph_shapes() -> t!(Vec<GraphShapes>) {
 fn shape_term() -> t!((PrefixNameSpace, String)) {
     select! {
             ShExMLToken::ShapeTerm{prefix, local} =>{
-                let mut p_ns = PrefixNameSpace::BasePrefix;
-                if !prefix.is_empty(){
-
-                    p_ns = PrefixNameSpace::NamedPrefix(prefix);
-                }
+                let p_ns = prefix.parse().unwrap();
                 (p_ns, local)
-
             }
 
     }
@@ -158,10 +157,7 @@ fn shapes() -> t!(Vec<Shape>) {
         .ignore_then(shape_expression())
         .then_ignore(just(ShExMLToken::SqBrackEnd));
 
-    let shape_expr_prefix = select! {
-        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
-        ShExMLToken::PrefixNS(prefix) => PrefixNameSpace::NamedPrefix(prefix),
-    };
+    let shape_expr_prefix = token_prefix_shex_pns();
 
     let prefix_shape_pair =
         shape_expr_prefix.then_ignore(just(ShExMLToken::PrefixSep));
@@ -228,11 +224,8 @@ fn shapes() -> t!(Vec<Shape>) {
 }
 
 fn object() -> t!(Object) {
-    let prefix = select! {
-        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
-        ShExMLToken::PrefixNS(prefix) => PrefixNameSpace::NamedPrefix(prefix),
-    }
-    .then_ignore(just(ShExMLToken::PrefixSep));
+    let prefix =
+        token_prefix_shex_pns().then_ignore(just(ShExMLToken::PrefixSep));
 
     let shape_expr = just(ShExMLToken::SqBrackStart)
         .ignore_then(shape_expression())
@@ -689,11 +682,7 @@ fn field() -> t!(Field) {
 }
 
 fn prefixes() -> t!(Vec<Prefix>) {
-    let prefix_ns = select! {
-        ShExMLToken::PrefixNS(ns) => PrefixNameSpace::NamedPrefix(ns),
-        ShExMLToken::BasePrefix => PrefixNameSpace::BasePrefix,
-
-    };
+    let prefix_ns = token_prefix_shex_pns();
 
     just(ShExMLToken::Prefix)
         .ignore_then(prefix_ns)

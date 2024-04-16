@@ -522,6 +522,19 @@ pub enum PrefixNameSpace {
     BNodePrefix,
 }
 
+impl FromStr for PrefixNameSpace {
+    type Err = ShExMLError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            Ok(PrefixNameSpace::BasePrefix)
+        } else if s == "_" {
+            Ok(PrefixNameSpace::BNodePrefix)
+        } else {
+            Ok(PrefixNameSpace::NamedPrefix(s.to_string()))
+        }
+    }
+}
+
 impl Display for PrefixNameSpace {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

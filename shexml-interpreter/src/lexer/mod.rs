@@ -534,6 +534,7 @@ pub fn prefixes() -> t!(Vec<ShExMLToken>) {
 
 fn prefix_namespace() -> t!(Vec<ShExMLToken>) {
     pn_prefix()
+        .or(just("_").map(|_| vec!['_']))
         .or_not()
         .then_ignore(just(":"))
         .padded()
