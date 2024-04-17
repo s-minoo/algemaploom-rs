@@ -16,6 +16,7 @@
         "translator/rml", 
         "translator/shexml", 
         "plangenerator", 
+        "engine",
         "vocab", 
         "operator", 
         "bin",""
