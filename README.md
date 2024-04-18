@@ -22,7 +22,7 @@
 
 Mapping algebra provides operational semantics to the mapping process, opening
 the door to study of complexity and expressiveness of existing mapping languages.
-This project provides the CLI translator from RML to mapping algebra.
+This project provides the CLI translator from RML and ShExML to mapping algebra.
 
 <!-- GETTING STARTED -->
 
@@ -72,12 +72,31 @@ python version >= 3.10 and the following packages:
 
 ## Test cases
 
-Currently, the translator will generate valid mapping plans for the official
+
+### RML 
+Currently, the translator generates valid mapping plans for the official
 [RML test cases](https://github.com/kg-construct/rml-test-casesk) with mapping plans
 for CSV data sources (all test cases ending in **CSV**).
 
 The generated mapping plans for the test cases are inside the
 [/resources/csv-testcases](/resources/csv-testcases).
+
+### ShExML
+The translator can *partially* translate ShExML documents. 
+The translator will make a **best-effort** translation if the ShExML document
+uses the following *unsupported* features. 
+It will still generate a mapping plan which could be executed but the 
+results won't be complete. 
+
+The following features are not supported in translation yet: 
+
+1) Autoincrements
+2) Query statements
+3) Joins 
+4) Functions 
+5) Conditionals
+
+
 
 ## Acknowledgement
 
