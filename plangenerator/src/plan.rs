@@ -16,7 +16,7 @@ use serde_json::json;
 
 use crate::error::PlanError;
 
-type DiGraphOperators = DiGraph<PlanNode, PlanEdge>;
+pub type DiGraphOperators = DiGraph<PlanNode, PlanEdge>;
 pub type RcRefCellDiGraph = Rc<RefCell<DiGraphOperators>>;
 
 type VSourceIdxs = Vec<NodeIndex>;
