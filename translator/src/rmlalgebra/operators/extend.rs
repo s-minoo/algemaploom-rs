@@ -88,9 +88,7 @@ fn extract_function(tm_info: &TermMapInfo) -> Function {
     match tm_info.term_type.unwrap() {
         sophia_api::term::TermKind::Iri => {
             Function::Iri {
-                inner_function: Function::UriEncode {
-                    inner_function: value_function,
-                }
+                inner_function: value_function
                 .into(),
             }
         }
