@@ -13,7 +13,7 @@ pub enum PlanError {
     )]
     WrongApplyOperator(Operator),
 
-    #[error("The given operator needs to be connected to a previous opeartor: \n{0:?}")]
+    #[error("The given operator needs to be connected to a previous operator: \n{0:?}")]
     DanglingApplyOperator(Operator),
 
     #[error("Something else happened: {0:?}")]
