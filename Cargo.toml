@@ -14,7 +14,7 @@ members = ["rml-interpreter", "shexml-interpreter",  "operator", "vocab", "plang
 [workspace.dependencies]
 anyhow = "1.0.71"
 lazy_static = "1.4.0"
-petgraph = { version = "0.6.3", features = ["serde-1"] }
+petgraph = { version = "0.6.5", features = ["serde-1"] }
 regex = "1.8.4"
 serde = {version="1.0.164", features= ["derive", "rc"]}
 serde_json = "1.0.99"
