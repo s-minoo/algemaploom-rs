@@ -75,7 +75,7 @@ python version >= 3.10 and the following packages:
 
 ### RML 
 Currently, the translator generates valid mapping plans for the official
-[RML test cases](https://github.com/kg-construct/rml-test-casesk) with mapping plans
+[RML test cases](https://github.com/kg-construct/rml-test-cases) with mapping plans
 for CSV data sources (all test cases ending in **CSV**).
 
 The generated mapping plans for the test cases are inside the
