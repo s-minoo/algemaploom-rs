@@ -166,7 +166,7 @@ fn add_rename_extend_op_from_quads(
     );
     next_plan = match !expression_extend_func_pairs.is_empty() {
         true => {
-            debug!("Adding rename operator since it is not empty");
+            debug!("Adding extend operator since it is not empty");
             let extend_pairs: HashMap<_, _> =
                 expression_extend_func_pairs.into_iter().collect();
 
