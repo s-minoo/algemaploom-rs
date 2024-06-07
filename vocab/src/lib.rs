@@ -10,6 +10,7 @@ pub mod rml;
 pub mod rmlt;
 pub mod void;
 pub mod xsd;
+pub mod rml_core;
 
 pub type PAIR<'a> = (&'a str, &'a str);
 

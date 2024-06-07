@@ -45,13 +45,21 @@ impl Extractor<TriplesMap> for TriplesMap {
 pub fn extract_triples_maps(
     graph: &FastGraph,
 ) -> ExtractorResult<Vec<TriplesMap>> {
-    let ptype: RcTerm = Term::new_iri(vocab::rdf::PROPERTY::TYPE.to_string())?;
-    let otm: RcTerm =
-        Term::new_iri(vocab::r2rml::CLASS::TRIPLESMAP.to_string())?;
-
-    graph
-        .triples_with_po(&ptype, &otm)
-        .filter_map(|triple| triple.ok())
-        .map(|triple| TriplesMap::extract_self(triple.s(), graph))
+    let old_rml_subject_map: RcTerm = Term::new_iri(vocab::r2rml::PROPERTY::SUBJECTMAP.to_string())?;
+    let rml_core_subject_map: RcTerm = Term::new_iri(vocab::rml_core::PROPERTY::SUBJECTMAP.to_string())?;
+    
+    let old_rml_tm_iter = graph.triples_with_p(&old_rml_subject_map);
+    let rml_core_tm_iter = graph.triples_with_p(&rml_core_subject_map);
+    
+    old_rml_tm_iter
+        .chain(rml_core_tm_iter)
+        .filter_map(|triple| { 
+            triple.ok()
+        })
+        .map(|triple| {
+            TriplesMap::extract_self(triple.s(), graph)
+        })
         .collect()
+    
+    // TODO: if it really needs to be valid at thid point, check for a logical source for old RML
 }
