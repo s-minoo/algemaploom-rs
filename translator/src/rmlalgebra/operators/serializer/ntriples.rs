@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use operator::formats::DataFormat;
 
-use super::util::unterminated_triple_strings;
+use super::util::get_triples_strings;
 use super::SerializeTranslator;
 use crate::rmlalgebra::types::Quad;
 
@@ -17,7 +17,7 @@ impl SerializeTranslator for NTriplesSerializer {
         let mut triples_strings: HashSet<String> = HashSet::new();
         for quad in quads {
             let terminated_triples =
-                unterminated_triple_strings(quad, variable_map)
+                get_triples_strings(quad, variable_map)
                     .into_iter()
                     .map(|str| format!("{} .", str));
 
