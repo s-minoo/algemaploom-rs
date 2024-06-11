@@ -4,7 +4,7 @@ use vocab::ToString;
 
 use crate::rmlalgebra::types::Quad;
 
-pub fn unterminated_triple_strings(
+pub fn get_triples_strings(
     quad: &Quad<'_>,
     variable_map: &HashMap<String, String>,
 ) -> Vec<String> {
